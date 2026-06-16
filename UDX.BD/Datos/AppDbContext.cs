@@ -1,0 +1,42 @@
+﻿using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Text;
+using UDX.BD.Datos.Entity;
+
+namespace UDX.BD.Datos
+{
+    public class AppDbContext : DbContext
+    {
+        public DbSet<Academia> Academias { get; set; }
+        public DbSet<ClaseAgendada> ClasesAgendadas { get; set; }
+        public DbSet<Contenido> Contenidos { get; set; }
+        public DbSet<DocenteMateria> DocentesMaterias { get; set; }
+        public DbSet<Hijo> Hijos { get; set; }
+        public DbSet<Materia> Materias { get; set; }
+        public DbSet<Mensaje> Mensajes { get; set; }
+        public DbSet<PagoDocente> PagosDocentes { get; set; }
+        public DbSet<PerfilDocente> PerfilesDocentes { get; set; }
+        public DbSet<PerfilPadre> PerfilesPadres { get; set; }
+        public DbSet<Resena> Resenas { get; set; }
+        public DbSet<SolicitudClase> SolicitudesClases { get; set; }
+        public DbSet<Usuario> Usuarios { get; set; }
+
+        public AppDbContext(DbContextOptions options) : base(options)
+        {
+        }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            foreach (var foreignKey in modelBuilder.Model
+              .GetEntityTypes()
+              .SelectMany(e => e.GetForeignKeys()))
+            {
+                foreignKey.DeleteBehavior = DeleteBehavior.NoAction;
+            }
+
+        }
+
+
+    }
+}

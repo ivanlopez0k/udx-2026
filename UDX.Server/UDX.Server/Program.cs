@@ -1,7 +1,14 @@
+using Microsoft.EntityFrameworkCore;
+using UDX.BD.Datos;
 using UDX.Server.Client.Pages;
 using UDX.Server.Components;
 
 var builder = WebApplication.CreateBuilder(args);
+
+
+string connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("No existe la conexion con la bd.");
+
+builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlServer(connectionString));
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
