@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="UDX.BD/UDX.BD.csproj" />
+  <Project Path="UDX.Repositorio/UDX.Repositorio.csproj" />
+  <Project Path="UDX.Server/UDX.Server.Client/UDX.Server.Client.csproj" />
+  <Project Path="UDX.Server/UDX.Server/UDX.Server.csproj" />
+  <Project Path="UDX.Servicios/UDX.Servicios.csproj" />
+  <Project Path="UDX.Shared/UDX.Shared.csproj" />
+</Solution>
