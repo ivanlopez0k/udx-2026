@@ -303,6 +303,9 @@ namespace UDX.BD.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int?>("AcademyId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Availability")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -324,10 +327,17 @@ namespace UDX.BD.Migrations
                     b.Property<float>("RatingAvg")
                         .HasColumnType("real");
 
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
                     b.Property<bool>("Verified")
                         .HasColumnType("bit");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("AcademyId");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("PerfilesDocentes");
                 });
@@ -632,6 +642,24 @@ namespace UDX.BD.Migrations
                     b.Navigation("Teacher");
 
                     b.Navigation("claseAgendada");
+                });
+
+            modelBuilder.Entity("UDX.BD.Datos.Entity.PerfilDocente", b =>
+                {
+                    b.HasOne("UDX.BD.Datos.Entity.Academia", "Academy")
+                        .WithMany()
+                        .HasForeignKey("AcademyId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("UDX.BD.Datos.Entity.Usuario", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Academy");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("UDX.BD.Datos.Entity.PerfilPadre", b =>

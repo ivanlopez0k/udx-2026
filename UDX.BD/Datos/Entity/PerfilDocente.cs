@@ -15,5 +15,12 @@ namespace UDX.BD.Datos.Entity
         public int RatinCount { get; set; }
         public string Availability { get; set; }
         public bool Verified { get; set; }
+
+        public int UserId { get; set; }
+        public Usuario User { get; set; }
+
+        public int? AcademyId { get; set; }
+        public Academia Academy { get; set; }
+
     }
 }

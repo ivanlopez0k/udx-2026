@@ -3,6 +3,11 @@ using UDX.BD.Datos;
 using UDX.BD.Datos.Entity;
 using UDX.Server.DTOs;
 using System.Linq;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using Microsoft.AspNetCore.Authorization;
 
 namespace UDX.Server.Controllers
 {
@@ -11,10 +16,14 @@ namespace UDX.Server.Controllers
     public class AuthController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly IConfiguration _configuration;
 
-        public AuthController(AppDbContext context)
+        public AuthController(
+            AppDbContext context,
+            IConfiguration configuration)
         {
             _context = context;
+            _configuration = configuration;
         }
 
         [HttpPost("register")]
@@ -42,6 +51,24 @@ namespace UDX.Server.Controllers
 
             _context.SaveChanges();
 
+            if (usuario.Role == Usuario.Rol.TEACHER)
+            {
+                PerfilDocente perfil = new PerfilDocente
+                {
+                    UserId = usuario.Id,
+                    Credentials = "",
+                    HourlyRate = 0,
+                    Location = "",
+                    RatingAvg = 0,
+                    RatinCount = 0,
+                    Availability = "",
+                    Verified = false
+                };
+
+                _context.PerfilesDocentes.Add(perfil);
+                _context.SaveChanges();
+            }
+
             return Ok(usuario);
         }
 
@@ -58,13 +85,68 @@ namespace UDX.Server.Controllers
                 return Unauthorized("Email o contraseña incorrectos.");
             }
 
+            var token = GenerateToken(usuario);
+
             return Ok(new
             {
-                usuario.Id,
+                Token = token,
                 usuario.Email,
-                usuario.Name,
                 usuario.Role
             });
         }
+
+        [Authorize]
+        [HttpGet("test")]
+        public IActionResult Test()
+        {
+            return Ok("JWT válido");
+        }
+
+        [Authorize]
+        [HttpGet("claims")]
+        public IActionResult Claims()
+        {
+            return Ok(User.Claims.Select(c => new
+            {
+                c.Type,
+                c.Value
+            }));
+        }
+
+        private string GenerateToken(Usuario usuario)
+        {
+            var claims = new[]
+            {
+        new Claim(ClaimTypes.NameIdentifier,
+            usuario.Id.ToString()),
+
+        new Claim(ClaimTypes.Email,
+            usuario.Email),
+
+        new Claim(ClaimTypes.Role,
+            usuario.Role.ToString())
+    };
+
+            var key = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(
+                    _configuration["Jwt:Key"]));
+
+            var credentials =
+                new SigningCredentials(
+                    key,
+                    SecurityAlgorithms.HmacSha256);
+
+            var token =
+                new JwtSecurityToken(
+                    issuer: _configuration["Jwt:Issuer"],
+                    audience: _configuration["Jwt:Audience"],
+                    claims: claims,
+                    expires: DateTime.Now.AddHours(2),
+                    signingCredentials: credentials);
+
+            return new JwtSecurityTokenHandler()
+                .WriteToken(token);
+        }
+
     }
 }
