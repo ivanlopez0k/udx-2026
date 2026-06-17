@@ -3,9 +3,11 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using UDX.BD.Datos;
+using UDX.Server.Authorization;
 using UDX.Server.Client.Pages;
 using UDX.Server.Components;
 using Microsoft.OpenApi;
+using Microsoft.AspNetCore.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,10 +37,34 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                             builder.Configuration["Jwt:Key"]))
             };
     });
-builder.Services.AddAuthorization();
+builder.Services.AddScoped<IAuthorizationHandler, PerfilDocenteHandler>();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("PerfilDocenteOnly", policy =>
+        policy.Requirements.Add(new PerfilDocenteRequirement()));
+});
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Ingresá el token JWT acá"
+    });
+
+    options.AddSecurityRequirement(doc => new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecuritySchemeReference("Bearer"),
+            new List<string>()
+        }
+    });
+});
 
 
 // Add services to the container.
