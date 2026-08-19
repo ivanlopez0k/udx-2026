@@ -99,7 +99,7 @@ namespace UDX.Server.Controllers
         [HttpGet("test")]
         public IActionResult Test()
         {
-            return Ok("JWT válido");
+            return Ok("JWT valido");
         }
 
         [Authorize]
