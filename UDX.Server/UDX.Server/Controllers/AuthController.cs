@@ -37,13 +37,17 @@ namespace UDX.Server.Controllers
                 return BadRequest("Ya existe un usuario con ese email.");
             }
 
+            var role = dto.Role == Usuario.Rol.PARENT || dto.Role == Usuario.Rol.TEACHER
+                ? dto.Role
+                : Usuario.Rol.PARENT;
+
             Usuario usuario = new Usuario
             {
                 Email = dto.Email,
                 Password = dto.Password,
                 Name = dto.Name,
                 Phone = dto.Phone,
-                Role = dto.Role,
+                Role = role,
                 CreatedAt = DateTime.UtcNow
             };
 
