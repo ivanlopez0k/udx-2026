@@ -1,10 +1,8 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using UDX.BD.Datos;
 using UDX.BD.Datos.Entity;
-using UDX.Server.Authorization;
 using UDX.Server.DTOs;
 
 namespace UDX.Server.Controllers
@@ -20,15 +18,35 @@ namespace UDX.Server.Controllers
             _context = context;
         }
 
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> ObtenerMaterias()
+        {
+            var materias = await _context.Materias
+                .Select(m => new
+                {
+                    m.Id,
+                    m.Name,
+                    m.Grade,
+                    m.Category
+                })
+                .ToListAsync();
+
+            return Ok(materias);
+        }
+
         [HttpPost]
-        [Authorize(Policy = "PerfilDocenteOnly")]
+        [Authorize(Roles = "ADMIN")]
         public async Task<IActionResult> CrearMateria(CrearMateriaDTO dto)
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-            int userId = int.Parse(userIdClaim!.Value);
+            var existe = await _context.Materias.AnyAsync(m =>
+                m.Name.ToLower() == dto.Name.ToLower() &&
+                m.Grade.ToLower() == dto.Grade.ToLower());
 
-            var perfilDocente = await _context.PerfilesDocentes
-                .FirstAsync(p => p.UserId == userId);
+            if (existe)
+            {
+                return Conflict(new { Message = "Ya existe una materia con ese nombre y grado." });
+            }
 
             var materia = new Materia
             {
@@ -40,45 +58,41 @@ namespace UDX.Server.Controllers
             _context.Materias.Add(materia);
             await _context.SaveChangesAsync();
 
-            var docenteMateria = new DocenteMateria
-            {
-                TeacherId = perfilDocente.Id,
-                MateriaId = materia.Id,
-                Level = "General"
-            };
-
-            _context.DocentesMaterias.Add(docenteMateria);
-            await _context.SaveChangesAsync();
-
             return Ok(new
             {
-                Materia = materia,
-                DocenteMateria = docenteMateria
+                materia.Id,
+                materia.Name,
+                materia.Grade,
+                materia.Category
             });
         }
 
-        [HttpGet]
-        [Authorize(Policy = "PerfilDocenteOnly")]
-        public async Task<IActionResult> ListarMisMaterias()
+        [HttpPut("{id}")]
+        [Authorize(Roles = "ADMIN")]
+        public async Task<IActionResult> EditarMateria(int id, EditarMateriaDTO dto)
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-            int userId = int.Parse(userIdClaim!.Value);
+            var materia = await _context.Materias.FindAsync(id);
+            if (materia == null)
+            {
+                return NotFound();
+            }
 
-            var perfilDocente = await _context.PerfilesDocentes
-                .FirstAsync(p => p.UserId == userId);
+            var duplicada = await _context.Materias.AnyAsync(m =>
+                m.Id != id &&
+                m.Name.ToLower() == dto.Name.ToLower() &&
+                m.Grade.ToLower() == dto.Grade.ToLower());
 
-            var materias = await _context.DocentesMaterias
-                .Where(dm => dm.TeacherId == perfilDocente.Id)
-                .Include(dm => dm.Materia)
-                .Select(dm => new
-                {
-                    dm.Id,
-                    dm.Level,
-                    Materia = dm.Materia
-                })
-                .ToListAsync();
+            if (duplicada)
+            {
+                return Conflict(new { Message = "Ya existe una materia con ese nombre y grado." });
+            }
 
-            return Ok(materias);
+            materia.Name = dto.Name;
+            materia.Grade = dto.Grade;
+            materia.Category = dto.Category;
+            await _context.SaveChangesAsync();
+
+            return NoContent();
         }
     }
 }
