@@ -23,7 +23,11 @@ html, body {
     min-width: 130px; 
 }
 
-
+.navbar {
+    display: flex;
+    justify-content: flex-end;
+    padding-right: 10px; /* ajustá el valor según lo que necesites */
+}
 
 
 .btn-primary {
