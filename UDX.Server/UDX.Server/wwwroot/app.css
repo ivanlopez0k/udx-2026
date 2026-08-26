@@ -26,7 +26,14 @@ html, body {
 .navbar {
     display: flex;
     justify-content: flex-end;
-    padding-right: 10px; /* ajustá el valor según lo que necesites */
+    padding-right: 10px;
+}
+@media (min-width: 992px) {
+    .navbar-expand-lg .navbar-collapse {
+        display: flex !important;
+        flex-basis: auto;
+        flex-direction: row-reverse;
+    }
 }
 
 
