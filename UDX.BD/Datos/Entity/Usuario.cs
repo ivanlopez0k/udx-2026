@@ -17,3 +17,6 @@ namespace UDX.BD.Datos.Entity
         public DateTime CreatedAt { get; set; }
     }
 }
+
+
+//prueba de commit
