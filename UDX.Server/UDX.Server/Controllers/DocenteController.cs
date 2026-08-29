@@ -4,8 +4,6 @@ using UDX.BD.Datos.Entity;
 using UDX.Server.DTOs;
 using UDX.BD.Datos;
 
-//Preuba de controlador para buscar docentes por materia y ubicación (1)
-
 namespace UDX.Server.Controllers;
 [ApiController]
 [Route("api/[controller]")]
