@@ -4,6 +4,8 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
 
 namespace UDX.BD.Datos.Entity
+
+
 {
     public class PerfilDocente : EntityBase
     {
