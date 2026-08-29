@@ -375,10 +375,16 @@ h1:focus {
     max-height: 400px;
 }
 
-.footer {
-    padding: 60px 0 25px;
+
+footer {
+    width: 100vw;
+    position: relative;
+    left: 50%;
+    right: 50%;
+    margin-left: -50vw;
+    margin-right: -50vw;
     background-color: #212529;
-    color: white;
+    padding: 60px 0 25px;
 }
 
 .footer-logo {
