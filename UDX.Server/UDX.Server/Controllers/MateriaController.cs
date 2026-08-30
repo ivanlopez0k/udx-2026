@@ -19,7 +19,6 @@ namespace UDX.Server.Controllers
         }
 
         [HttpGet]
-        [Authorize]
         public async Task<IActionResult> ObtenerMaterias()
         {
             var materias = await _context.Materias

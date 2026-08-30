@@ -1,0 +1,92 @@
+@page "/materias"
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@inject HttpClient Http
+
+<PageTitle>Materias - UDX</PageTitle>
+
+<section class="materias py-5">
+    <div class="container">
+
+        <div class="text-center mb-5">
+            <h2 class="fw-bold">Todas las materias</h2>
+            <p class="text-muted">
+                Encontrá profesores especializados en la materia que estás buscando.
+            </p>
+        </div>
+
+        @if (cargando)
+        {
+            <div class="text-center py-5">
+                <p class="text-muted">Cargando materias...</p>
+            </div>
+        }
+        else if (error != null)
+        {
+            <div class="text-center py-5">
+                <p class="text-danger">No se pudieron cargar las materias. @error</p>
+            </div>
+        }
+        else if (materias != null && materias.Count == 0)
+        {
+            <div class="text-center py-5">
+                <p class="text-muted">Todavía no hay materias cargadas.</p>
+            </div>
+        }
+        else
+        {
+            <div class="row g-4">
+                @foreach (var materia in materias)
+                {
+                    <div class="col-12 col-sm-6 col-lg-4">
+                        <div class="materia-card">
+                            <div class="materia-icon">
+                                <i class="bi bi-journal-bookmark"></i>
+                            </div>
+
+                            <h3>@materia.Name</h3>
+
+                            <p>
+                                @materia.Category
+                            </p>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+
+    </div>
+</section>
+
+@code {
+    private List<MateriaDto>? materias;
+    private bool cargando = true;
+    private string? error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var todas = await Http.GetFromJsonAsync<List<MateriaDto>>("/api/Materia");
+            materias = todas?
+                .DistinctBy(m => m.Name)
+                .OrderBy(m => m.Name)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private class MateriaDto
+    {
+        public int Id { get; set; }
+        public string? Name { get; set; }
+        public string? Grade { get; set; }
+        public string? Category { get; set; }
+    }
+}
