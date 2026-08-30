@@ -35,6 +35,12 @@ namespace UDX.BD.Datos
                 foreignKey.DeleteBehavior = DeleteBehavior.NoAction;
             }
 
+            modelBuilder.Entity<Materia>(entity =>
+            {
+                entity.Property(m => m.Name).HasMaxLength(200);
+                entity.Property(m => m.Grade).HasMaxLength(200);
+                entity.HasIndex(m => new { m.Name, m.Grade }).IsUnique();
+            });
         }
 
 
