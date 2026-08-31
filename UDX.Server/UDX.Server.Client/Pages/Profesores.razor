@@ -2,6 +2,30 @@
 
 <PageTitle>Profesores</PageTitle>
 
+@code {
+    private bool mostrarModal = false;
+
+    private string fotoSeleccionada = "";
+    private string nombreSeleccionado = "";
+    private string materiaSeleccionada = "";
+    private string ubicacionSeleccionada = "";
+
+    private void AbrirModal(string foto, string nombre, string materia, string ubicacion)
+    {
+        fotoSeleccionada = foto;
+        nombreSeleccionado = nombre;
+        materiaSeleccionada = materia;
+        ubicacionSeleccionada = ubicacion;
+
+        mostrarModal = true;
+    }
+
+    private void CerrarModal()
+    {
+        mostrarModal = false;
+    }
+}
+
 <div class="profesores-container">
     
     <h1>Profesores Disponibles</h1>
@@ -9,7 +33,8 @@
     <div class="profesores-lista">
 
         <!-- PROFESOR 1 Lukita Doncic -->
-        <div class="profesor-card">
+        <div class="profesor-card"
+             @onclick='() => AbrirModal("/IMG/luka.jpg", "Luka Doncic", "Matemáticas", "Buenos Aires")'>
 
             <div class="profesor-foto">
                 <img src="/IMG/luka.jpg" alt="Luka Doncic">
@@ -46,7 +71,8 @@
 
 
         <!-- Profesor 2 Pepe -->
-        <div class="profesor-card">
+        <div class="profesor-card"
+             @onclick='() => AbrirModal("/IMG/pepe.jpg", "Pepe Reina", "Historia", "Córdoba")'>
 
             <div class="profesor-foto">
                 <img src="/IMG/pepe.jpg" alt="Pepe Reina">
@@ -78,7 +104,8 @@
 
 
         <!-- Profesor 3 Messi -->
-        <div class="profesor-card">
+        <div class="profesor-card"
+             @onclick='() => AbrirModal("/IMG/messi.jpg", "Lionel Messi", "Educación Física", "Rosario, Santa Fe")'>
 
             <div class="profesor-foto">
                 <img src="/IMG/messi.jpg" alt="Lionel Messi">
@@ -113,7 +140,8 @@
 
 
         <!-- Profesor 4 Momo -->
-        <div class="profesor-card">
+        <div class="profesor-card"
+             @onclick='() => AbrirModal("/IMG/momo.jpg", "Gerónimo Benavidez", "Historia", "Buenos Aires")'>
 
             <div class="profesor-foto">
                 <img src="/IMG/momo.jpg" alt="Gerónimo Benavidez">
@@ -148,7 +176,8 @@
 
 
         <!-- Profesor 5 Duki -->
-        <div class="profesor-card">
+        <div class="profesor-card"
+             @onclick='() => AbrirModal("/IMG/duki.jpg", "Mauro Lombardo", "Música", "Córdoba")'>
 
             <div class="profesor-foto">
                 <img src="/IMG/duki.jpg" alt="Mauro Lombardo">
@@ -186,7 +215,8 @@
 
 
         <!-- Profesor 6 Araujo -->
-        <div class="profesor-card">
+        <div class="profesor-card"
+             @onclick='() => AbrirModal("/IMG/araujo.jpg", "Ronald Araujo", "Educación Física", "Tucumán")'>
 
             <div class="profesor-foto">
                 <img src="/IMG/araujo.jpg" alt="Ronald Araujo">
@@ -222,4 +252,10 @@
     </div>
 
 </div>
+<ProfesorModal Mostrar="@mostrarModal"
+               Foto="@fotoSeleccionada"
+               Nombre="@nombreSeleccionado"
+               Materia="@materiaSeleccionada"
+               Ubicacion="@ubicacionSeleccionada"
+               CerrarModal="@CerrarModal" />
 <Footer />
