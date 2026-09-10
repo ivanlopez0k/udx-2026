@@ -16,42 +16,99 @@ public class DocenteController : ControllerBase
     }
 
     [HttpGet("buscar")]
-    public async Task<ActionResult<IEnumerable<DocenteDTO>>> Buscar(
+    public async Task<ActionResult<BusquedaDocenteResponseDTO>> Buscar(
         [FromQuery] string? materia,
-        [FromQuery] string? ubicacion)
+        [FromQuery] string? ubicacion,
+        [FromQuery] decimal? minPrecio,
+        [FromQuery] decimal? maxPrecio,
+        [FromQuery] float? minRating,
+        [FromQuery] float? maxRating,
+        [FromQuery] bool? soloVerificados,
+        [FromQuery] string? disponibilidad,
+        [FromQuery] string? orden,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20)
     {
+        pageSize = Math.Min(pageSize, 50);
+        if (page < 1) page = 1;
+
         var query = _context.PerfilesDocentes
             .Include(p => p.User)
             .AsQueryable();
 
-        if (!string.IsNullOrEmpty(ubicacion))
-        {
-            query = query.Where(p => p.Location == ubicacion);
-        }
-
         if (!string.IsNullOrEmpty(materia))
         {
-            var teacherIds = _context.DocentesMaterias
-                .Where(dm => dm.Materia.Name == materia)
-                .Select(dm => dm.TeacherId);
-
-            query = query.Where(p => teacherIds.Contains(p.Id));
+            query = query.Where(p => p.DocentesMaterias.Any(dm =>
+                dm.Materia.Name.ToLower().Contains(materia.ToLower())));
         }
 
-        var perfiles = await query.ToListAsync();
-
-        var resultado = perfiles.Select(p => new DocenteDTO
+        if (!string.IsNullOrEmpty(ubicacion))
         {
-            Id = p.Id,
-            Nombre = p.User?.Name,
-            Location = p.Location,
-            Materias = _context.DocentesMaterias
-                .Where(dm => dm.TeacherId == p.Id)
-                .Select(dm => dm.Materia.Name)
-                .ToList()
-        }).ToList();
+            query = query.Where(p => p.Location.ToLower().Contains(ubicacion.ToLower()));
+        }
 
-        return Ok(resultado);
+        if (minPrecio.HasValue)
+        {
+            query = query.Where(p => p.HourlyRate >= minPrecio.Value);
+        }
+
+        if (maxPrecio.HasValue)
+        {
+            query = query.Where(p => p.HourlyRate <= maxPrecio.Value);
+        }
+
+        if (minRating.HasValue)
+        {
+            query = query.Where(p => p.RatingAvg >= minRating.Value);
+        }
+
+        if (maxRating.HasValue)
+        {
+            query = query.Where(p => p.RatingAvg <= maxRating.Value);
+        }
+
+        if (soloVerificados == true)
+        {
+            query = query.Where(p => p.Verified);
+        }
+
+        if (!string.IsNullOrEmpty(disponibilidad))
+        {
+            query = query.Where(p => p.Availability.ToLower().Contains(disponibilidad.ToLower()));
+        }
+
+        query = orden?.ToLower() switch
+        {
+            "precio" => query.OrderBy(p => p.HourlyRate),
+            "nombre" => query.OrderBy(p => p.User.Name),
+            _ => query.OrderByDescending(p => p.RatingAvg)
+        };
+
+        var total = await query.CountAsync();
+
+        var items = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(p => new DocenteDTO
+            {
+                Id = p.Id,
+                Nombre = p.User.Name,
+                Location = p.Location,
+                HourlyRate = p.HourlyRate,
+                RatingAvg = p.RatingAvg,
+                RatingCount = p.RatinCount,
+                Verified = p.Verified,
+                Availability = p.Availability,
+                Materias = p.DocentesMaterias.Select(dm => dm.Materia.Name).ToList()
+            })
+            .ToListAsync();
+
+        return Ok(new BusquedaDocenteResponseDTO
+        {
+            Items = items,
+            Total = total,
+            Page = page,
+            PageSize = pageSize
+        });
     }
 }
-
