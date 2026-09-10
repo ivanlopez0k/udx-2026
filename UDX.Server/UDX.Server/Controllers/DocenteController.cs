@@ -111,4 +111,44 @@ public class DocenteController : ControllerBase
             PageSize = pageSize
         });
     }
+
+    [HttpGet("{id:int}")]
+    public async Task<ActionResult<DocenteDetalleDTO>> GetById(int id)
+    {
+        var perfil = await _context.PerfilesDocentes
+            .Include(p => p.User)
+            .Include(p => p.DocentesMaterias)
+                .ThenInclude(dm => dm.Materia)
+            .Include(p => p.Academy)
+            .FirstOrDefaultAsync(p => p.Id == id);
+
+        if (perfil == null)
+            return NotFound();
+
+        var resultado = new DocenteDetalleDTO
+        {
+            Id = perfil.Id,
+            Nombre = perfil.User?.Name,
+            Email = perfil.User?.Email,
+            Phone = perfil.User?.Phone,
+            Credentials = perfil.Credentials,
+            HourlyRate = perfil.HourlyRate,
+            Location = perfil.Location,
+            RatingAvg = perfil.RatingAvg,
+            RatingCount = perfil.RatinCount,
+            Verified = perfil.Verified,
+            Availability = perfil.Availability,
+            Academy = perfil.Academy?.Name,
+            Materias = perfil.DocentesMaterias?
+                .Select(dm => new MateriaDetalleDTO
+                {
+                    Name = dm.Materia?.Name,
+                    Grade = dm.Materia?.Grade,
+                    Category = dm.Materia?.Category,
+                    Level = dm.Level
+                }).ToList() ?? new List<MateriaDetalleDTO>()
+        };
+
+        return Ok(resultado);
+    }
 }
