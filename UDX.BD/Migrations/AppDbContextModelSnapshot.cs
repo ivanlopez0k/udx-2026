@@ -380,9 +380,6 @@ namespace UDX.BD.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("AuthorId")
-                        .HasColumnType("int");
-
                     b.Property<string>("Comment")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -401,9 +398,9 @@ namespace UDX.BD.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AuthorId");
-
                     b.HasIndex("TeacherId");
+
+                    b.HasIndex("authorResena");
 
                     b.ToTable("Resenas");
                 });
@@ -683,15 +680,15 @@ namespace UDX.BD.Migrations
 
             modelBuilder.Entity("UDX.BD.Datos.Entity.Resena", b =>
                 {
-                    b.HasOne("UDX.BD.Datos.Entity.Usuario", "Author")
-                        .WithMany()
-                        .HasForeignKey("AuthorId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
                     b.HasOne("UDX.BD.Datos.Entity.PerfilDocente", "Teacher")
                         .WithMany()
                         .HasForeignKey("TeacherId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("UDX.BD.Datos.Entity.Usuario", "Author")
+                        .WithMany()
+                        .HasForeignKey("authorResena")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 

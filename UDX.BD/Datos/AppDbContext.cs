@@ -28,6 +28,16 @@ namespace UDX.BD.Datos
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<Resena>()
+                .HasOne(r => r.Author)
+                .WithMany()
+                .HasForeignKey(r => r.authorResena);
+
+            modelBuilder.Entity<Resena>()
+                .HasOne(r => r.Teacher)
+                .WithMany()
+                .HasForeignKey(r => r.TeacherId);
+
             foreach (var foreignKey in modelBuilder.Model
               .GetEntityTypes()
               .SelectMany(e => e.GetForeignKeys()))
