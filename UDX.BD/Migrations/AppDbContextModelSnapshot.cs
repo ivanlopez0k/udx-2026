@@ -326,6 +326,10 @@ namespace UDX.BD.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("ProfileImage")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("RatinCount")
                         .HasColumnType("int");
 
