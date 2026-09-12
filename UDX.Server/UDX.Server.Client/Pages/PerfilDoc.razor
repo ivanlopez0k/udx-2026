@@ -1,5 +1,39 @@
-﻿<h3>PerfilDoc</h3>
+﻿@page "/perfil-doc"
+@using Microsoft.AspNetCore.Components.Forms
+@inject HttpClient Http
+
+
+<h3>Mi Perfil</h3>
+
+<InputFile OnChange="SeleccionarFoto" />
+
+<button @onclick="SubirFoto">Subir foto</button>
+
+
 
 @code {
+
+    private IBrowserFile? fotoSeleccionada;
+
+    private void SeleccionarFoto(InputFileChangeEventArgs e)
+    {
+        fotoSeleccionada = e.File;
+    }
+
+    private async Task SubirFoto()
+    {
+        if (fotoSeleccionada == null)
+            return;
+
+        using var stream = fotoSeleccionada.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
+
+        var contenido = new MultipartFormDataContent();
+
+        var archivo = new StreamContent(stream);
+
+        contenido.Add(archivo, "foto", fotoSeleccionada.Name);
+
+        await Http.PostAsync("api/Docente/foto", contenido);
+    }
 
 }
