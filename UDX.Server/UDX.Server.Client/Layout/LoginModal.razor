@@ -1,4 +1,8 @@
-﻿<div class="modal fade" id="loginModal" tabindex="-1">
+﻿@using System.Net.Http.Json
+@inject HttpClient Http
+@inject IJSRuntime JS
+
+<div class="modal fade" id="loginModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
 
@@ -20,7 +24,8 @@
 
                     <input type="text"
                            class="form-control"
-                           placeholder="Ingrese su usuario" />
+                           placeholder="Ingrese su usuario"
+                           @bind="email" />
                 </div>
 
                 <div class="mb-3">
@@ -30,8 +35,16 @@
 
                     <input type="password"
                            class="form-control"
-                           placeholder="Ingrese su contraseña" />
+                           placeholder="Ingrese su contraseña"
+                           @bind="password" />
                 </div>
+
+                @if (!string.IsNullOrEmpty(mensaje))
+                {
+                    <div class="alert alert-danger">
+                        @mensaje
+                    </div>
+                }
 
             </div>
 
@@ -44,8 +57,9 @@
                 </button>
 
                 <button type="button"
-                        class="btn btn-primary">
-                    Login
+                        class="btn btn-primary"
+                        @onclick="Login">
+                    Iniciar sesión
                 </button>
 
             </div>
@@ -54,3 +68,51 @@
     </div>
 </div>
 
+@code {
+
+    private string email = "";
+    private string password = "";
+    private string mensaje = "";
+
+    private async Task Login()
+    {
+        mensaje = "";
+
+        var datos = new
+        {
+            Email = email,
+            Password = password
+        };
+
+        var respuesta = await Http.PostAsJsonAsync(
+            "api/Auth/login",
+            datos);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            var resultado = await respuesta.Content.ReadFromJsonAsync<LoginRespuesta>();
+
+            
+            if (resultado != null)
+            {
+                await JS.InvokeVoidAsync(
+                    "localStorage.setItem",
+                    "token",
+                    resultado.Token);
+
+                mensaje = "Login correcto";
+            }
+        }
+        else
+        {
+            mensaje = "Email o contraseña incorrectos.";
+        }
+    }
+
+    public class LoginRespuesta
+    {
+        public string Token { get; set; } = "";
+        public string Email { get; set; } = "";
+        public int Role { get; set; }
+    }
+}
