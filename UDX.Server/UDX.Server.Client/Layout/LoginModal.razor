@@ -1,4 +1,7 @@
-﻿<div class="modal fade" id="loginModal" tabindex="-1">
+﻿@inject HttpClient Http
+@inject IJSRuntime JS
+
+<div class="modal fade" id="loginModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
 
@@ -15,12 +18,13 @@
 
                 <div class="mb-3">
                     <label class="form-label">
-                        Usuario
+                        Email
                     </label>
 
                     <input type="text"
                            class="form-control"
-                           placeholder="Ingrese su usuario" />
+                           placeholder="Ingrese su email"
+                           @bind="email" />
                 </div>
 
                 <div class="mb-3">
@@ -30,7 +34,8 @@
 
                     <input type="password"
                            class="form-control"
-                           placeholder="Ingrese su contraseña" />
+                           placeholder="Ingrese su contraseña"
+                           @bind="password" />
                 </div>
 
             </div>
@@ -43,9 +48,8 @@
                     Cancelar
                 </button>
 
-                <button type="button"
-                        class="btn btn-primary">
-                    Login
+                <button type="button" class="btn btn-primary" @onclick="IniciarSesion">
+                    Iniciar sesión
                 </button>
 
             </div>
@@ -54,3 +58,23 @@
     </div>
 </div>
 
+@code
+{
+    private string email = "";
+    private string password = "";
+
+    private async Task IniciarSesion()
+    {
+        var datos = new
+        {
+            Email = email,
+            Password = password
+        };
+
+        var respuesta = await Http.PostAsJsonAsync(
+            "api/Auth/login",
+            datos);
+
+        Console.WriteLine($"Estado: {respuesta.StatusCode}");
+    }
+}
