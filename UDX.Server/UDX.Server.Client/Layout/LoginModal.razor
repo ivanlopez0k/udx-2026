@@ -1,4 +1,5 @@
-﻿@inject HttpClient Http
+﻿@using System.Net.Http.Json
+@inject HttpClient Http
 @inject IJSRuntime JS
 
 <div class="modal fade" id="loginModal" tabindex="-1">
@@ -38,6 +39,13 @@
                            @bind="password" />
                 </div>
 
+                @if (!string.IsNullOrEmpty(mensaje))
+                {
+                    <div class="alert alert-danger">
+                        @mensaje
+                    </div>
+                }
+
             </div>
 
             <div class="modal-footer">
@@ -48,7 +56,7 @@
                     Cancelar
                 </button>
 
-                <button type="button" class="btn btn-primary" @onclick="IniciarSesion">
+                <button type="button" class="btn btn-primary" @onclick="Login">
                     Iniciar sesión
                 </button>
 
@@ -58,13 +66,16 @@
     </div>
 </div>
 
-@code
-{
+@code {
+
     private string email = "";
     private string password = "";
+    private string mensaje = "";
 
-    private async Task IniciarSesion()
+    private async Task Login()
     {
+        mensaje = "";
+
         var datos = new
         {
             Email = email,
@@ -75,6 +86,31 @@
             "api/Auth/login",
             datos);
 
-        Console.WriteLine($"Estado: {respuesta.StatusCode}");
+        if (respuesta.IsSuccessStatusCode)
+        {
+            var resultado = await respuesta.Content.ReadFromJsonAsync<LoginRespuesta>();
+
+            
+            if (resultado != null)
+            {
+                await JS.InvokeVoidAsync(
+                    "localStorage.setItem",
+                    "token",
+                    resultado.Token);
+
+                mensaje = "Login correcto";
+            }
+        }
+        else
+        {
+            mensaje = "Email o contraseña incorrectos.";
+        }
+    }
+
+    public class LoginRespuesta
+    {
+        public string Token { get; set; } = "";
+        public string Email { get; set; } = "";
+        public int Role { get; set; }
     }
 }
