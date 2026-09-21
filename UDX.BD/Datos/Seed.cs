@@ -40,7 +40,8 @@ namespace UDX.BD.Datos
                     RatingAvg = 0,
                     RatinCount = 0,
                     Availability = "",
-                    Verified = false
+                    Verified = false,
+                    ProfileImage = ""
                 };
 
                 context.PerfilesDocentes.Add(perfilDocente);
@@ -107,11 +108,18 @@ namespace UDX.BD.Datos
                 {
                     Name = "Academia de Prueba",
                     Description = "Academia creada para realizar pruebas",
+                    Code = "SEED0001",
                     CreatedAt = DateTime.Now,
                     TeacherId = profesor.Id
                 };
 
                 context.Academias.Add(academia);
+                context.SaveChanges();
+            }
+
+            if (perfilDocente.AcademyId == 0)
+            {
+                perfilDocente.AcademyId = academia.Id;
                 context.SaveChanges();
             }
         }
