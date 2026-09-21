@@ -1,4 +1,6 @@
-﻿<div class="modal fade" id="registerModal" tabindex="-1">
+﻿@inject HttpClient Http
+@inject IJSRuntime JS
+<div class="modal fade" id="registerModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
 
@@ -14,19 +16,39 @@
             <div class="modal-body">
 
                 <div class="mb-3">
-                    <label class="form-label">Usuario</label>
+                    <label class="form-label">Nombre</label>
 
                     <input type="text"
                            class="form-control"
-                           placeholder="Ingrese un usuario" />
+                           placeholder="Ingrese su nombre"
+                           @bind="nombre" />
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Correo electrónico</label>
+                    <label class="form-label">Soy</label>
+
+                    <select class="form-select" @bind="rol">
+                        <option value="0">Padre</option>
+                        <option value="1">Profesor</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Email</label>
 
                     <input type="email"
                            class="form-control"
-                           placeholder="Ingrese su correo" />
+                           placeholder="Ingrese su email"
+                           @bind="email" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Teléfono</label>
+
+                    <input type="text"
+                           class="form-control"
+                           placeholder="Ingrese su teléfono"
+                           @bind="telefono" />
                 </div>
 
                 <div class="mb-3">
@@ -34,7 +56,8 @@
 
                     <input type="password"
                            class="form-control"
-                           placeholder="Ingrese una contraseña" />
+                           placeholder="Ingrese una contraseña"
+                           @bind="password" />
                 </div>
 
                 <div class="mb-3">
@@ -42,8 +65,16 @@
 
                     <input type="password"
                            class="form-control"
-                           placeholder="Repita la contraseña" />
+                           placeholder="Repita la contraseña"
+                           @bind="repetirPassword" />
                 </div>
+
+                @if (!string.IsNullOrEmpty(mensaje))
+                {
+                    <div class="alert alert-danger">
+                        @mensaje
+                    </div>
+                }
 
             </div>
 
@@ -56,7 +87,8 @@
                 </button>
 
                 <button type="button"
-                        class="btn btn-success">
+                        class="btn btn-success"
+                        @onclick="Registrarse">
                     Registrarse
                 </button>
 
@@ -65,4 +97,66 @@
         </div>
     </div>
 </div>
+@code
+{
+    private string nombre = "";
+    private string email = "";
+    private string password = "";
+    private string repetirPassword = "";
+    private string telefono = "";
+    private int rol = 0;
+    private string mensaje = "";
 
+    private bool ValidarPassword()
+    {
+        if (password.Length < 8)
+        {
+            mensaje = "❌ La contraseña debe tener al menos 8 caracteres.";
+            return false;
+        }
+
+        if (password != repetirPassword)
+        {
+            mensaje = "❌ Las contraseñas no coinciden.";
+            return false;
+        }
+
+        mensaje = "";
+        return true;
+    }
+
+    private async Task Registrarse()
+    {
+        if (!ValidarPassword())
+            return;
+
+        var datos = new
+        {
+            Name = nombre,
+            Email = email,
+            Phone = telefono,
+            Password = password,
+            Role = rol
+        };
+
+        var respuesta = await Http.PostAsJsonAsync(
+        "api/Auth/register",
+        datos);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            mensaje = "✅ Usuario registrado correctamente.";
+            
+        }
+        else
+        {
+            var error = await respuesta.Content.ReadAsStringAsync();
+
+            mensaje = $"❌ {error}";
+        }
+
+
+    }
+
+
+}
