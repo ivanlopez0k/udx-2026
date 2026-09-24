@@ -1,5 +1,232 @@
-﻿<h3>PerfilDoc</h3>
+﻿@page "/perfil-doc"
+<PageTitle>UDX</PageTitle>
 
-@code {
+<div class="container" style="max-width: 1000px; padding-top: 80px;">
+    <div class="row">
 
+        
+        <div class="col-md-4 text-center" style="margin-top: 50px;">
+
+            <div class="text-center">
+
+                <img src="https://ssl.gstatic.com/accounts/ui/avatar_2x.png"
+                     class="avatar img-circle img-thumbnail"
+                     style="width: 180px; height: 180px; object-fit: cover;"
+                     alt="avatar" />
+
+                <h6>Subir una foto diferente...</h6>
+
+                <div style="display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 8px;
+                    max-width: 100%;">
+
+                    <label class="btn btn-primary"
+                           style="margin-bottom: 0;">
+
+                        Elegir archivo
+
+                        <input type="file"
+                               style="display: none;"
+                               accept="image/*" />
+
+                    </label>
+
+                    <span style="white-space: nowrap;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        color: #666;
+                        max-width: 150px;">
+
+                        Ningún archivo selec...
+
+                    </span>
+
+                </div>
+
+            </div>
+
+            <hr />
+
+        </div>
+
+
+        
+        <div class="col-md-8" style="margin-top: 50px;">
+
+            
+            <ul class="nav nav-tabs">
+
+                <li class="nav-item">
+                    <a class="nav-link active">
+                       Mi Perfil
+                    </a>
+                </li>
+
+            </ul>
+
+
+            <div class="tab-content">
+
+                <div class="tab-pane active">
+
+                    <hr />
+
+                    
+                    <div class="row">
+
+                        <div class="col-md-6 mb-3">
+
+                            <label class="form-label">
+                                Nombre
+                            </label>
+
+                            <input type="text"
+                                   class="form-control"/>
+
+                        </div>
+
+
+                        <div class="col-md-6 mb-3">
+
+                            <label class="form-label">
+                                Teléfono
+                            </label>
+
+                            <input type="text"
+                                   class="form-control"/>
+
+                        </div>
+
+                    </div>
+
+
+                    
+                    <div class="row">
+
+                        <div class="col-md-6 mb-3">
+
+                            <label class="form-label">
+                                Email
+                            </label>
+
+                            <input type="email"
+                                   class="form-control"
+                                   readonly />
+
+                        </div>
+
+
+                        <div class="col-md-6 mb-3">
+
+                            <label class="form-label">
+                                Ciudad
+                            </label>
+
+                            <input type="text"
+                                   class="form-control">
+
+                        </div>
+
+                    </div>
+
+
+                    
+                    <div class="row">
+
+                        <div class="col-md-6 mb-3">
+
+                            <label class="form-label">
+                                Credenciales
+                            </label>
+
+                            <input type="text"
+                                   class="form-control"/>
+
+                        </div>
+
+
+                        <div class="col-md-6 mb-3">
+
+                            <label class="form-label">
+                                Precio por hora
+                            </label>
+
+                            <input type="number"
+                                   class="form-control"/>
+
+                        </div>
+
+                    </div>
+
+
+                    
+                    <div class="row">
+
+                        <div class="col-md-6 mb-3">
+
+                            <label class="form-label">
+                                Disponibilidad
+                            </label>
+
+                            <input type="text"
+                                   class="form-control"/>
+
+                        </div>
+
+                    </div>
+
+
+                    
+                    <div class="row">
+
+                        <div class="col-md-12">
+
+                            <br />
+
+                            <button class="btn btn-success"
+                                    type="button">
+
+                                 Guardar
+
+                            </button>
+
+
+                            <button class="btn btn-danger ms-2"
+                                    type="button">
+
+                                 Limpiar
+
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                    <hr />
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
+
+
+
+@code
+{
+    private string nombre = "";
+    private string telefono = "";
+    private string email = "";
+    private string ubicacion = "";
+    private string credenciales = "";
+    private decimal precioPorHora;
+    private string disponibilidad = "";
 }
+
+
