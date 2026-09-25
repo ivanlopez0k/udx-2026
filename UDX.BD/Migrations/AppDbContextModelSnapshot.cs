@@ -121,6 +121,16 @@ namespace UDX.BD.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("FilePath")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("HijoId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MateriaId")
+                        .HasColumnType("int");
+
                     b.Property<int>("ParentId")
                         .HasColumnType("int");
 
@@ -136,6 +146,10 @@ namespace UDX.BD.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("HijoId");
+
+                    b.HasIndex("MateriaId");
 
                     b.HasIndex("ParentId");
 
@@ -565,6 +579,18 @@ namespace UDX.BD.Migrations
 
             modelBuilder.Entity("UDX.BD.Datos.Entity.Contenido", b =>
                 {
+                    b.HasOne("UDX.BD.Datos.Entity.Hijo", "Hijo")
+                        .WithMany()
+                        .HasForeignKey("HijoId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("UDX.BD.Datos.Entity.Materia", "Materia")
+                        .WithMany()
+                        .HasForeignKey("MateriaId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
                     b.HasOne("UDX.BD.Datos.Entity.Usuario", "Parent")
                         .WithMany()
                         .HasForeignKey("ParentId")
@@ -576,6 +602,10 @@ namespace UDX.BD.Migrations
                         .HasForeignKey("TeacherId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
+
+                    b.Navigation("Hijo");
+
+                    b.Navigation("Materia");
 
                     b.Navigation("Parent");
 
@@ -591,7 +621,7 @@ namespace UDX.BD.Migrations
                         .IsRequired();
 
                     b.HasOne("UDX.BD.Datos.Entity.PerfilDocente", "Teacher")
-                        .WithMany()
+                        .WithMany("DocentesMaterias")
                         .HasForeignKey("TeacherId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
@@ -739,6 +769,11 @@ namespace UDX.BD.Migrations
                     b.Navigation("Materia");
 
                     b.Navigation("Parent");
+                });
+
+            modelBuilder.Entity("UDX.BD.Datos.Entity.PerfilDocente", b =>
+                {
+                    b.Navigation("DocentesMaterias");
                 });
 #pragma warning restore 612, 618
         }

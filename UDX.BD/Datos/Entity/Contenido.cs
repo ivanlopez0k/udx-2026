@@ -15,5 +15,13 @@ namespace UDX.BD.Datos.Entity
 
         public int ParentId { get; set; }
         public Usuario Parent { get; set; }
+
+        public string FilePath { get; set; }
+
+        public int MateriaId { get; set; }
+        public Materia Materia { get; set; }
+
+        public int HijoId { get; set; }
+        public Hijo Hijo { get; set; }
     }
 }
