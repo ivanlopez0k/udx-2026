@@ -22,7 +22,7 @@ namespace UDX.BD.Datos.Entity
         public int UserId { get; set; }
         public Usuario User { get; set; }
 
-        public int? AcademyId { get; set; }
+        public int AcademyId { get; set; }
         public Academia Academy { get; set; }
 
         public ICollection<DocenteMateria> DocentesMaterias { get; set; }

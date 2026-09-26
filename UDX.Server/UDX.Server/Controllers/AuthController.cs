@@ -41,6 +41,24 @@ namespace UDX.Server.Controllers
                 ? dto.Role
                 : Usuario.Rol.PARENT;
 
+            // Step 1: Validate academy code BEFORE saving anything
+            int? academiaId = null;
+
+            if (role == Usuario.Rol.TEACHER)
+            {
+                if (!string.IsNullOrEmpty(dto.AcademyCode))
+                {
+                    var academia = _context.Academias
+                        .FirstOrDefault(a => a.Code.ToUpper() == dto.AcademyCode.ToUpper());
+
+                    if (academia == null)
+                        return BadRequest("Código de academia no válido.");
+
+                    academiaId = academia.Id;
+                }
+            }
+
+            // Step 2: Save user first (to get Id)
             Usuario usuario = new Usuario
             {
                 Email = dto.Email,
@@ -52,11 +70,28 @@ namespace UDX.Server.Controllers
             };
 
             _context.Usuarios.Add(usuario);
-
             _context.SaveChanges();
 
-            if (usuario.Role == Usuario.Rol.TEACHER)
+            // Step 3: Create academy + perfil for TEACHER
+            if (role == Usuario.Rol.TEACHER)
             {
+                // If no academy code, create new academy with real TeacherId
+                if (!academiaId.HasValue)
+                {
+                    var nuevaAcademia = new Academia
+                    {
+                        Name = $"{dto.Name} Academy",
+                        Description = "",
+                        Code = GenerateAcademyCode(),
+                        CreatedAt = DateTime.UtcNow,
+                        TeacherId = usuario.Id
+                    };
+
+                    _context.Academias.Add(nuevaAcademia);
+                    _context.SaveChanges();
+                    academiaId = nuevaAcademia.Id;
+                }
+
                 PerfilDocente perfil = new PerfilDocente
                 {
                     UserId = usuario.Id,
@@ -66,7 +101,9 @@ namespace UDX.Server.Controllers
                     RatingAvg = 0,
                     RatinCount = 0,
                     Availability = "",
-                    Verified = false
+                    Verified = false,
+                    ProfileImage = "",
+                    AcademyId = academiaId.Value
                 };
 
                 _context.PerfilesDocentes.Add(perfil);
@@ -115,6 +152,14 @@ namespace UDX.Server.Controllers
                 c.Type,
                 c.Value
             }));
+        }
+
+        private string GenerateAcademyCode()
+        {
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+            var random = new Random();
+            return new string(Enumerable.Range(0, 8)
+                .Select(_ => chars[random.Next(chars.Length)]).ToArray());
         }
 
         private string GenerateToken(Usuario usuario)
