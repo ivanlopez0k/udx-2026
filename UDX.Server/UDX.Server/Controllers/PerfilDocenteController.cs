@@ -42,5 +42,25 @@ namespace UDX.Server.Controllers
 
             return Ok(new { perfil.Id, perfil.Location });
         }
+
+        [HttpPut("precio")]
+        [Authorize(Policy = "PerfilDocenteOnly")]
+        public async Task<IActionResult> EditarPrecio(EditarPrecioDTO dto)
+        {
+            int userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
+            var perfil = await _context.PerfilesDocentes
+                .FirstOrDefaultAsync(p => p.UserId == userId);
+
+            if (perfil == null)
+            {
+                return NotFound("No se encontró el perfil docente.");
+            }
+
+            perfil.HourlyRate = dto.HourlyRate;
+            await _context.SaveChangesAsync();
+
+            return Ok(new { perfil.Id, perfil.HourlyRate });
+        }
     }
 }
