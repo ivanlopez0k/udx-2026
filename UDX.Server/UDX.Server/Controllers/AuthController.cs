@@ -62,7 +62,7 @@ namespace UDX.Server.Controllers
             Usuario usuario = new Usuario
             {
                 Email = dto.Email,
-                Password = dto.Password,
+                Password = BCrypt.Net.BCrypt.HashPassword(dto.Password),
                 Name = dto.Name,
                 Phone = dto.Phone,
                 Role = role,
@@ -117,11 +117,25 @@ namespace UDX.Server.Controllers
         public IActionResult Login(LoginDTO dto)
         {
             var usuario = _context.Usuarios
-                .FirstOrDefault(u =>
-                    u.Email == dto.Email &&
-                    u.Password == dto.Password);
+                .FirstOrDefault(u => u.Email == dto.Email);
 
             if (usuario == null)
+            {
+                return Unauthorized("Email o contraseña incorrectos.");
+            }
+
+            bool passwordValida;
+            try
+            {
+                passwordValida = BCrypt.Net.BCrypt.Verify(dto.Password, usuario.Password);
+            }
+            catch (BCrypt.Net.SaltParseException)
+            {
+                // Contraseña vieja guardada en texto plano (sin hash)
+                passwordValida = false;
+            }
+
+            if (!passwordValida)
             {
                 return Unauthorized("Email o contraseña incorrectos.");
             }
