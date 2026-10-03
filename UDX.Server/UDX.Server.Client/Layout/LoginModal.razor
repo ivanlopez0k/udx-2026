@@ -1,26 +1,37 @@
-﻿<div class="modal fade" id="loginModal" tabindex="-1">
+﻿@using UDX.Shared.DTOs
+@inject HttpClient Http
+@inject IJSRuntime JS
+
+<div class="modal fade" id="loginModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
 
             <div class="modal-header">
-                <h5 class="modal-title">Iniciar sesión</h5>
-
+               
                 <button type="button"
                         class="btn-close"
                         data-bs-dismiss="modal">
                 </button>
             </div>
+            
 
             <div class="modal-body">
+                @if (!string.IsNullOrEmpty(mensaje))
+                {
+                    <div class="alert alert-danger">
+                        @mensaje
+                    </div>
+                }
 
                 <div class="mb-3">
                     <label class="form-label">
-                        Usuario
+                        Email
                     </label>
 
-                    <input type="text"
+                    <input type="email"
                            class="form-control"
-                           placeholder="Ingrese su usuario" />
+                           placeholder="Ingrese su Email"
+                           @bind="email" />
                 </div>
 
                 <div class="mb-3">
@@ -30,7 +41,8 @@
 
                     <input type="password"
                            class="form-control"
-                           placeholder="Ingrese su contraseña" />
+                           placeholder="Ingrese su contraseña" 
+                           @bind="password" />
                 </div>
 
             </div>
@@ -38,14 +50,9 @@
             <div class="modal-footer">
 
                 <button type="button"
-                        class="btn btn-secondary"
-                        data-bs-dismiss="modal">
-                    Cancelar
-                </button>
-
-                <button type="button"
-                        class="btn btn-primary">
-                    Login
+                        class="btn btn-primary"
+                        @onclick="IniciarSesion">
+                    Iniciar Sesion
                 </button>
 
             </div>
@@ -54,3 +61,44 @@
     </div>
 </div>
 
+@code
+{
+    private string email = "";
+    private string password = "";
+    private string mensaje = "";
+    
+    
+   private async Task IniciarSesion()
+{
+    mensaje = "";
+    var datos = new
+    {
+        Email = email,
+        Password = password
+    };
+
+    var respuesta = await Http.PostAsJsonAsync(
+        "api/Auth/login",
+        datos);
+
+    if (respuesta.IsSuccessStatusCode)
+    {
+        var resultado = await respuesta.Content
+            .ReadFromJsonAsync<LoginResponseDTO>();
+
+        if (resultado != null)
+        {
+            await JS.InvokeVoidAsync(
+                "localStorage.setItem",
+                "token",
+                resultado.Token);
+
+                await JS.InvokeVoidAsync("cerrarLoginModal");
+        }
+    }
+    else
+    {
+        mensaje = "Email o contraseña incorrectos.";
+    }
+}
+}

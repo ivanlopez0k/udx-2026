@@ -1,4 +1,7 @@
-﻿<div class="modal fade" id="registerModal" tabindex="-1">
+﻿@using System.Net.Http.Json
+@inject HttpClient Http
+
+<div class="modal fade" id="registerModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
 
@@ -14,19 +17,39 @@
             <div class="modal-body">
 
                 <div class="mb-3">
-                    <label class="form-label">Usuario</label>
+                    <label class="form-label">Nombre</label>
 
                     <input type="text"
                            class="form-control"
-                           placeholder="Ingrese un usuario" />
+                           placeholder="Ingrese su nombre"
+                           @bind="nombre" />
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Correo electrónico</label>
+                    <label class="form-label">Soy</label>
+
+                    <select class="form-select" @bind="rol">
+                        <option value="0">Padre</option>
+                        <option value="1">Profesor</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Email</label>
 
                     <input type="email"
                            class="form-control"
-                           placeholder="Ingrese su correo" />
+                           placeholder="Ingrese su correo"
+                           @bind="email" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Teléfono</label>
+
+                    <input type="text"
+                           class="form-control"
+                           placeholder="Ingrese su teléfono"
+                           @bind="telefono" />
                 </div>
 
                 <div class="mb-3">
@@ -34,7 +57,16 @@
 
                     <input type="password"
                            class="form-control"
-                           placeholder="Ingrese una contraseña" />
+                           placeholder="Ingrese una contraseña"
+                           @bind="password"
+                           @bind:event="oninput" />
+
+                    @if (!string.IsNullOrEmpty(password) && password.Length < 8)
+                    {
+                        <div class="text-danger mt-1">
+                            ⚠ La contraseña debe tener al menos 8 caracteres.
+                        </div>
+                    }
                 </div>
 
                 <div class="mb-3">
@@ -42,21 +74,27 @@
 
                     <input type="password"
                            class="form-control"
-                           placeholder="Repita la contraseña" />
+                           placeholder="Repita la contraseña"
+                           minlength="8"
+                           @bind="repetirPassword" />
                 </div>
+
+                
+
+                @if (!string.IsNullOrEmpty(mensaje))
+                {
+                    <div class="alert @(registroExitoso ? "alert-success" : "alert-danger")">
+                        @mensaje
+                    </div>
+                }
 
             </div>
 
             <div class="modal-footer">
 
                 <button type="button"
-                        class="btn btn-secondary"
-                        data-bs-dismiss="modal">
-                    Cancelar
-                </button>
-
-                <button type="button"
-                        class="btn btn-success">
+                        class="btn btn-success"
+                        @onclick="Registrar">
                     Registrarse
                 </button>
 
@@ -66,3 +104,84 @@
     </div>
 </div>
 
+@code {
+
+    private string nombre = "";
+    private string email = "";
+    private string telefono = "";
+    private string password = "";
+    private string repetirPassword = "";
+
+    private int rol = 0;
+
+    private string mensaje = "";
+    private bool registroExitoso = false;
+
+    private async Task Registrar()
+    {
+        mensaje = "";
+        registroExitoso = false;
+
+        if (password != repetirPassword)
+        {
+            mensaje = "Las contraseñas no coinciden.";
+            return;
+        }
+       
+        if (password.Length < 8)
+        {
+            mensaje = "La contraseña debe tener al menos 8 caracteres.";
+            return;
+        }
+        
+        var registro = new
+        {
+            Email = email,
+            Password = password,
+            Name = nombre,
+            Phone = telefono,
+            Role = rol
+        };
+
+        try
+        {
+            var response = await Http.PostAsJsonAsync(
+                "api/Auth/register",
+                registro);
+
+            if (response.IsSuccessStatusCode)
+            {
+                registroExitoso = true;
+                mensaje = "Cuenta creada correctamente.";
+
+                nombre = "";
+                email = "";
+                telefono = "";
+                password = "";
+                repetirPassword = "";
+                rol = 0;
+            }
+            else
+            {
+                mensaje = await response.Content.ReadAsStringAsync();
+            }
+        }
+        catch
+        {
+            mensaje = "No se pudo conectar con el servidor.";
+        }
+    }
+
+    private void LimpiarFormulario()
+    {
+        nombre = "";
+        email = "";
+        telefono = "";
+        password = "";
+        repetirPassword = "";
+        rol = 0;
+
+        mensaje = "";
+        registroExitoso = false;
+    }
+}
