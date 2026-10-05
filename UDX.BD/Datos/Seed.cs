@@ -26,6 +26,24 @@ namespace UDX.BD.Datos
                 context.SaveChanges();
             }
 
+            var academia = context.Academias
+                .FirstOrDefault(a => a.Name == "Academia de Prueba");
+
+            if (academia == null)
+            {
+                academia = new Academia
+                {
+                    Name = "Academia de Prueba",
+                    Description = "Academia creada para realizar pruebas",
+                    Code = "SEED0001",
+                    CreatedAt = DateTime.Now,
+                    TeacherId = profesor.Id
+                };
+
+                context.Academias.Add(academia);
+                context.SaveChanges();
+            }
+
             var perfilDocente = context.PerfilesDocentes
     .FirstOrDefault(p => p.UserId == profesor.Id);
 
@@ -34,6 +52,7 @@ namespace UDX.BD.Datos
                 perfilDocente = new PerfilDocente
                 {
                     UserId = profesor.Id,
+                    AcademyId = academia.Id,
                     Credentials = "",
                     HourlyRate = 0,
                     Location = "",
@@ -99,29 +118,6 @@ namespace UDX.BD.Datos
                 context.SaveChanges();
             }
 
-            var academia = context.Academias
-                .FirstOrDefault(a => a.Name == "Academia de Prueba");
-
-            if (academia == null)
-            {
-                academia = new Academia
-                {
-                    Name = "Academia de Prueba",
-                    Description = "Academia creada para realizar pruebas",
-                    Code = "SEED0001",
-                    CreatedAt = DateTime.Now,
-                    TeacherId = profesor.Id
-                };
-
-                context.Academias.Add(academia);
-                context.SaveChanges();
-            }
-
-            if (perfilDocente.AcademyId == 0)
-            {
-                perfilDocente.AcademyId = academia.Id;
-                context.SaveChanges();
-            }
         }
     }
 }
