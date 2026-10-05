@@ -42,5 +42,25 @@ namespace UDX.Server.Controllers
 
             return Ok(new { perfil.Id, perfil.Location });
         }
+
+        [HttpPut("ubicacion")]
+        [Authorize(Policy = "PerfilDocenteOnly")]
+        public async Task<IActionResult> EditarUbicacion(CargarUbicacionDTO dto)
+        {
+            int userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
+            var perfil = await _context.PerfilesDocentes
+                .FirstOrDefaultAsync(p => p.UserId == userId);
+
+            if (perfil == null)
+            {
+                return NotFound("No se encontró el perfil docente.");
+            }
+
+            perfil.Location = dto.Location;
+            await _context.SaveChangesAsync();
+
+            return Ok(new { perfil.Id, perfil.Location });
+        }
     }
 }
