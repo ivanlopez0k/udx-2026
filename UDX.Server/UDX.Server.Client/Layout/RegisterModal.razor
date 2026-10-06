@@ -1,5 +1,6 @@
-﻿@inject HttpClient Http
-@inject IJSRuntime JS
+@using System.Net.Http.Json
+@inject HttpClient Http
+
 <div class="modal fade" id="registerModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -38,7 +39,7 @@
 
                     <input type="email"
                            class="form-control"
-                           placeholder="Ingrese su email"
+                           placeholder="Ingrese su correo"
                            @bind="email" />
                 </div>
 
@@ -57,7 +58,15 @@
                     <input type="password"
                            class="form-control"
                            placeholder="Ingrese una contraseña"
-                           @bind="password" />
+                           @bind="password"
+                           @bind:event="oninput" />
+
+                    @if (!string.IsNullOrEmpty(password) && password.Length < 8)
+                    {
+                        <div class="text-danger mt-1">
+                            ⚠ La contraseña debe tener al menos 8 caracteres.
+                        </div>
+                    }
                 </div>
 
                 <div class="mb-3">
@@ -66,12 +75,15 @@
                     <input type="password"
                            class="form-control"
                            placeholder="Repita la contraseña"
+                           minlength="8"
                            @bind="repetirPassword" />
                 </div>
 
+                
+
                 @if (!string.IsNullOrEmpty(mensaje))
                 {
-                    <div class="alert alert-danger">
+                    <div class="alert @(registroExitoso ? "alert-success" : "alert-danger")">
                         @mensaje
                     </div>
                 }
@@ -81,14 +93,8 @@
             <div class="modal-footer">
 
                 <button type="button"
-                        class="btn btn-secondary"
-                        data-bs-dismiss="modal">
-                    Cancelar
-                </button>
-
-                <button type="button"
                         class="btn btn-success"
-                        @onclick="Registrarse">
+                        @onclick="Registrar">
                     Registrarse
                 </button>
 
@@ -97,66 +103,85 @@
         </div>
     </div>
 </div>
-@code
-{
+
+@code {
+
     private string nombre = "";
     private string email = "";
+    private string telefono = "";
     private string password = "";
     private string repetirPassword = "";
-    private string telefono = "";
-    private int rol = 0;
-    private string mensaje = "";
 
-    private bool ValidarPassword()
+    private int rol = 0;
+
+    private string mensaje = "";
+    private bool registroExitoso = false;
+
+    private async Task Registrar()
     {
-        if (password.Length < 8)
-        {
-            mensaje = "❌ La contraseña debe tener al menos 8 caracteres.";
-            return false;
-        }
+        mensaje = "";
+        registroExitoso = false;
 
         if (password != repetirPassword)
         {
-            mensaje = "❌ Las contraseñas no coinciden.";
-            return false;
-        }
-
-        mensaje = "";
-        return true;
-    }
-
-    private async Task Registrarse()
-    {
-        if (!ValidarPassword())
+            mensaje = "Las contraseñas no coinciden.";
             return;
-
-        var datos = new
+        }
+       
+        if (password.Length < 8)
         {
-            Name = nombre,
+            mensaje = "La contraseña debe tener al menos 8 caracteres.";
+            return;
+        }
+        
+        var registro = new
+        {
             Email = email,
-            Phone = telefono,
             Password = password,
+            Name = nombre,
+            Phone = telefono,
             Role = rol
         };
 
-        var respuesta = await Http.PostAsJsonAsync(
-        "api/Auth/register",
-        datos);
-
-        if (respuesta.IsSuccessStatusCode)
+        try
         {
-            mensaje = "✅ Usuario registrado correctamente.";
-            
+            var response = await Http.PostAsJsonAsync(
+                "api/Auth/register",
+                registro);
+
+            if (response.IsSuccessStatusCode)
+            {
+                registroExitoso = true;
+                mensaje = "Cuenta creada correctamente.";
+
+                nombre = "";
+                email = "";
+                telefono = "";
+                password = "";
+                repetirPassword = "";
+                rol = 0;
+            }
+            else
+            {
+                mensaje = await response.Content.ReadAsStringAsync();
+            }
         }
-        else
+        catch
         {
-            var error = await respuesta.Content.ReadAsStringAsync();
-
-            mensaje = $"❌ {error}";
+            mensaje = "No se pudo conectar con el servidor.";
         }
-
-
     }
 
+    private void LimpiarFormulario()
+    {
+        nombre = "";
+        email = "";
+        telefono = "";
+        password = "";
+        repetirPassword = "";
+        rol = 0;
 
+        mensaje = "";
+        registroExitoso = false;
+    }
 }

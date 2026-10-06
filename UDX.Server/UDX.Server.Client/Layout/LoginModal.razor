@@ -1,4 +1,5 @@
-﻿@using System.Net.Http.Json
+@using UDX.Shared.DTOs
+@using System.Net.Http.Json
 @inject HttpClient Http
 @inject IJSRuntime JS
 
@@ -7,22 +8,28 @@
         <div class="modal-content">
 
             <div class="modal-header">
-                <h5 class="modal-title">Iniciar sesión</h5>
-
+               
                 <button type="button"
                         class="btn-close"
                         data-bs-dismiss="modal">
                 </button>
             </div>
+            
 
             <div class="modal-body">
+                @if (!string.IsNullOrEmpty(mensaje))
+                {
+                    <div class="alert alert-danger">
+                        @mensaje
+                    </div>
+                }
 
                 <div class="mb-3">
                     <label class="form-label">
                         Email
                     </label>
 
-                    <input type="text"
+                    <input type="email"
                            class="form-control"
                            placeholder="Ingrese su email"
                            @bind="email" />
@@ -35,7 +42,7 @@
 
                     <input type="password"
                            class="form-control"
-                           placeholder="Ingrese su contraseña"
+                           placeholder="Ingrese su contraseña" 
                            @bind="password" />
                 </div>
 
@@ -51,13 +58,9 @@
             <div class="modal-footer">
 
                 <button type="button"
-                        class="btn btn-secondary"
-                        data-bs-dismiss="modal">
-                    Cancelar
-                </button>
-
-                <button type="button" class="btn btn-primary" @onclick="Login">
-                    Iniciar sesión
+                        class="btn btn-primary"
+                        @onclick="IniciarSesion">
+                    Iniciar Sesion
                 </button>
 
             </div>
@@ -66,51 +69,44 @@
     </div>
 </div>
 
-@code {
-
+@code
+{
     private string email = "";
     private string password = "";
     private string mensaje = "";
-
-    private async Task Login()
+    
+    
+   private async Task IniciarSesion()
+{
+    mensaje = "";
+    var datos = new
     {
-        mensaje = "";
+        Email = email,
+        Password = password
+    };
 
-        var datos = new
+    var respuesta = await Http.PostAsJsonAsync(
+        "api/Auth/login",
+        datos);
+
+    if (respuesta.IsSuccessStatusCode)
+    {
+        var resultado = await respuesta.Content
+            .ReadFromJsonAsync<LoginResponseDTO>();
+
+        if (resultado != null)
         {
-            Email = email,
-            Password = password
-        };
+            await JS.InvokeVoidAsync(
+                "localStorage.setItem",
+                "token",
+                resultado.Token);
 
-        var respuesta = await Http.PostAsJsonAsync(
-            "api/Auth/login",
-            datos);
-
-        if (respuesta.IsSuccessStatusCode)
-        {
-            var resultado = await respuesta.Content.ReadFromJsonAsync<LoginRespuesta>();
-
-            
-            if (resultado != null)
-            {
-                await JS.InvokeVoidAsync(
-                    "localStorage.setItem",
-                    "token",
-                    resultado.Token);
-
-                mensaje = "Login correcto";
-            }
-        }
-        else
-        {
-            mensaje = "Email o contraseña incorrectos.";
+                await JS.InvokeVoidAsync("cerrarLoginModal");
         }
     }
-
-    public class LoginRespuesta
+    else
     {
-        public string Token { get; set; } = "";
-        public string Email { get; set; } = "";
-        public int Role { get; set; }
+        mensaje = "Email o contraseña incorrectos.";
     }
+}
 }
