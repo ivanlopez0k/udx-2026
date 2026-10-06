@@ -15,7 +15,7 @@ namespace UDX.BD.Datos
                 profesor = new Usuario
                 {
                     Email = "profesor@test.com",
-                    Password = "123456",
+                    Password = BCrypt.Net.BCrypt.HashPassword("123456"),
                     Role = Usuario.Rol.TEACHER,
                     Name = "Profesor de Prueba",
                     Phone = "3511234567",
@@ -107,7 +107,7 @@ namespace UDX.BD.Datos
                 padre = new Usuario
                 {
                     Email = "padre@test.com",
-                    Password = "123456",
+                    Password = BCrypt.Net.BCrypt.HashPassword("123456"),
                     Role = Usuario.Rol.PARENT,
                     Name = "Padre de Prueba",
                     Phone = "3517654321",
