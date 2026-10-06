@@ -25,7 +25,11 @@ namespace UDX.BD.Datos
                 context.Usuarios.Add(profesor);
                 context.SaveChanges();
             }
-
+            else if (!profesor.Password.StartsWith("$2"))
+            {
+                profesor.Password = BCrypt.Net.BCrypt.HashPassword("123456");
+                context.SaveChanges();
+            }
             var academia = context.Academias
                 .FirstOrDefault(a => a.Name == "Academia de Prueba");
 
@@ -115,6 +119,11 @@ namespace UDX.BD.Datos
                 };
 
                 context.Usuarios.Add(padre);
+                context.SaveChanges();
+            }
+            else if (!padre.Password.StartsWith("$2"))
+            {
+                padre.Password = BCrypt.Net.BCrypt.HashPassword("123456");
                 context.SaveChanges();
             }
 

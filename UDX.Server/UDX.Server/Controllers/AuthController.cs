@@ -64,7 +64,7 @@ namespace UDX.Server.Controllers
             Usuario usuario = new Usuario
             {
                 Email = email,
-                Password = dto.Password,
+                Password = BCrypt.Net.BCrypt.HashPassword(dto.Password),
                 Name = dto.Name,
                 Phone = dto.Phone,
                 Role = role,
@@ -204,7 +204,8 @@ namespace UDX.Server.Controllers
             {
                 Token = token,
                 usuario.Email,
-                usuario.Role
+                usuario.Role,
+                usuario.Name
             });
         }
 
