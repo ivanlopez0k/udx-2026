@@ -30,6 +30,10 @@ namespace UDX.BD.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -45,6 +49,9 @@ namespace UDX.BD.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
 
                     b.HasIndex("TeacherId");
 
@@ -308,7 +315,7 @@ namespace UDX.BD.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int?>("AcademyId")
+                    b.Property<int>("AcademyId")
                         .HasColumnType("int");
 
                     b.Property<string>("Availability")
@@ -323,6 +330,10 @@ namespace UDX.BD.Migrations
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("Location")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ProfileImage")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -385,9 +396,6 @@ namespace UDX.BD.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("AuthorId")
-                        .HasColumnType("int");
-
                     b.Property<string>("Comment")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -406,9 +414,9 @@ namespace UDX.BD.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AuthorId");
-
                     b.HasIndex("TeacherId");
+
+                    b.HasIndex("authorResena");
 
                     b.ToTable("Resenas");
                 });
@@ -427,8 +435,8 @@ namespace UDX.BD.Migrations
                     b.Property<int>("DocenteId")
                         .HasColumnType("int");
 
-                    b.Property<DateTime>("Duration")
-                        .HasColumnType("datetime2");
+                    b.Property<int>("Duration")
+                        .HasColumnType("int");
 
                     b.Property<int>("MateriaId")
                         .HasColumnType("int");
@@ -437,7 +445,13 @@ namespace UDX.BD.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("Notes")
+                    b.Property<int>("Modalidad")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ParentId")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("RequestedAt")
@@ -449,9 +463,6 @@ namespace UDX.BD.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
-                    b.Property<int>("parentId")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
                     b.HasIndex("AcademyId");
@@ -460,7 +471,7 @@ namespace UDX.BD.Migrations
 
                     b.HasIndex("MateriaId");
 
-                    b.HasIndex("parentId");
+                    b.HasIndex("ParentId");
 
                     b.ToTable("SolicitudesClases");
                 });
@@ -593,7 +604,7 @@ namespace UDX.BD.Migrations
                         .IsRequired();
 
                     b.HasOne("UDX.BD.Datos.Entity.PerfilDocente", "Teacher")
-                        .WithMany()
+                        .WithMany("DocentesMaterias")
                         .HasForeignKey("TeacherId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
@@ -657,7 +668,8 @@ namespace UDX.BD.Migrations
                     b.HasOne("UDX.BD.Datos.Entity.Academia", "Academy")
                         .WithMany()
                         .HasForeignKey("AcademyId")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
 
                     b.HasOne("UDX.BD.Datos.Entity.Usuario", "User")
                         .WithMany()
@@ -691,15 +703,15 @@ namespace UDX.BD.Migrations
 
             modelBuilder.Entity("UDX.BD.Datos.Entity.Resena", b =>
                 {
-                    b.HasOne("UDX.BD.Datos.Entity.Usuario", "Author")
-                        .WithMany()
-                        .HasForeignKey("AuthorId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
                     b.HasOne("UDX.BD.Datos.Entity.PerfilDocente", "Teacher")
                         .WithMany()
                         .HasForeignKey("TeacherId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("UDX.BD.Datos.Entity.Usuario", "Author")
+                        .WithMany()
+                        .HasForeignKey("authorResena")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
@@ -730,7 +742,7 @@ namespace UDX.BD.Migrations
 
                     b.HasOne("UDX.BD.Datos.Entity.PerfilPadre", "Parent")
                         .WithMany()
-                        .HasForeignKey("parentId")
+                        .HasForeignKey("ParentId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
@@ -741,6 +753,11 @@ namespace UDX.BD.Migrations
                     b.Navigation("Materia");
 
                     b.Navigation("Parent");
+                });
+
+            modelBuilder.Entity("UDX.BD.Datos.Entity.PerfilDocente", b =>
+                {
+                    b.Navigation("DocentesMaterias");
                 });
 #pragma warning restore 612, 618
         }

@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="BCrypt.Net-Next" Version="4.2.0" />
     <ProjectReference Include="..\..\UDX.Repositorio\UDX.Repositorio.csproj" />
     <ProjectReference Include="..\..\UDX.Shared\UDX.Shared.csproj" />
     <ProjectReference Include="..\UDX.Server.Client\UDX.Server.Client.csproj" />
