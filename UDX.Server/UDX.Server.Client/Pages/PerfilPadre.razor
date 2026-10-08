@@ -1,6 +1,7 @@
 ﻿@page "/perfil-padre"
 @using UDX.Shared.DTOs
 @using Microsoft.AspNetCore.Components.Forms
+@using System.Net.Http.Headers
 @layout MainLayout
 @inject HttpClient Http
 @inject IJSRuntime JS
@@ -170,15 +171,22 @@ else
                                 <br />
 
                                 <button class="btn btn-primary"
-                                        @onclick="GuardarCambios">
-                                    Guardar
-                                </button>
+        @onclick="GuardarCambios">
+    Guardar
+</button>
 
-                                <button class="btn btn-secondary ms-2"
-                                        type="button"
-                                        @onclick="CerrarSesion">
-                                    Cerrar sesión
-                                </button>
+<button class="btn btn-secondary ms-2"
+        type="button"
+        @onclick="CerrarSesion">
+    Cerrar sesión
+</button>
+
+@if (!string.IsNullOrEmpty(mensaje))
+{
+    <div class="alert @(guardadoCorrectamente ? "alert-success" : "alert-danger") mt-3">
+        @mensaje
+    </div>
+}
 
                             </div>
 
@@ -286,7 +294,8 @@ else
 
     private bool cargando = true;
     private string mensajeFoto = "";
-
+    private string mensaje = "";
+    private bool guardadoCorrectamente = false;
     private bool mostrarConfirmacionEliminar = false;
 
     private IBrowserFile? fotoSeleccionada;
@@ -415,16 +424,19 @@ else
                 "api/Padre/perfil",
                 datos);
 
-        if (!respuesta.IsSuccessStatusCode)
-        {
-            Console.WriteLine(
-                $"Error al actualizar perfil: {respuesta.StatusCode}");
+       if (!respuesta.IsSuccessStatusCode)
+{
+    mensaje = "❌ No se pudieron guardar los cambios.";
+    guardadoCorrectamente = false;
 
-            return;
-        }
+    Console.WriteLine(
+        $"Error al actualizar perfil: {respuesta.StatusCode}");
 
-        Console.WriteLine(
-            "Perfil actualizado correctamente.");
+    return;
+}
+
+mensaje = "✅ Perfil actualizado correctamente.";
+guardadoCorrectamente = true;
     }
 
 
@@ -472,26 +484,44 @@ else
     }
 
 
-    private async Task EliminarCuenta()
+   private async Task EliminarCuenta()
+{
+    var token = await JS.InvokeAsync<string>(
+        "localStorage.getItem",
+        "token");
+
+    if (string.IsNullOrEmpty(token))
     {
-        var respuesta =
-            await Http.DeleteAsync(
-                "api/Padre/cuenta");
-
-        if (!respuesta.IsSuccessStatusCode)
-        {
-            Console.WriteLine(
-                $"Error al eliminar cuenta: {respuesta.StatusCode}");
-
-            mostrarConfirmacionEliminar = false;
-
-            return;
-        }
-
-        await JS.InvokeVoidAsync(
-            "localStorage.removeItem",
-            "token");
-
-        Navigation.NavigateTo("/");
+        Navigation.NavigateTo("/login");
+        return;
     }
+
+    using var request = new HttpRequestMessage(
+        HttpMethod.Delete,
+        "api/Padre/cuenta");
+
+    request.Headers.Authorization =
+        new AuthenticationHeaderValue(
+            "Bearer",
+            token);
+
+    var respuesta =
+        await Http.SendAsync(request);
+
+    if (!respuesta.IsSuccessStatusCode)
+    {
+        Console.WriteLine(
+            $"Error al eliminar cuenta: {respuesta.StatusCode}");
+
+        mostrarConfirmacionEliminar = false;
+
+        return;
+    }
+
+    await JS.InvokeVoidAsync(
+        "localStorage.removeItem",
+        "token");
+
+    Navigation.NavigateTo("/");
+}
 }

@@ -99,8 +99,12 @@ namespace UDX.BD.Datos
                 context.DocentesMaterias.Add(docenteMateria);
                 context.SaveChanges();
             }
+            
+
             var padre = context.Usuarios
                 .FirstOrDefault(u => u.Email == "padre@test.com");
+
+            
 
             if (padre == null)
             {

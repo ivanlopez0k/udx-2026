@@ -1,13 +1,14 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
+using System.Security.Claims;
+using System.Text;
 using UDX.BD.Datos;
 using UDX.BD.Datos.Entity;
 using UDX.Server.DTOs;
-using System.Linq;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
-using Microsoft.AspNetCore.Authorization;
 
 namespace UDX.Server.Controllers
 {
@@ -64,7 +65,7 @@ namespace UDX.Server.Controllers
             Usuario usuario = new Usuario
             {
                 Email = email,
-                Password = dto.Password,
+                Password = BCrypt.Net.BCrypt.HashPassword(dto.Password),
                 Name = dto.Name,
                 Phone = dto.Phone,
                 Role = role,
@@ -150,23 +151,7 @@ namespace UDX.Server.Controllers
                 );
             }
 
-            if (usuario.Role == Usuario.Rol.TEACHER)
-            {
-                PerfilDocente perfil = new PerfilDocente
-                {
-                    UserId = usuario.Id,
-                    Credentials = "",
-                    HourlyRate = 0,
-                    Location = "",
-                    RatingAvg = 0,
-                    RatinCount = 0,
-                    Availability = "",
-                    Verified = false
-                };
-
-                _context.PerfilesDocentes.Add(perfil);
-                _context.SaveChanges();
-            }
+          
 
             return Ok(usuario);
         }
@@ -174,12 +159,13 @@ namespace UDX.Server.Controllers
         [HttpPost("login")]
         public IActionResult Login(LoginDTO dto)
         {
+            
             var usuario = _context.Usuarios
                 .FirstOrDefault(u => u.Email == dto.Email);
 
             if (usuario == null)
             {
-                return Unauthorized("Email o contraseña incorrectos.");
+                return Unauthorized("No existe una cuenta con ese email.");
             }
 
             bool passwordValida;
@@ -195,11 +181,11 @@ namespace UDX.Server.Controllers
 
             if (!passwordValida)
             {
-                return Unauthorized("Email o contraseña incorrectos.");
+                return Unauthorized("La contraseña es incorrecta.");
             }
 
             var token = GenerateToken(usuario);
-
+            
             return Ok(new
             {
                 Token = token,

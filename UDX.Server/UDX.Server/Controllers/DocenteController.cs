@@ -160,9 +160,13 @@ public class DocenteController : ControllerBase
         var userId = int.Parse(
             User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
 
+        
+
         var perfil = await _context.PerfilesDocentes
             .Include(p => p.User)
             .FirstOrDefaultAsync(p => p.UserId == userId);
+
+       
 
         if (perfil == null)
             return NotFound("No se encontró el perfil docente.");
@@ -184,7 +188,7 @@ public class DocenteController : ControllerBase
         });
     }
 
-   
+
     [Authorize(Roles = "TEACHER")]
     [HttpPost("foto")]
     public async Task<IActionResult> SubirFoto(IFormFile foto)
@@ -301,5 +305,43 @@ public class DocenteController : ControllerBase
         await _context.SaveChangesAsync();
 
         return Ok("Perfil actualizado correctamente.");
+    }
+
+    [Authorize(Roles = "TEACHER")]
+    [HttpDelete("cuenta")]
+    public async Task<IActionResult> EliminarCuenta()
+    {
+        var userId = int.Parse(
+            User.FindFirst(
+                System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
+
+        var usuario = await _context.Usuarios
+            .FirstOrDefaultAsync(u => u.Id == userId);
+
+        if (usuario == null)
+            return NotFound("No se encontró el usuario.");
+
+        var perfil = await _context.PerfilesDocentes
+            .FirstOrDefaultAsync(p => p.UserId == userId);
+
+        if (perfil != null)
+        {
+            _context.PerfilesDocentes.Remove(perfil);
+        }
+
+        var academias = await _context.Academias
+            .Where(a => a.TeacherId == userId)
+            .ToListAsync();
+
+        if (academias.Any())
+        {
+            _context.Academias.RemoveRange(academias);
+        }
+
+        _context.Usuarios.Remove(usuario);
+
+        await _context.SaveChangesAsync();
+
+        return Ok("Cuenta eliminada correctamente.");
     }
 }

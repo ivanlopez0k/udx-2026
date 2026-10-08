@@ -1,80 +1,383 @@
 ﻿@page "/perfil-doc"
 @using Microsoft.AspNetCore.Components.Forms
 @using System.Net.Http.Headers
+@using System.Net.Http.Json
+@layout MainLayout
+
 @inject HttpClient Http
 @inject IJSRuntime JS
+@inject NavigationManager Navigation
 
+<PageTitle>UDX</PageTitle>
 
-<h3>Mi Perfil</h3>
-@if (perfil != null)
+@if (cargando)
 {
-    <div class="mt-3">
-
-        <div class="mb-3">
-            <label>Nombre</label>
-            <input class="form-control" @bind="nombre" />
-        </div>
-
-        <div class="mb-3">
-            <label>Teléfono</label>
-            <input class="form-control" @bind="telefono" />
-        </div>
-
-        <div class="mb-3">
-            <label>Credenciales</label>
-            <input class="form-control" @bind="credenciales" />
-        </div>
-
-        <div class="mb-3">
-            <label>Precio por hora</label>
-            <input class="form-control" type="number" @bind="precioPorHora" />
-        </div>
-
-        <div class="mb-3">
-            <label>Ubicación</label>
-            <input class="form-control" @bind="ubicacion" />
-        </div>
-
-        <div class="mb-3">
-            <label>Disponibilidad</label>
-            <input class="form-control" @bind="disponibilidad" />
-        </div>
-        <button class="btn btn-primary" @onclick="GuardarCambios">
-            Guardar cambios
-        </button>
+    <div class="text-center" style="padding-top: 150px;">
+        <h4>Cargando perfil...</h4>
     </div>
 }
-<InputFile OnChange="SeleccionarFoto" />
+else
+{
+    <div class="container" style="max-width: 1000px; padding-top: 80px;">
 
-<button @onclick="SubirFoto">Subir foto</button>
-@if (!string.IsNullOrEmpty(mensaje))
-{
-    <p>@mensaje</p>
-}
+        <div class="row">
 
-@if (cargandoFoto)
-{
-    <p>Cargando foto...</p>
-}
-else if (!string.IsNullOrEmpty(fotoUrl))
-{
-    <div class="mt-3">
-        <img src="@fotoUrl"
-             alt="Foto de perfil"
-             width="200" />
+            <!-- FOTO DE PERFIL -->
+            <div class="col-md-4 text-center" style="margin-top: 50px;">
+
+                <div style="display: flex;
+                    flex-direction: column;
+                    align-items: center;">
+
+                    <img src="@(string.IsNullOrWhiteSpace(fotoUrl)
+                                                    ? "images/default-avatar.avif"
+                                                    : fotoUrl)"
+                         class="avatar img-circle img-thumbnail"
+                         style="width: 180px;
+                    height: 180px;
+                    object-fit: cover;
+                    display: block;
+                    margin: 0;"
+                         alt="Foto de perfil" />
+
+                    @if (!string.IsNullOrEmpty(mensajeFoto))
+                    {
+                        <div class="alert alert-danger"
+                             style="display: inline-block;
+                            white-space: nowrap;
+                            margin-top: 5px;
+                            margin-bottom: 5px;">
+                            @mensajeFoto
+                        </div>
+                    }
+
+                    <label class="btn btn-primary button text-nowrap"
+                           style="margin-top: 5px;
+                        margin-bottom: 0;">
+
+                        Elegir foto
+
+                        <InputFile OnChange="SeleccionarFoto"
+                                   style="display: none;"
+                                   accept="image/*" />
+
+                    </label>
+
+                </div>
+
+                <hr />
+
+            </div>
+
+            <!-- DATOS DEL PERFIL -->
+            <div class="col-md-8" style="margin-top: 50px;">
+
+                <ul class="nav nav-tabs">
+                    <li class="nav-item">
+                        <a class="nav-link active">
+                            Mi Perfil
+                        </a>
+                    </li>
+                </ul>
+
+                <div class="tab-content">
+
+                    <div class="tab-pane active">
+
+                        <hr />
+
+                        <!-- NOMBRE Y TELÉFONO -->
+                        <div class="row">
+
+                            <div class="col-md-6 mb-3">
+
+                                <label class="form-label">
+                                    Nombre
+                                </label>
+
+                                <input type="text"
+                                       class="form-control"
+                                       @bind="nombre" />
+
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+
+                                <label class="form-label">
+                                    Teléfono
+                                </label>
+
+                                <input type="text"
+                                       class="form-control"
+                                       @bind="telefono" />
+
+                            </div>
+
+                        </div>
+
+                        <!-- EMAIL Y UBICACIÓN -->
+                        <div class="row">
+
+                            <div class="col-md-6 mb-3">
+
+                                <label class="form-label">
+                                    Email
+                                </label>
+
+                                <input type="email"
+                                       class="form-control"
+                                       @bind="email"
+                                       readonly />
+
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+
+                                <label class="form-label">
+                                    Ubicación
+                                </label>
+
+                                <input type="text"
+                                       class="form-control"
+                                       @bind="ubicacion" />
+
+                            </div>
+
+                        </div>
+
+                        <!-- CREDENCIALES Y PRECIO -->
+                        <div class="row">
+
+                            <div class="col-md-6 mb-3">
+
+                                <label class="form-label">
+                                    Credenciales
+                                </label>
+
+                                <input type="text"
+                                       class="form-control"
+                                       @bind="credenciales" />
+
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+
+                                <label class="form-label">
+                                    Precio por hora
+                                </label>
+
+                                <input type="number"
+                                       class="form-control"
+                                       @bind="precioPorHora" />
+
+                            </div>
+
+                        </div>
+
+                        <!-- DISPONIBILIDAD -->
+                        <div class="row">
+
+                            <div class="col-md-12 mb-3">
+
+                                <label class="form-label">
+                                    Disponibilidad
+                                </label>
+
+                                <input type="text"
+                                       class="form-control"
+                                       @bind="disponibilidad" />
+
+                            </div>
+
+                        </div>
+
+                        <!-- INFORMACIÓN DEL DOCENTE -->
+                        <div class="row">
+
+                            <div class="col-md-6 mb-3">
+
+                                <label class="form-label">
+                                    Calificación
+                                </label>
+
+                                <input type="text"
+                                       class="form-control"
+                                       value="@calificacion"
+                                       readonly />
+
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+
+                                <label class="form-label">
+                                    Cantidad de reseñas
+                                </label>
+
+                                <input type="text"
+                                       class="form-control"
+                                       value="@cantidadResenas"
+                                       readonly />
+
+                            </div>
+
+                        </div>
+
+                        <!-- VERIFICACIÓN -->
+                        <div class="row">
+
+                            <div class="col-md-12 mb-3">
+
+                                <label class="form-label">
+                                    Estado de verificación
+                                </label>
+
+                                <input type="text"
+                                       class="form-control"
+                                       value="@(verificado ? "Verificado" : "No verificado")"
+                                       readonly />
+
+                            </div>
+
+                        </div>
+
+                        <!-- BOTONES PRINCIPALES -->
+                        <div class="row">
+
+                            <div class="col-md-12">
+
+                                <br />
+
+                                <button class="btn btn-primary"
+                                        @onclick="GuardarCambios">
+                                    Guardar
+                                </button>
+
+                                <button class="btn btn-secondary ms-2"
+                                        type="button"
+                                        @onclick="CerrarSesion">
+                                    Cerrar sesión
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(mensaje))
+                        {
+                            <div class="alert @(guardadoCorrectamente ? "alert-success" : "alert-danger") mt-3">
+                                @mensaje
+                            </div>
+                        }
+
+                        <!-- ELIMINAR CUENTA -->
+                        <hr />
+
+                        <div class="mt-4 pt-3 border-top">
+
+                            <p class="text-muted mb-2">
+                                Zona de peligro
+                            </p>
+
+                            <button class="btn btn-danger"
+                                    type="button"
+                                    @onclick="MostrarConfirmacionEliminar">
+                                Eliminar cuenta
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
     </div>
 }
 
+@if (mostrarConfirmacionEliminar)
+{
+    <div class="modal fade show d-block"
+         tabindex="-1"
+         style="background-color: rgba(0,0,0,0.5);">
+
+        <div class="modal-dialog modal-dialog-centered">
+
+            <div class="modal-content">
+
+                <div class="modal-header">
+
+                    <h5 class="modal-title">
+                        Eliminar cuenta
+                    </h5>
+
+                    <button type="button"
+                            class="btn-close"
+                            @onclick="CancelarEliminar">
+                    </button>
+
+                </div>
+
+                <div class="modal-body">
+
+                    <p>
+                        ¿Estás seguro de que querés eliminar tu cuenta?
+                    </p>
+
+                    <p class="text-danger">
+                        Esta acción no se puede deshacer.
+                    </p>
+
+                </div>
+
+                <div class="modal-footer">
+
+                    <button type="button"
+                            class="btn btn-success"
+                            @onclick="CancelarEliminar">
+                        Cancelar
+                    </button>
+
+                    <button type="button"
+                            class="btn btn-danger"
+                            @onclick="EliminarCuenta">
+                        Eliminar cuenta
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+}
 
 @code
 {
-  
     private string nombre = "";
+    private string email = "";
     private string telefono = "";
     private string credenciales = "";
     private decimal precioPorHora;
     private string ubicacion = "";
     private string disponibilidad = "";
+    private bool mostrarConfirmacionEliminar = false;
+    private float calificacion;
+    private int cantidadResenas;
+    private bool verificado;
+
+    private string fotoUrl = "";
+
+    private bool cargando = true;
+
+    private string mensajeFoto = "";
+    private string mensaje = "";
+    private bool guardadoCorrectamente = false;
+
+    private IBrowserFile? fotoSeleccionada;
 
     public class RespuestaFoto
     {
@@ -82,152 +385,6 @@ else if (!string.IsNullOrEmpty(fotoUrl))
         public string foto { get; set; } = "";
     }
 
-    private string fotoUrl = "";
-    private bool cargandoFoto = true;
-    private IBrowserFile? fotoSeleccionada;
-    private string mensaje = "";
-    private PerfilRespuesta? perfil;
-
-    private void SeleccionarFoto(InputFileChangeEventArgs e)
-    {
-        fotoSeleccionada = e.File;
-    }
-
-    private async Task SubirFoto()
-    {
-        if (fotoSeleccionada == null)
-        {
-            mensaje = "⚠️ Tenés que seleccionar una foto antes de subirla.";
-            return;
-        }
-
-        mensaje = "";
-
-        var token = await JS.InvokeAsync<string>(
-            "localStorage.getItem",
-            "token");
-
-        using var stream = fotoSeleccionada.OpenReadStream(
-            maxAllowedSize: 5 * 1024 * 1024);
-
-        using var archivo = new StreamContent(stream);
-
-        archivo.Headers.ContentType =
-            new MediaTypeHeaderValue(fotoSeleccionada.ContentType);
-
-        using var contenido = new MultipartFormDataContent();
-
-        contenido.Add(
-            archivo,
-            "foto",
-            fotoSeleccionada.Name);
-
-        using var request = new HttpRequestMessage(
-            HttpMethod.Post,
-            "api/Docente/foto");
-
-        request.Content = contenido;
-
-        request.Headers.Authorization =
-            new AuthenticationHeaderValue("Bearer", token);
-
-        var respuesta = await Http.SendAsync(request);
-        if (respuesta.IsSuccessStatusCode)
-        {
-            var resultado =
-                await respuesta.Content.ReadFromJsonAsync<RespuestaFoto>();
-
-            if (resultado != null)
-            {
-                fotoUrl = resultado.foto;
-                mensaje = "";
-            }
-        }
-        else
-        {
-            mensaje = "❌ Parece que el archivo seleccionado no es una imagen. Elegí una foto para subir.";
-        }
-    }
-    private async Task GuardarCambios()
-    {
-        var token = await JS.InvokeAsync<string>(
-            "localStorage.getItem",
-            "token");
-
-        var datos = new
-        {
-            Nombre = nombre,
-            Telefono = telefono,
-            Credenciales = credenciales,
-            PrecioPorHora = precioPorHora,
-            Ubicacion = ubicacion,
-            Disponibilidad = disponibilidad
-        };
-
-        using var request = new HttpRequestMessage(
-            HttpMethod.Put,
-            "api/Docente/perfil");
-
-        request.Headers.Authorization =
-            new AuthenticationHeaderValue("Bearer", token);
-
-        request.Content = JsonContent.Create(datos);
-
-        var respuesta = await Http.SendAsync(request);
-
-        if (respuesta.IsSuccessStatusCode)
-        {
-            mensaje = "✅ Perfil actualizado correctamente.";
-        }
-        else
-        {
-            mensaje = "❌ No se pudieron guardar los cambios.";
-        }
-    }
-    private async Task CargarFoto()
-    {
-        var token = await JS.InvokeAsync<string>(
-            "localStorage.getItem",
-            "token");
-
-        if (string.IsNullOrEmpty(token))
-        {
-            cargandoFoto = false;
-            return;
-        }
-
-        using var request = new HttpRequestMessage(
-            HttpMethod.Get,
-            "api/Docente/foto");
-
-        request.Headers.Authorization =
-            new AuthenticationHeaderValue("Bearer", token);
-
-        var respuesta = await Http.SendAsync(request);
-
-        if (respuesta.IsSuccessStatusCode)
-        {
-            var resultado =
-                await respuesta.Content.ReadFromJsonAsync<RespuestaFoto>();
-
-            if (resultado != null)
-            {
-                fotoUrl = resultado.foto;
-            }
-        }
-
-        cargandoFoto = false;
-    }
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            await CargarPerfil();
-            await CargarFoto();
-
-            StateHasChanged();
-        }
-    }
     public class PerfilRespuesta
     {
         public int Id { get; set; }
@@ -244,6 +401,134 @@ else if (!string.IsNullOrEmpty(fotoUrl))
         public string Foto { get; set; } = "";
     }
 
+    private async Task SeleccionarFoto(InputFileChangeEventArgs e)
+    {
+        fotoSeleccionada = e.File;
+        mensajeFoto = "";
+
+        using var stream = fotoSeleccionada.OpenReadStream(
+            maxAllowedSize: 5 * 1024 * 1024);
+
+        using var memoryStream = new MemoryStream();
+
+        await stream.CopyToAsync(memoryStream);
+
+        var bytes = memoryStream.ToArray();
+
+        fotoUrl =
+            $"data:{fotoSeleccionada.ContentType};base64,{Convert.ToBase64String(bytes)}";
+    }
+
+    private async Task GuardarCambios()
+    {
+        mensaje = "";
+        guardadoCorrectamente = false;
+
+        var token = await JS.InvokeAsync<string>(
+            "localStorage.getItem",
+            "token");
+
+        if (string.IsNullOrEmpty(token))
+        {
+            mensaje = "❌ No hay una sesión iniciada.";
+            return;
+        }
+
+        // Si seleccionamos una foto, primero la subimos.
+        if (fotoSeleccionada != null)
+        {
+            using var stream = fotoSeleccionada.OpenReadStream(
+                maxAllowedSize: 5 * 1024 * 1024);
+
+            using var archivo = new StreamContent(stream);
+
+            archivo.Headers.ContentType =
+                new MediaTypeHeaderValue(
+                    fotoSeleccionada.ContentType);
+
+            using var contenido =
+                new MultipartFormDataContent();
+
+            contenido.Add(
+                archivo,
+                "foto",
+                fotoSeleccionada.Name);
+
+            using var requestFoto = new HttpRequestMessage(
+                HttpMethod.Post,
+                "api/Docente/foto");
+
+            requestFoto.Content = contenido;
+
+            requestFoto.Headers.Authorization =
+                new AuthenticationHeaderValue(
+                    "Bearer",
+                    token);
+
+            var respuestaFoto =
+                await Http.SendAsync(requestFoto);
+
+            if (!respuestaFoto.IsSuccessStatusCode)
+            {
+                mensajeFoto =
+                    "❌ No se pudo subir la foto.";
+
+                return;
+            }
+
+            var resultadoFoto =
+                await respuestaFoto.Content
+                    .ReadFromJsonAsync<RespuestaFoto>();
+
+            if (resultadoFoto != null)
+            {
+                fotoUrl = resultadoFoto.foto;
+            }
+
+            fotoSeleccionada = null;
+        }
+
+        // Guardamos los datos del perfil.
+        var datos = new
+        {
+            Nombre = nombre,
+            Telefono = telefono,
+            Credenciales = credenciales,
+            PrecioPorHora = precioPorHora,
+            Ubicacion = ubicacion,
+            Disponibilidad = disponibilidad
+        };
+
+        using var request = new HttpRequestMessage(
+            HttpMethod.Put,
+            "api/Docente/perfil");
+
+        request.Headers.Authorization =
+            new AuthenticationHeaderValue(
+                "Bearer",
+                token);
+
+        request.Content = JsonContent.Create(datos);
+
+        var respuesta =
+            await Http.SendAsync(request);
+
+        if (!respuesta.IsSuccessStatusCode)
+        {
+            mensaje =
+                "❌ No se pudieron guardar los cambios.";
+
+            guardadoCorrectamente = false;
+
+            return;
+        }
+
+        mensaje =
+            "✅ Perfil actualizado correctamente.";
+
+        guardadoCorrectamente = true;
+    }
+
     private async Task CargarPerfil()
     {
         var token = await JS.InvokeAsync<string>(
@@ -251,31 +536,183 @@ else if (!string.IsNullOrEmpty(fotoUrl))
             "token");
 
         if (string.IsNullOrEmpty(token))
+        {
+            Navigation.NavigateTo("/");
             return;
+        }
 
         using var request = new HttpRequestMessage(
             HttpMethod.Get,
             "api/Docente/perfil");
 
         request.Headers.Authorization =
-            new AuthenticationHeaderValue("Bearer", token);
+            new AuthenticationHeaderValue(
+                "Bearer",
+                token);
 
-        var respuesta = await Http.SendAsync(request);
+        var respuesta =
+            await Http.SendAsync(request);
+
+        if (respuesta.StatusCode ==
+            System.Net.HttpStatusCode.Unauthorized ||
+            respuesta.StatusCode ==
+            System.Net.HttpStatusCode.Forbidden)
+        {
+            Navigation.NavigateTo("/");
+            return;
+        }
+
+        if (!respuesta.IsSuccessStatusCode)
+        {
+            mensaje = "❌ No se pudo cargar el perfil.";
+            cargando = false;
+            return;
+        }
+
+        perfil =
+            await respuesta.Content
+                .ReadFromJsonAsync<PerfilRespuesta>();
+
+        if (perfil != null)
+        {
+            nombre = perfil.Nombre;
+            email = perfil.Email;
+            telefono = perfil.Telefono;
+            credenciales = perfil.Credenciales;
+            precioPorHora = perfil.PrecioPorHora;
+            ubicacion = perfil.Ubicacion;
+            disponibilidad = perfil.Disponibilidad;
+
+            calificacion = perfil.Calificacion;
+            cantidadResenas = perfil.CantidadResenas;
+            verificado = perfil.Verificado;
+        }
+
+        cargando = false;
+    }
+
+    private async Task CargarFoto()
+    {
+        var token = await JS.InvokeAsync<string>(
+            "localStorage.getItem",
+            "token");
+
+        if (string.IsNullOrEmpty(token))
+        {
+            return;
+        }
+
+        using var request = new HttpRequestMessage(
+            HttpMethod.Get,
+            "api/Docente/foto");
+
+        request.Headers.Authorization =
+            new AuthenticationHeaderValue(
+                "Bearer",
+                token);
+
+        var respuesta =
+            await Http.SendAsync(request);
 
         if (respuesta.IsSuccessStatusCode)
         {
-            perfil = await respuesta.Content
-                .ReadFromJsonAsync<PerfilRespuesta>();
+            var resultado =
+                await respuesta.Content
+                    .ReadFromJsonAsync<RespuestaFoto>();
 
-            if (perfil != null)
+            if (resultado != null)
             {
-                nombre = perfil.Nombre;
-                telefono = perfil.Telefono;
-                credenciales = perfil.Credenciales;
-                precioPorHora = perfil.PrecioPorHora;
-                ubicacion = perfil.Ubicacion;
-                disponibilidad = perfil.Disponibilidad;
+                fotoUrl = resultado.foto;
             }
         }
+    }
+
+    private async Task CerrarSesion()
+    {
+        await JS.InvokeVoidAsync(
+            "localStorage.removeItem",
+            "token");
+
+        await JS.InvokeVoidAsync(
+            "localStorage.removeItem",
+            "role");
+
+        await JS.InvokeVoidAsync(
+            "localStorage.removeItem",
+            "name");
+
+        Navigation.NavigateTo("/");
+    }
+
+    protected override async Task OnAfterRenderAsync(
+        bool firstRender)
+    {
+        if (!firstRender)
+            return;
+
+        await CargarPerfil();
+        await CargarFoto();
+
+        StateHasChanged();
+    }
+
+    private PerfilRespuesta? perfil;
+
+    private void MostrarConfirmacionEliminar()
+    {
+        mostrarConfirmacionEliminar = true;
+    }
+
+    private void CancelarEliminar()
+    {
+        mostrarConfirmacionEliminar = false;
+    }
+
+    private async Task EliminarCuenta()
+    {
+        var token = await JS.InvokeAsync<string>(
+            "localStorage.getItem",
+            "token");
+
+        if (string.IsNullOrEmpty(token))
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
+        using var request = new HttpRequestMessage(
+            HttpMethod.Delete,
+            "api/Docente/cuenta");
+
+        request.Headers.Authorization =
+            new AuthenticationHeaderValue(
+                "Bearer",
+                token);
+
+        var respuesta =
+            await Http.SendAsync(request);
+
+        if (!respuesta.IsSuccessStatusCode)
+        {
+            mensaje =
+                "❌ No se pudo eliminar la cuenta.";
+
+            mostrarConfirmacionEliminar = false;
+            return;
+        }
+
+        await JS.InvokeVoidAsync(
+            "localStorage.removeItem",
+            "token");
+
+        await JS.InvokeVoidAsync(
+            "localStorage.removeItem",
+            "role");
+
+        await JS.InvokeVoidAsync(
+            "localStorage.removeItem",
+            "name");
+
+        Navigation.NavigateTo("/");
     }
 }

@@ -8,15 +8,16 @@
         <div class="modal-content">
 
             <div class="modal-header">
-               
+
                 <button type="button"
                         class="btn-close"
                         data-bs-dismiss="modal">
                 </button>
+
             </div>
-            
 
             <div class="modal-body">
+
                 @if (!string.IsNullOrEmpty(mensaje))
                 {
                     <div class="alert alert-danger">
@@ -25,6 +26,7 @@
                 }
 
                 <div class="mb-3">
+
                     <label class="form-label">
                         Email
                     </label>
@@ -33,25 +35,21 @@
                            class="form-control"
                            placeholder="Ingrese su email"
                            @bind="email" />
+
                 </div>
 
                 <div class="mb-3">
+
                     <label class="form-label">
                         Contraseña
                     </label>
 
                     <input type="password"
                            class="form-control"
-                           placeholder="Ingrese su contraseña" 
+                           placeholder="Ingrese su contraseña"
                            @bind="password" />
-                </div>
 
-                @if (!string.IsNullOrEmpty(mensaje))
-                {
-                    <div class="alert alert-danger">
-                        @mensaje
-                    </div>
-                }
+                </div>
 
             </div>
 
@@ -74,39 +72,61 @@
     private string email = "";
     private string password = "";
     private string mensaje = "";
-    
-    
-   private async Task IniciarSesion()
-{
-    mensaje = "";
-    var datos = new
+
+    private async Task IniciarSesion()
     {
-        Email = email,
-        Password = password
-    };
+        mensaje = "";
 
-    var respuesta = await Http.PostAsJsonAsync(
-        "api/Auth/login",
-        datos);
-
-    if (respuesta.IsSuccessStatusCode)
-    {
-        var resultado = await respuesta.Content
-            .ReadFromJsonAsync<LoginResponseDTO>();
-
-        if (resultado != null)
+        if (string.IsNullOrWhiteSpace(email))
         {
-            await JS.InvokeVoidAsync(
-                "localStorage.setItem",
-                "token",
-                resultado.Token);
+            mensaje = "El email es obligatorio.";
+            return;
+        }
 
-                await JS.InvokeVoidAsync("cerrarLoginModal");
+        if (string.IsNullOrWhiteSpace(password))
+        {
+            mensaje = "La contraseña es obligatoria.";
+            return;
+        }
+
+        var datos = new
+        {
+            Email = email,
+            Password = password
+        };
+
+        var respuesta = await Http.PostAsJsonAsync(
+            "api/Auth/login",
+            datos);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            var resultado = await respuesta.Content
+                .ReadFromJsonAsync<LoginResponseDTO>();
+
+            if (resultado != null)
+            {
+                await JS.InvokeVoidAsync(
+                    "localStorage.setItem",
+                    "token",
+                    resultado.Token);
+
+                LimpiarFormulario();
+
+                await JS.InvokeVoidAsync(
+                    "cerrarLoginModal");
+            }
+        }
+        else
+        {
+            mensaje = await respuesta.Content.ReadAsStringAsync();
         }
     }
-    else
+
+    private void LimpiarFormulario()
     {
-        mensaje = "Email o contraseña incorrectos.";
+        email = "";
+        password = "";
+        mensaje = "";
     }
-}
 }
