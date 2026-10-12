@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 using UDX.BD.Datos;
 using UDX.BD.Datos.Entity;
 using UDX.Server.DTOs;
@@ -17,14 +19,22 @@ public class SolicitudClaseController : ControllerBase
         _context = context;
     }
 
-    // POST: api/SolicitudClase
+    // POST: api/SolicitudClase (solo PADRE puede crear)
+    [Authorize(Roles = "PARENT")]
     [HttpPost]
     public async Task<ActionResult<SolicitudClaseDTO>> Crear([FromBody] CrearSolicitudDTO dto)
     {
-        // Validate parent exists
-        var parent = await _context.PerfilesPadres.FindAsync(dto.ParentId);
+        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
+        // Validate parent exists and matches authenticated user
+        var parent = await _context.PerfilesPadres
+            .FirstOrDefaultAsync(p => p.Id == dto.ParentId);
+
         if (parent == null)
             return BadRequest("No se encontró el perfil del padre.");
+
+        if (parent.UserId != userId)
+            return Forbid("No podés crear solicitudes para otro padre.");
 
         // Validate teacher exists
         var docente = await _context.PerfilesDocentes.FindAsync(dto.DocenteId);
@@ -67,20 +77,46 @@ public class SolicitudClaseController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = solicitud.Id }, result);
     }
 
-    // GET: api/SolicitudClase/docente/{docenteId}
+    // GET: api/SolicitudClase/docente/{docenteId}?status=PENDING (solo DOCENTE puede ver las suyas)
+    [Authorize(Roles = "TEACHER")]
     [HttpGet("docente/{docenteId:int}")]
-    public async Task<ActionResult<List<SolicitudClaseDTO>>> GetByDocente(int docenteId)
+    public async Task<ActionResult<List<SolicitudClaseDTO>>> GetByDocente(
+        int docenteId,
+        [FromQuery] string? status = null)
     {
-        var docente = await _context.PerfilesDocentes.FindAsync(docenteId);
-        if (docente == null)
+        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
+        var perfil = await _context.PerfilesDocentes
+            .FirstOrDefaultAsync(p => p.Id == docenteId);
+
+        if (perfil == null)
             return NotFound("No se encontró el perfil del docente.");
 
-        var solicitudes = await _context.SolicitudesClases
+        if (perfil.UserId != userId)
+            return Forbid("No podés ver solicitudes de otro docente.");
+
+        var query = _context.SolicitudesClases
             .Include(s => s.Parent).ThenInclude(p => p.User)
             .Include(s => s.Docente).ThenInclude(d => d.User)
             .Include(s => s.Academy)
             .Include(s => s.Materia)
             .Where(s => s.DocenteId == docenteId)
+            .AsQueryable();
+
+        // Filter by status if provided
+        if (!string.IsNullOrEmpty(status))
+        {
+            if (Enum.TryParse<SolicitudClase.Stat>(status, true, out var statusFilter))
+            {
+                query = query.Where(s => s.Status == statusFilter);
+            }
+            else
+            {
+                return BadRequest("Estado inválido. Valores permitidos: PENDING, ACCEPTED, DECLINED, EXPIRED");
+            }
+        }
+
+        var solicitudes = await query
             .OrderByDescending(s => s.RequestedAt)
             .ToListAsync();
 
@@ -107,7 +143,8 @@ public class SolicitudClaseController : ControllerBase
         return Ok(result);
     }
 
-    // GET: api/SolicitudClase/{id}
+    // GET: api/SolicitudClase/{id} (cualquier usuario autenticado puede ver)
+    [Authorize]
     [HttpGet("{id:int}")]
     public async Task<ActionResult<SolicitudClaseDTO>> GetById(int id)
     {
@@ -118,12 +155,15 @@ public class SolicitudClaseController : ControllerBase
         return Ok(dto);
     }
 
-    // PUT: api/SolicitudClase/{id}/estado
+    // PUT: api/SolicitudClase/{id}/estado (solo DOCENTE puede aceptar/rechazar)
+    [Authorize(Roles = "TEACHER")]
     [HttpPut("{id:int}/estado")]
     public async Task<ActionResult<SolicitudClaseDTO>> ActualizarEstado(
         int id,
         [FromBody] ActualizarEstadoSolicitudDTO dto)
     {
+        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
         var solicitud = await _context.SolicitudesClases
             .Include(s => s.Parent)
             .Include(s => s.Docente)
@@ -133,6 +173,10 @@ public class SolicitudClaseController : ControllerBase
 
         if (solicitud == null)
             return NotFound("No se encontró la solicitud.");
+
+        // Verify the authenticated teacher owns this solicitud
+        if (solicitud.Docente.UserId != userId)
+            return Forbid("No podés modificar solicitudes de otro docente.");
 
         if (solicitud.Status != SolicitudClase.Stat.PENDING)
             return BadRequest("Solo se pueden modificar solicitudes en estado PENDING.");
