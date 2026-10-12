@@ -29,8 +29,10 @@ namespace UDX.Server.Controllers
         [HttpPost("register")]
         public IActionResult Register(RegisterDTO dto)
         {
+            var email = dto.Email.Trim().ToLower();
+
             bool existe = _context.Usuarios
-                .Any(u => u.Email == dto.Email);
+                .Any(u => u.Email.ToLower() == email);
 
             if (existe)
             {
@@ -61,7 +63,7 @@ namespace UDX.Server.Controllers
             // Step 2: Save user first (to get Id)
             Usuario usuario = new Usuario
             {
-                Email = dto.Email,
+                Email = email,
                 Password = dto.Password,
                 Name = dto.Name,
                 Phone = dto.Phone,
@@ -109,6 +111,62 @@ namespace UDX.Server.Controllers
                 _context.PerfilesDocentes.Add(perfil);
                 _context.SaveChanges();
             }
+            else if (usuario.Role == Usuario.Rol.PARENT)
+            {
+                Hijo hijo = new Hijo
+                {
+                    Name = "",
+                    Grade = "",
+                    ParentId = usuario.Id
+                };
+
+                _context.Hijos.Add(hijo);
+
+                _context.SaveChanges();
+
+                PerfilPadre perfil = new PerfilPadre
+                {
+                    UserId = usuario.Id,
+                    HijoId = hijo.Id,
+                    Location = "",
+                    Verified = false
+                };
+
+                _context.PerfilesPadres.Add(perfil);
+
+                _context.SaveChanges();
+            }
+
+            try
+            {
+                _context.SaveChanges();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(
+                    ex.InnerException?.InnerException?.Message
+                    ?? ex.InnerException?.Message
+                    ?? ex.Message
+                );
+            }
+
+            if (usuario.Role == Usuario.Rol.TEACHER)
+            {
+                PerfilDocente perfil = new PerfilDocente
+                {
+                    UserId = usuario.Id,
+                    Credentials = "",
+                    HourlyRate = 0,
+                    Location = "",
+                    RatingAvg = 0,
+                    RatinCount = 0,
+                    Availability = "",
+                    Verified = false
+                };
+
+                _context.PerfilesDocentes.Add(perfil);
+                _context.SaveChanges();
+            }
 
             return Ok(usuario);
         }
@@ -117,11 +175,25 @@ namespace UDX.Server.Controllers
         public IActionResult Login(LoginDTO dto)
         {
             var usuario = _context.Usuarios
-                .FirstOrDefault(u =>
-                    u.Email == dto.Email &&
-                    u.Password == dto.Password);
+                .FirstOrDefault(u => u.Email == dto.Email);
 
             if (usuario == null)
+            {
+                return Unauthorized("Email o contraseña incorrectos.");
+            }
+
+            bool passwordValida;
+            try
+            {
+                passwordValida = BCrypt.Net.BCrypt.Verify(dto.Password, usuario.Password);
+            }
+            catch (BCrypt.Net.SaltParseException)
+            {
+                // Contraseña vieja guardada en texto plano (sin hash)
+                passwordValida = false;
+            }
+
+            if (!passwordValida)
             {
                 return Unauthorized("Email o contraseña incorrectos.");
             }

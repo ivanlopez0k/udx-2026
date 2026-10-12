@@ -15,8 +15,8 @@ namespace UDX.BD.Datos.Entity
         public string Name { get; set; }
         public string Phone { get; set; }
         public DateTime CreatedAt { get; set; }
+
+        public string? FotoPerfil { get; set; }
     }
 }
 
-
-//prueba de commit
