@@ -6,7 +6,9 @@
         <div class="modal-content">
 
             <div class="modal-header">
-                <h5 class="modal-title">Crear cuenta</h5>
+                <h5 class="modal-title">
+                    Crear cuenta
+                </h5>
 
                 <button type="button"
                         class="btn-close"
@@ -17,7 +19,9 @@
             <div class="modal-body">
 
                 <div class="mb-3">
-                    <label class="form-label">Nombre</label>
+                    <label class="form-label">
+                        Nombre
+                    </label>
 
                     <input type="text"
                            class="form-control"
@@ -26,16 +30,28 @@
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Soy</label>
+                    <label class="form-label">
+                        Soy
+                    </label>
 
-                    <select class="form-select" @bind="rol">
-                        <option value="0">Padre</option>
-                        <option value="1">Profesor</option>
+                    <select class="form-select"
+                            @bind="rol">
+
+                        <option value="0">
+                            Padre
+                        </option>
+
+                        <option value="1">
+                            Profesor
+                        </option>
+
                     </select>
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Email</label>
+                    <label class="form-label">
+                        Email
+                    </label>
 
                     <input type="email"
                            class="form-control"
@@ -44,7 +60,9 @@
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Teléfono</label>
+                    <label class="form-label">
+                        Teléfono
+                    </label>
 
                     <input type="text"
                            class="form-control"
@@ -53,7 +71,9 @@
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Contraseña</label>
+                    <label class="form-label">
+                        Contraseña
+                    </label>
 
                     <input type="password"
                            class="form-control"
@@ -61,7 +81,8 @@
                            @bind="password"
                            @bind:event="oninput" />
 
-                    @if (!string.IsNullOrEmpty(password) && password.Length < 8)
+                    @if (!string.IsNullOrEmpty(password) &&
+                         password.Length < 8)
                     {
                         <div class="text-danger mt-1">
                             ⚠ La contraseña debe tener al menos 8 caracteres.
@@ -70,7 +91,9 @@
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Repetir contraseña</label>
+                    <label class="form-label">
+                        Repetir contraseña
+                    </label>
 
                     <input type="password"
                            class="form-control"
@@ -79,12 +102,14 @@
                            @bind="repetirPassword" />
                 </div>
 
-                
-
                 @if (!string.IsNullOrEmpty(mensaje))
                 {
-                    <div class="alert @(registroExitoso ? "alert-success" : "alert-danger")">
+                    <div class="alert @(registroExitoso
+                        ? "alert-success"
+                        : "alert-danger")">
+
                         @mensaje
+
                     </div>
                 }
 
@@ -95,7 +120,9 @@
                 <button type="button"
                         class="btn btn-success"
                         @onclick="Registrar">
+
                     Registrarse
+
                 </button>
 
             </div>
@@ -104,8 +131,8 @@
     </div>
 </div>
 
-@code {
-
+@code
+{
     private string nombre = "";
     private string email = "";
     private string telefono = "";
@@ -122,18 +149,48 @@
         mensaje = "";
         registroExitoso = false;
 
-        if (password != repetirPassword)
+        if (string.IsNullOrWhiteSpace(nombre))
         {
-            mensaje = "Las contraseñas no coinciden.";
+            mensaje = "El nombre es obligatorio.";
             return;
         }
-       
+
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            mensaje = "El email es obligatorio.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(telefono))
+        {
+            mensaje = "El teléfono es obligatorio.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(password))
+        {
+            mensaje = "La contraseña es obligatoria.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(repetirPassword))
+        {
+            mensaje = "Debés repetir la contraseña.";
+            return;
+        }
+
         if (password.Length < 8)
         {
             mensaje = "La contraseña debe tener al menos 8 caracteres.";
             return;
         }
-        
+
+        if (password != repetirPassword)
+        {
+            mensaje = "Las contraseñas no coinciden.";
+            return;
+        }
+
         var registro = new
         {
             Email = email,
@@ -152,23 +209,40 @@
             if (response.IsSuccessStatusCode)
             {
                 registroExitoso = true;
-                mensaje = "Cuenta creada correctamente.";
+                mensaje = "✅ Cuenta creada correctamente.";
 
-                nombre = "";
-                email = "";
-                telefono = "";
-                password = "";
-                repetirPassword = "";
-                rol = 0;
+                LimpiarFormulario();
+
+                return;
             }
-            else
+
+            if (response.StatusCode ==
+                System.Net.HttpStatusCode.Conflict)
             {
-                mensaje = await response.Content.ReadAsStringAsync();
+                mensaje = "❌ Ese email ya está registrado.";
+                return;
             }
+
+            if (response.StatusCode ==
+                System.Net.HttpStatusCode.BadRequest)
+            {
+                var error =
+                    await response.Content.ReadAsStringAsync();
+
+                mensaje = string.IsNullOrWhiteSpace(error)
+                    ? "❌ Los datos ingresados no son válidos."
+                    : $"❌ {error}";
+
+                return;
+            }
+
+            mensaje =
+                $"❌ No se pudo crear la cuenta. Código: {(int)response.StatusCode}";
         }
         catch
         {
-            mensaje = "No se pudo conectar con el servidor.";
+            mensaje =
+                "❌ No se pudo conectar con el servidor.";
         }
     }
 
@@ -180,8 +254,5 @@
         password = "";
         repetirPassword = "";
         rol = 0;
-
-        mensaje = "";
-        registroExitoso = false;
     }
 }
