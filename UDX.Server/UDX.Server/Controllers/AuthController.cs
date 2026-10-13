@@ -137,37 +137,6 @@ namespace UDX.Server.Controllers
                 _context.SaveChanges();
             }
 
-            try
-            {
-                _context.SaveChanges();
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(
-                    ex.InnerException?.InnerException?.Message
-                    ?? ex.InnerException?.Message
-                    ?? ex.Message
-                );
-            }
-
-            if (usuario.Role == Usuario.Rol.TEACHER)
-            {
-                PerfilDocente perfil = new PerfilDocente
-                {
-                    UserId = usuario.Id,
-                    Credentials = "",
-                    HourlyRate = 0,
-                    Location = "",
-                    RatingAvg = 0,
-                    RatinCount = 0,
-                    Availability = "",
-                    Verified = false
-                };
-
-                _context.PerfilesDocentes.Add(perfil);
-                _context.SaveChanges();
-            }
-
             return Ok(usuario);
         }
 
