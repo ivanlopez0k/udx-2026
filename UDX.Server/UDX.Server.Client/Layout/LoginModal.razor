@@ -16,52 +16,51 @@
 
             </div>
 
-            <div class="modal-body">
+            <EditForm Model="this" OnValidSubmit="IniciarSesion">
 
-                @if (!string.IsNullOrEmpty(mensaje))
-                {
-                    <div class="alert alert-danger">
-                        @mensaje
+                <div class="modal-body">
+
+                    @if (!string.IsNullOrEmpty(mensaje))
+                    {
+                        <div class="alert alert-danger">
+                            @mensaje
+                        </div>
+                    }
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            Email
+                        </label>
+
+                        <input type="email"
+                               class="form-control"
+                               placeholder="Ingrese su email"
+                               @bind="email" />
                     </div>
-                }
 
-                <div class="mb-3">
+                    <div class="mb-3">
+                        <label class="form-label">
+                            Contraseña
+                        </label>
 
-                    <label class="form-label">
-                        Email
-                    </label>
-
-                    <input type="email"
-                           class="form-control"
-                           placeholder="Ingrese su email"
-                           @bind="email" />
-
-                </div>
-
-                <div class="mb-3">
-
-                    <label class="form-label">
-                        Contraseña
-                    </label>
-
-                    <input type="password"
-                           class="form-control"
-                           placeholder="Ingrese su contraseña"
-                           @bind="password" />
+                        <input type="password"
+                               class="form-control"
+                               placeholder="Ingrese su contraseña"
+                               @bind="password" />
+                    </div>
 
                 </div>
 
-            </div>
+                <div class="modal-footer">
 
-            <div class="modal-footer">
+                    <button type="submit"
+                            class="btn btn-primary">
+                        Iniciar Sesion
+                    </button>
 
-                <button type="button"
-                        class="btn btn-primary"
-                        @onclick="IniciarSesion">
-                    Iniciar Sesion
-                </button>
+                </div>
 
-            </div>
+            </EditForm>
 
         </div>
     </div>

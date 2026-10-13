@@ -190,7 +190,8 @@ namespace UDX.Server.Controllers
             {
                 Token = token,
                 usuario.Email,
-                usuario.Role
+                usuario.Role,
+                usuario.Name
             });
         }
 
