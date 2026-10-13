@@ -201,7 +201,7 @@ public class SolicitudClaseController : ControllerBase
                 TeacherId = solicitud.DocenteId,
                 SubjectId = solicitud.MateriaId,
                 AcademyId = solicitud.AcademyId,
-                ContentId = 0
+                ContentId = null
             };
 
             _context.ClasesAgendadas.Add(clase);
