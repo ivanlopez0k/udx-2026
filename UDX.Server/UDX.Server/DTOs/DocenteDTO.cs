@@ -44,5 +44,7 @@
         public string Grade { get; set; }
         public string Category { get; set; }
         public string Level { get; set; }
+
+        public decimal HourlyRate { get; set; }
     }
 }

@@ -2,29 +2,7 @@
 
 <PageTitle>Profesores</PageTitle>
 
-@code {
-    private bool mostrarModal = false;
 
-    private string fotoSeleccionada = "";
-    private string nombreSeleccionado = "";
-    private string materiaSeleccionada = "";
-    private string ubicacionSeleccionada = "";
-
-    private void AbrirModal(string foto, string nombre, string materia, string ubicacion)
-    {
-        fotoSeleccionada = foto;
-        nombreSeleccionado = nombre;
-        materiaSeleccionada = materia;
-        ubicacionSeleccionada = ubicacion;
-
-        mostrarModal = true;
-    }
-
-    private void CerrarModal()
-    {
-        mostrarModal = false;
-    }
-}
 
 <div class="profesores-container">
     
@@ -259,3 +237,29 @@
                Ubicacion="@ubicacionSeleccionada"
                CerrarModal="@CerrarModal" />
 <Footer />
+
+
+
+@code {
+    private bool mostrarModal = false;
+
+    private string fotoSeleccionada = "";
+    private string nombreSeleccionado = "";
+    private string materiaSeleccionada = "";
+    private string ubicacionSeleccionada = "";
+
+    private void AbrirModal(string foto, string nombre, string materia, string ubicacion)
+    {
+        fotoSeleccionada = foto;
+        nombreSeleccionado = nombre;
+        materiaSeleccionada = materia;
+        ubicacionSeleccionada = ubicacion;
+
+        mostrarModal = true;
+    }
+
+    private void CerrarModal()
+    {
+        mostrarModal = false;
+    }
+}

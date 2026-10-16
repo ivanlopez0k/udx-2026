@@ -141,12 +141,14 @@ public class DocenteController : ControllerBase
             Availability = perfil.Availability,
             Academy = perfil.Academy?.Name,
             Materias = perfil.DocentesMaterias?
+            
                 .Select(dm => new MateriaDetalleDTO
                 {
                     Name = dm.Materia?.Name,
                     Grade = dm.Materia?.Grade,
                     Category = dm.Materia?.Category,
-                    Level = dm.Level
+                    Level = dm.Level,
+                    HourlyRate = dm.HourlyRate
                 }).ToList() ?? new List<MateriaDetalleDTO>()
         };
 
@@ -182,9 +184,90 @@ public class DocenteController : ControllerBase
             Verificado = perfil.Verified,
             Foto = perfil.ProfileImage
         });
+     }
+
+    [Authorize(Roles = "TEACHER")]
+    [HttpGet("perfil/materias")]
+    public async Task<IActionResult> ObtenerMateriasPerfil()
+    {
+        var userId = int.Parse(
+            User.FindFirst(
+                System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
+
+        var perfil = await _context.PerfilesDocentes
+            .Include(p => p.DocentesMaterias)
+                .ThenInclude(dm => dm.Materia)
+            .FirstOrDefaultAsync(p => p.UserId == userId);
+
+        if (perfil == null)
+            return NotFound("No se encontró el perfil docente.");
+
+        var materias = perfil.DocentesMaterias.Select(dm => new
+        {
+            MateriaId = dm.MateriaId,
+            Nombre = dm.Materia.Name,
+            Grado = dm.Materia.Grade,
+            Nivel = dm.Level,
+            PrecioPorHora = dm.HourlyRate
+        }).ToList();
+
+        return Ok(materias);
     }
 
-   
+    [Authorize(Roles = "TEACHER")]
+    [HttpPost("perfil/materias")]
+    public async Task<IActionResult> AgregarMateriaPerfil(
+        AgregarMateriaDocenteDTO dto)
+    {
+        if (dto.MateriaId <= 0)
+            return BadRequest("La materia seleccionada no es válida.");
+
+        if (string.IsNullOrWhiteSpace(dto.Nivel))
+            return BadRequest("Tenés que indicar el nivel.");
+
+        if (dto.PrecioPorHora < 0)
+            return BadRequest("El precio no puede ser negativo.");
+
+        var userId = int.Parse(
+            User.FindFirst(
+                System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
+
+        var perfil = await _context.PerfilesDocentes
+            .Include(p => p.DocentesMaterias)
+            .FirstOrDefaultAsync(p => p.UserId == userId);
+
+        if (perfil == null)
+            return NotFound("No se encontró el perfil docente.");
+
+        var materia = await _context.Materias
+            .FirstOrDefaultAsync(m => m.Id == dto.MateriaId);
+
+        if (materia == null)
+            return NotFound("La materia seleccionada no existe.");
+
+        var yaExiste = perfil.DocentesMaterias.Any(
+            dm => dm.MateriaId == dto.MateriaId
+                  && dm.Level == dto.Nivel);
+
+        if (yaExiste)
+            return BadRequest("Ya tenés esa materia asociada a ese nivel.");
+
+        var docenteMateria = new DocenteMateria
+        {
+            TeacherId = perfil.Id,
+            MateriaId = materia.Id,
+            Level = dto.Nivel,
+            HourlyRate = dto.PrecioPorHora
+        };
+
+        _context.Set<DocenteMateria>().Add(docenteMateria);
+
+        await _context.SaveChangesAsync();
+
+        return Ok("Materia agregada correctamente a tu perfil.");
+    }
+
+
     [Authorize(Roles = "TEACHER")]
     [HttpPost("foto")]
     public async Task<IActionResult> SubirFoto(IFormFile foto)
@@ -301,5 +384,37 @@ public class DocenteController : ControllerBase
         await _context.SaveChangesAsync();
 
         return Ok("Perfil actualizado correctamente.");
+    }
+
+    [Authorize(Roles = "TEACHER")]
+    [HttpPut("materias/precio")]
+    public async Task<IActionResult> ActualizarPrecioMateria(
+    ActualizarPrecioMateriaDTO dto)
+    {
+        if (dto.HourlyRate < 0)
+            return BadRequest("El precio no puede ser negativo.");
+
+        var userId = int.Parse(
+            User.FindFirst(
+                System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
+
+        var perfil = await _context.PerfilesDocentes
+            .Include(p => p.DocentesMaterias)
+            .FirstOrDefaultAsync(p => p.UserId == userId);
+
+        if (perfil == null)
+            return NotFound("No se encontró el perfil docente.");
+
+        var docenteMateria = perfil.DocentesMaterias
+            .FirstOrDefault(dm => dm.MateriaId == dto.MateriaId);
+
+        if (docenteMateria == null)
+            return NotFound("No tenés esa materia asociada a tu perfil.");
+
+        docenteMateria.HourlyRate = dto.HourlyRate;
+
+        await _context.SaveChangesAsync();
+
+        return Ok("Precio de la materia actualizado correctamente.");
     }
 }

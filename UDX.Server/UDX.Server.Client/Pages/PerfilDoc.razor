@@ -46,11 +46,7 @@
 }
 <InputFile OnChange="SeleccionarFoto" />
 
-<button @onclick="SubirFoto">Subir foto</button>
-@if (!string.IsNullOrEmpty(mensaje))
-{
-    <p>@mensaje</p>
-}
+
 
 @if (cargandoFoto)
 {
@@ -66,8 +62,103 @@ else if (!string.IsNullOrEmpty(fotoUrl))
 }
 
 
+<hr class="my-4" />
+
+<h4>Mis materias</h4>
+
+@if (cargandoMaterias)
+{
+    <p>Cargando materias...</p>
+}
+else
+{
+    @if (materiasDocente.Count > 0)
+    {
+        <h5>Materias asociadas</h5>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Materia</th>
+                    <th>Grado/Año</th>
+                    <th>Nivel</th>
+                    <th>Precio por hora</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var materia in materiasDocente)
+                {
+                    <tr>
+                        <td>@materia.Nombre</td>
+                        <td>@materia.Grado</td>
+                        <td>@materia.Nivel</td>
+                        <td>$@materia.PrecioPorHora</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <p>Todavía no tenés materias asociadas.</p>
+    }
+
+    <h5 class="mt-4">Agregar una materia</h5>
+
+    <div class="mb-3">
+        <label>Materia</label>
+        <select class="form-select" @bind="materiaIdSeleccionada">
+            <option value="0">Seleccioná una materia</option>
+            @foreach (var materia in catalogoMaterias)
+            {
+                <option value="@materia.Id">
+                    @materia.Name - Grado @materia.Grade
+                </option>
+            }
+        </select>
+    </div>
+
+    <div class="mb-3">
+        <label>Nivel</label>
+        <select class="form-select" @bind="nivelMateria">
+            <option value="">Seleccioná un nivel</option>
+           
+            <option value="Primario">Primario</option>
+            <option value="Secundario">Secundario</option>
+        </select>
+    </div>
+
+    <div class="mb-3">
+        <label>Precio por hora</label>
+        <input class="form-control" type="number" min="0"
+               @bind="precioMateria" />
+    </div>
+
+    <button type="button"
+            class="btn btn-success"
+            @onclick="AgregarMateria">
+        Agregar materia
+    </button>
+    
+
+    @if (!string.IsNullOrEmpty(mensaje))
+    {
+        <div class="alert alert-info mt-3" role="alert">
+            @mensaje
+        </div>
+    }
+}
+
+
 @code
 {
+    private List<MateriaCatalogo> catalogoMaterias = new();
+    private List<MateriaDocenteRespuesta> materiasDocente = new();
+
+    private bool cargandoMaterias = true;
+    private int materiaIdSeleccionada;
+    private string nivelMateria = "";
+    private decimal precioMateria;
   
     private string nombre = "";
     private string telefono = "";
@@ -224,7 +315,7 @@ else if (!string.IsNullOrEmpty(fotoUrl))
         {
             await CargarPerfil();
             await CargarFoto();
-
+            await CargarMaterias();
             StateHasChanged();
         }
     }
@@ -243,7 +334,22 @@ else if (!string.IsNullOrEmpty(fotoUrl))
         public bool Verificado { get; set; }
         public string Foto { get; set; } = "";
     }
+     public class MateriaCatalogo
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = "";
+        public string Grade { get; set; } = "";
+        public string Category { get; set; } = "";
+    }
 
+    public class MateriaDocenteRespuesta
+    {
+     public int MateriaId { get; set; }
+     public string Nombre { get; set; } = "";
+     public string Grado { get; set; } = "";
+     public string Nivel { get; set; } = "";
+     public decimal PrecioPorHora { get; set; }
+    }
     private async Task CargarPerfil()
     {
         var token = await JS.InvokeAsync<string>(
@@ -278,4 +384,134 @@ else if (!string.IsNullOrEmpty(fotoUrl))
             }
         }
     }
+
+    
+private async Task CargarMaterias()
+{
+    cargandoMaterias = true;
+
+    try
+    {
+        var token = await JS.InvokeAsync<string>(
+            "localStorage.getItem", "token");
+
+        if (string.IsNullOrEmpty(token))
+            return;
+
+        using var requestCatalogo = new HttpRequestMessage(
+            HttpMethod.Get, "api/Materia");
+
+        requestCatalogo.Headers.Authorization =
+            new AuthenticationHeaderValue("Bearer", token);
+
+        var respuestaCatalogo = await Http.SendAsync(requestCatalogo);
+
+        if (respuestaCatalogo.IsSuccessStatusCode)
+        {
+            catalogoMaterias = await respuestaCatalogo.Content
+                .ReadFromJsonAsync<List<MateriaCatalogo>>()
+                ?? new List<MateriaCatalogo>();
+        }
+
+        using var requestDocente = new HttpRequestMessage(
+            HttpMethod.Get, "api/Docente/perfil/materias");
+
+        requestDocente.Headers.Authorization =
+            new AuthenticationHeaderValue("Bearer", token);
+
+        var respuestaDocente = await Http.SendAsync(requestDocente);
+
+        if (respuestaDocente.IsSuccessStatusCode)
+        {
+            materiasDocente = await respuestaDocente.Content
+                .ReadFromJsonAsync<List<MateriaDocenteRespuesta>>()
+                ?? new List<MateriaDocenteRespuesta>();
+        }
+        else
+        {
+            mensaje = "No se pudieron cargar las materias del perfil.";
+        }
+    }
+    catch (Exception)
+    {
+        mensaje = "Ocurrió un error al cargar las materias.";
+    }
+    finally
+    {
+        cargandoMaterias = false;
+    }
+}
+
+private async Task AgregarMateria()
+{
+        mensaje = "Se hizo clic en Agregar materia.";
+    if (materiaIdSeleccionada <= 0)
+    {
+        mensaje = "Seleccioná una materia.";
+        return;
+    }
+
+    if (string.IsNullOrWhiteSpace(nivelMateria))
+    {
+        mensaje = "Indicá el nivel de la materia.";
+        return;
+    }
+
+    if (precioMateria < 0)
+    {
+        mensaje = "El precio no puede ser negativo.";
+        return;
+    }
+
+    try
+    {
+        var token = await JS.InvokeAsync<string>(
+            "localStorage.getItem", "token");
+
+        if (string.IsNullOrEmpty(token))
+        {
+            mensaje = "Tenés que iniciar sesión nuevamente.";
+            return;
+        }
+
+        var datos = new
+        {
+            MateriaId = materiaIdSeleccionada,
+            Nivel = nivelMateria,
+            PrecioPorHora = precioMateria
+        };
+
+        using var request = new HttpRequestMessage(
+            HttpMethod.Post, "api/Docente/perfil/materias");
+
+        request.Headers.Authorization =
+            new AuthenticationHeaderValue("Bearer", token);
+
+        request.Content = JsonContent.Create(datos);
+
+        var respuesta = await Http.SendAsync(request);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            mensaje = "✅ Materia agregada correctamente.";
+            materiaIdSeleccionada = 0;
+            nivelMateria = "";
+            precioMateria = 0;
+
+            await CargarMaterias();
+        }
+        else
+        {
+            var detalle = await respuesta.Content.ReadAsStringAsync();
+            mensaje = $"No se pudo agregar la materia: {detalle}";
+        }
+    }
+    catch (Exception)
+    {
+        mensaje = "Ocurrió un error al agregar la materia.";
+    }
+}
+
+  
+
 }
