@@ -74,10 +74,10 @@
 
                             @if (!string.IsNullOrWhiteSpace(materia.Grade))
                             {
-                                <span> — @materia.Grade</span>
+                                <span> · @materia.Grade° grado</span>
                             }
 
-                            <span> — $@materia.HourlyRate por hora</span>
+                            <span> · $@materia.HourlyRate por hora</span>
                         </li>
                     }
                 </ul>
@@ -109,7 +109,16 @@
 
         try
         {
-            docente = await Http.GetFromJsonAsync<DocenteDetalle>($"api/Docente/{Id}");
+            using var respuesta = await Http.GetAsync($"api/Docente/{Id}");
+
+            if (respuesta.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                error = "No se encontró el docente.";
+                return;
+            }
+
+            respuesta.EnsureSuccessStatusCode();
+            docente = await respuesta.Content.ReadFromJsonAsync<DocenteDetalle>();
 
             if (docente == null)
             {

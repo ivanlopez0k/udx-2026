@@ -116,12 +116,17 @@ public class DocenteController : ControllerBase
     [HttpGet("{id:int}")]
     public async Task<ActionResult<DocenteDetalleDTO>> GetById(int id)
     {
-        var perfil = await _context.PerfilesDocentes
+        var consultaPerfil = _context.PerfilesDocentes
             .Include(p => p.User)
             .Include(p => p.DocentesMaterias)
                 .ThenInclude(dm => dm.Materia)
-            .Include(p => p.Academy)
+            .Include(p => p.Academy);
+
+        var perfil = await consultaPerfil
             .FirstOrDefaultAsync(p => p.Id == id);
+
+        perfil ??= await consultaPerfil
+            .FirstOrDefaultAsync(p => p.UserId == id);
 
         if (perfil == null)
             return NotFound();
@@ -133,13 +138,13 @@ public class DocenteController : ControllerBase
             Email = perfil.User?.Email,
             Phone = perfil.User?.Phone,
             Credentials = perfil.Credentials,
-            HourlyRate = perfil.HourlyRate,
             Location = perfil.Location,
             RatingAvg = perfil.RatingAvg,
             RatingCount = perfil.RatinCount,
             Verified = perfil.Verified,
             Availability = perfil.Availability,
             Academy = perfil.Academy?.Name,
+            Foto = perfil.ProfileImage,
             Materias = perfil.DocentesMaterias?
             
                 .Select(dm => new MateriaDetalleDTO
@@ -265,6 +270,37 @@ public class DocenteController : ControllerBase
         await _context.SaveChangesAsync();
 
         return Ok("Materia agregada correctamente a tu perfil.");
+    }
+
+    [Authorize(Roles = "TEACHER")]
+    [HttpDelete("perfil/materias/{materiaId:int}")]
+    public async Task<IActionResult> EliminarMateriaPerfil(
+        int materiaId,
+        [FromQuery] string nivel)
+    {
+        var userId = int.Parse(
+            User.FindFirst(
+                System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
+
+        var perfil = await _context.PerfilesDocentes
+            .FirstOrDefaultAsync(p => p.UserId == userId);
+
+        if (perfil == null)
+            return NotFound("No se encontró el perfil docente.");
+
+        var docenteMateria = await _context.DocentesMaterias
+            .FirstOrDefaultAsync(dm =>
+                dm.TeacherId == perfil.Id &&
+                dm.MateriaId == materiaId &&
+                dm.Level == nivel);
+
+        if (docenteMateria == null)
+            return NotFound("La materia no está asociada a tu perfil.");
+
+        _context.DocentesMaterias.Remove(docenteMateria);
+        await _context.SaveChangesAsync();
+
+        return NoContent();
     }
 
 

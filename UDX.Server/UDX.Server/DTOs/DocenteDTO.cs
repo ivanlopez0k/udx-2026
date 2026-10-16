@@ -28,13 +28,13 @@
         public string Email { get; set; }
         public string Phone { get; set; }
         public string Credentials { get; set; }
-        public decimal HourlyRate { get; set; }
         public string Location { get; set; }
         public float RatingAvg { get; set; }
         public int RatingCount { get; set; }
         public bool Verified { get; set; }
         public string Availability { get; set; }
         public string Academy { get; set; }
+        public string Foto { get; set; }
         public List<MateriaDetalleDTO> Materias { get; set; }
     }
 

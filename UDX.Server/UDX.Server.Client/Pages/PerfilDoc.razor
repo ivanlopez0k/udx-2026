@@ -27,7 +27,7 @@
 
         <div class="mb-3">
             <label>Precio por hora</label>
-            <input class="form-control" type="number" @bind="precioPorHora" />
+            <input class="form-control" type="number" min="0" max="5000" @bind="precioPorHora" />
         </div>
 
         <div class="mb-3">
@@ -80,9 +80,10 @@ else
             <thead>
                 <tr>
                     <th>Materia</th>
-                    <th>Grado/Año</th>
-                    <th>Nivel</th>
+                    <th>Grado</th>
+                    
                     <th>Precio por hora</th>
+                    <th></th>
                 </tr>
             </thead>
             <tbody>
@@ -91,8 +92,17 @@ else
                     <tr>
                         <td>@materia.Nombre</td>
                         <td>@materia.Grado</td>
-                        <td>@materia.Nivel</td>
+                        
                         <td>$@materia.PrecioPorHora</td>
+                        <td>
+                            <button type="button"
+                                    class="border-0 bg-transparent text-danger p-0 fs-3 fw-bold text-decoration-none"
+                                    title="Eliminar materia"
+                                    aria-label="Eliminar materia"
+                                    @onclick="() => EliminarMateria(materia)">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </td>
                     </tr>
                 }
             </tbody>
@@ -112,25 +122,32 @@ else
             @foreach (var materia in catalogoMaterias)
             {
                 <option value="@materia.Id">
-                    @materia.Name - Grado @materia.Grade
+
+                    @materia.Name
                 </option>
             }
         </select>
     </div>
 
     <div class="mb-3">
-        <label>Nivel</label>
+        <label>Grado</label>
         <select class="form-select" @bind="nivelMateria">
-            <option value="">Seleccioná un nivel</option>
+            <option value="">Seleccioná</option>
            
-            <option value="Primario">Primario</option>
-            <option value="Secundario">Secundario</option>
+            <option value="1">1°</option>
+            <option value="2">2°</option>
+            <option value="3">3°</option>
+            <option value="4">4°</option>
+            <option value="5">5°</option>
+            <option value="6">6°</option>
+            <option value="7">7°</option>
+
         </select>
     </div>
 
     <div class="mb-3">
         <label>Precio por hora</label>
-        <input class="form-control" type="number" min="0"
+        <input class="form-control" type="number"@*  min="0" max="1000000" *@
                @bind="precioMateria" />
     </div>
 
@@ -408,9 +425,18 @@ private async Task CargarMaterias()
 
         if (respuestaCatalogo.IsSuccessStatusCode)
         {
-            catalogoMaterias = await respuestaCatalogo.Content
+            var materias = await respuestaCatalogo.Content
                 .ReadFromJsonAsync<List<MateriaCatalogo>>()
                 ?? new List<MateriaCatalogo>();
+
+            catalogoMaterias = materias
+                .GroupBy(m => m.Name.Trim(), StringComparer.OrdinalIgnoreCase)
+                .Select(grupo => grupo
+                    .OrderBy(m => m.Grade)
+                    .ThenBy(m => m.Id)
+                    .First())
+                .OrderBy(m => m.Name)
+                .ToList();
         }
 
         using var requestDocente = new HttpRequestMessage(
@@ -444,7 +470,7 @@ private async Task CargarMaterias()
 
 private async Task AgregarMateria()
 {
-        mensaje = "Se hizo clic en Agregar materia.";
+      
     if (materiaIdSeleccionada <= 0)
     {
         mensaje = "Seleccioná una materia.";
@@ -453,7 +479,7 @@ private async Task AgregarMateria()
 
     if (string.IsNullOrWhiteSpace(nivelMateria))
     {
-        mensaje = "Indicá el nivel de la materia.";
+        mensaje = "Indicá el grado/año.";
         return;
     }
 
@@ -462,7 +488,11 @@ private async Task AgregarMateria()
         mensaje = "El precio no puede ser negativo.";
         return;
     }
-
+//     if (precioMateria > 5000)
+// {
+//     mensaje = "El precio por hora no puede superar los $5.000";
+//     return;
+// }
     try
     {
         var token = await JS.InvokeAsync<string>(
@@ -509,6 +539,46 @@ private async Task AgregarMateria()
     catch (Exception)
     {
         mensaje = "Ocurrió un error al agregar la materia.";
+    }
+}
+
+private async Task EliminarMateria(MateriaDocenteRespuesta materia)
+{
+    try
+    {
+        var token = await JS.InvokeAsync<string>(
+            "localStorage.getItem", "token");
+
+        if (string.IsNullOrEmpty(token))
+        {
+            mensaje = "Tenés que iniciar sesión nuevamente.";
+            return;
+        }
+
+        var nivel = Uri.EscapeDataString(materia.Nivel);
+        using var request = new HttpRequestMessage(
+            HttpMethod.Delete,
+            $"api/Docente/perfil/materias/{materia.MateriaId}?nivel={nivel}");
+
+        request.Headers.Authorization =
+            new AuthenticationHeaderValue("Bearer", token);
+
+        var respuesta = await Http.SendAsync(request);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            mensaje = "✅ Materia eliminada correctamente.";
+            await CargarMaterias();
+        }
+        else
+        {
+            var detalle = await respuesta.Content.ReadAsStringAsync();
+            mensaje = $"No se pudo eliminar la materia: {detalle}";
+        }
+    }
+    catch (Exception)
+    {
+        mensaje = "Ocurrió un error al eliminar la materia.";
     }
 }
 
