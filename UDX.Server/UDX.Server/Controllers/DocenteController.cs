@@ -496,8 +496,8 @@ public class DocenteController : ControllerBase
         await _context.SaveChangesAsync();
 
         return Ok("Cuenta eliminada correctamente.");
-    }
-}
+    
+
 
     }
 }

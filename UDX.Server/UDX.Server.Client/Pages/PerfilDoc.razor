@@ -102,7 +102,7 @@ else
                             </div>
                         </div>
 
-                        <!-- CREDENCIALES Y PRECIO -->
+                        <!-- CREDENCIALES-->
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Credenciales</label>
@@ -111,12 +111,6 @@ else
                                        @bind="credenciales" />
                             </div>
 
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Precio por hora</label>
-                                <input type="number"
-                                       class="form-control"
-                                       @bind="precioPorHora" />
-                            </div>
                         </div>
 
                         <!-- DISPONIBILIDAD -->
@@ -177,12 +171,7 @@ else
                             </div>
                         </div>
 
-                        @if (!string.IsNullOrEmpty(mensaje))
-                        {
-                            <div class="alert @(guardadoCorrectamente ? "alert-success" : "alert-danger") mt-3">
-                                @mensaje
-                            </div>
-                        }
+                        
 
                         <!-- ELIMINAR CUENTA -->
                         <hr />
@@ -294,11 +283,25 @@ else
             </button>
 
             @if (!string.IsNullOrEmpty(mensaje))
-            {
-                <div class="alert alert-info mt-3" role="alert">
-                    @mensaje
-                </div>
-            }
+{
+    
+@if (!string.IsNullOrEmpty(mensaje))
+{
+    @if (guardadoCorrectamente)
+    {
+        <div class="alert alert-success mt-3">
+            @mensaje
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-danger mt-3">
+            @mensaje
+        </div>
+    }
+}
+
+}
         }
     </div>
 }
@@ -802,7 +805,7 @@ else
 
         if (string.IsNullOrWhiteSpace(nivelMateria))
         {
-            mensaje = "Indicá el grado/año.";
+            mensaje = "Indicá el grado.";
             return;
         }
 
@@ -811,7 +814,11 @@ else
             mensaje = "El precio no puede ser negativo.";
             return;
         }
-
+        if (precioMateria == 0)
+        {
+            mensaje = "Indicá un precio.";
+            return;
+        }
         try
         {
             var token = await JS.InvokeAsync<string>(
@@ -843,6 +850,7 @@ else
 
             if (respuesta.IsSuccessStatusCode)
             {
+                guardadoCorrectamente = true;
                 mensaje = "✅ Materia agregada correctamente.";
                 materiaIdSeleccionada = 0;
                 nivelMateria = "";
@@ -853,6 +861,7 @@ else
             else
             {
                 var detalle = await respuesta.Content.ReadAsStringAsync();
+                guardadoCorrectamente = false;
                 mensaje = $"No se pudo agregar la materia: {detalle}";
             }
         }
@@ -863,45 +872,51 @@ else
     }
 
     // ELIMINAR MATERIA
-    private async Task EliminarMateria(MateriaDocenteRespuesta materia)
+    
+private async Task EliminarMateria(MateriaDocenteRespuesta materia)
+{
+    try
     {
-        try
+        var token = await JS.InvokeAsync<string>(
+            "localStorage.getItem", "token");
+
+        if (string.IsNullOrEmpty(token))
         {
-            var token = await JS.InvokeAsync<string>(
-                "localStorage.getItem", "token");
-
-            if (string.IsNullOrEmpty(token))
-            {
-                mensaje = "Tenés que iniciar sesión nuevamente.";
-                return;
-            }
-
-            var nivel = Uri.EscapeDataString(materia.Nivel);
-
-            using var request = new HttpRequestMessage(
-                HttpMethod.Delete,
-                $"api/Docente/perfil/materias/{materia.MateriaId}?nivel={nivel}");
-
-            request.Headers.Authorization =
-                new AuthenticationHeaderValue("Bearer", token);
-
-            var respuesta = await Http.SendAsync(request);
-
-            if (respuesta.IsSuccessStatusCode)
-            {
-                mensaje = "✅ Materia eliminada correctamente.";
-                await CargarMaterias();
-            }
-            else
-            {
-                var detalle = await respuesta.Content.ReadAsStringAsync();
-                mensaje = $"No se pudo eliminar la materia: {detalle}";
-            }
+            guardadoCorrectamente = false;
+            mensaje = "Tenés que iniciar sesión nuevamente.";
+            return;
         }
-        catch (Exception)
+
+        var nivel = Uri.EscapeDataString(materia.Nivel);
+
+        using var request = new HttpRequestMessage(
+            HttpMethod.Delete,
+            $"api/Docente/perfil/materias/{materia.MateriaId}?nivel={nivel}");
+
+        request.Headers.Authorization =
+            new AuthenticationHeaderValue("Bearer", token);
+
+        var respuesta = await Http.SendAsync(request);
+
+        if (respuesta.IsSuccessStatusCode)
         {
-            mensaje = "Ocurrió un error al eliminar la materia.";
+            guardadoCorrectamente = true;
+            mensaje = "✅ Materia eliminada correctamente.";
+            await CargarMaterias();
+        }
+        else
+        {
+            guardadoCorrectamente = false;
+            var detalle = await respuesta.Content.ReadAsStringAsync();
+            mensaje = $"No se pudo eliminar la materia: {detalle}";
         }
     }
+    catch (Exception)
+    {
+        guardadoCorrectamente = false;
+        mensaje = "Ocurrió un error al eliminar la materia.";
+    }
+}
+
 }
 
