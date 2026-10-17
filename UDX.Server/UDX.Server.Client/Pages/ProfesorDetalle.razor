@@ -1,0 +1,169 @@
+﻿@page "/profesores/{Id:int}"
+@using System.Net.Http.Json
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<PageTitle>Perfil del docente</PageTitle>
+
+<div class="container mt-4">
+    @if (cargando)
+    {
+        <p>Cargando perfil del docente...</p>
+    }
+    else if (!string.IsNullOrEmpty(error))
+    {
+        <div class="alert alert-danger">
+            @error
+        </div>
+    }
+    else if (docente != null)
+    {
+        <div class="card p-4">
+            <div class="text-center">
+                @if (!string.IsNullOrEmpty(docente.Foto))
+                {
+                    <img src="@docente.Foto"
+                         alt="@docente.Nombre"
+                         class="rounded-circle mb-3"
+                         style="width: 150px; height: 150px; object-fit: cover;" />
+                }
+
+                <h1>@docente.Nombre</h1>
+
+                @if (docente.Verificado)
+                {
+                    <span class="badge bg-success">Docente verificado</span>
+                }
+
+                <p class="mt-3">
+                    <strong>Zona:</strong>
+                    @(string.IsNullOrWhiteSpace(docente.Location)
+                        ? "No especificada"
+                        : docente.Location)
+                </p>
+
+                <p>
+                    <strong>Modalidad / disponibilidad:</strong>
+                    @(string.IsNullOrWhiteSpace(docente.Availability)
+                        ? "Consultar disponibilidad"
+                        : docente.Availability)
+                </p>
+
+                <p>
+                    <strong>Calificación:</strong>
+                    @docente.RatingAvg / 5
+                    (@docente.RatingCount reseñas)
+                </p>
+            </div>
+
+            <hr />
+
+            <h3>Materias que enseña</h3>
+
+            @if (docente.Materias == null || !docente.Materias.Any())
+            {
+                <p>Este docente todavía no tiene materias registradas.</p>
+            }
+            else
+            {
+                <ul>
+                    @foreach (var materia in docente.Materias)
+                    {
+                        <li>
+                            <strong>@materia.Name</strong>
+
+                            @if (!string.IsNullOrWhiteSpace(materia.Grade))
+                            {
+                                <span> · @materia.Grade° grado</span>
+                            }
+
+                            <span> · $@materia.HourlyRate por hora</span>
+                        </li>
+                    }
+                </ul>
+            }
+
+            <div class="text-center mt-4">
+                <button class="btn btn-primary"
+                        @onclick="ContratarClase">
+                    Contratar clase
+                </button>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private DocenteDetalle? docente;
+    private bool cargando = true;
+    private string error = "";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        cargando = true;
+        error = "";
+        docente = null;
+
+        try
+        {
+            using var respuesta = await Http.GetAsync($"api/Docente/{Id}");
+
+            if (respuesta.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                error = "No se encontró el docente.";
+                return;
+            }
+
+            respuesta.EnsureSuccessStatusCode();
+            docente = await respuesta.Content.ReadFromJsonAsync<DocenteDetalle>();
+
+            if (docente == null)
+            {
+                error = "No se encontró el docente.";
+            }
+        }
+        catch (HttpRequestException)
+        {
+            error = "No se pudo consultar el docente.";
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            error = "La respuesta del servidor no tiene el formato esperado.";
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private void ContratarClase()
+    {
+        // La contratación se conectará cuando definamos su flujo.
+        error = "La contratación todavía no está implementada.";
+    }
+
+    public class DocenteDetalle
+    {
+        public int Id { get; set; }
+        public string? Nombre { get; set; }
+        public string? Location { get; set; }
+        public float RatingAvg { get; set; }
+        public int RatingCount { get; set; }
+        public bool Verificado { get; set; }
+        public string? Availability { get; set; }
+        public string? Foto { get; set; }
+        public List<MateriaDetalle> Materias { get; set; } = new();
+    }
+
+    public class MateriaDetalle
+    {
+        public string? Name { get; set; }
+        public string? Grade { get; set; }
+        public string? Category { get; set; }
+        public string? Level { get; set; }
+        public decimal HourlyRate { get; set; }
+    }
+}
