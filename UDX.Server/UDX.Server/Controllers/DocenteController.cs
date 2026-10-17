@@ -120,7 +120,8 @@ public class DocenteController : ControllerBase
             .Include(p => p.User)
             .Include(p => p.DocentesMaterias)
                 .ThenInclude(dm => dm.Materia)
-            .Include(p => p.Academy)
+            .Include(p => p.DocentesAcademias)
+                .ThenInclude(da => da.Academy)
             .FirstOrDefaultAsync(p => p.Id == id);
 
         if (perfil == null)
@@ -139,7 +140,14 @@ public class DocenteController : ControllerBase
             RatingCount = perfil.RatinCount,
             Verified = perfil.Verified,
             Availability = perfil.Availability,
-            Academy = perfil.Academy?.Name,
+            // Solo academias oficiales: la personal nunca se muestra
+            Academias = perfil.DocentesAcademias?
+                .Where(da => da.Academy != null && !da.Academy.IsPersonal)
+                .Select(da => new AcademiaResumenDTO
+                {
+                    Id = da.Academy.Id,
+                    Name = da.Academy.Name
+                }).ToList() ?? new List<AcademiaResumenDTO>(),
             Materias = perfil.DocentesMaterias?
                 .Select(dm => new MateriaDetalleDTO
                 {
@@ -326,16 +334,25 @@ public class DocenteController : ControllerBase
 
         if (perfil != null)
         {
+            var membresias = await _context.DocentesAcademias
+                .Where(da => da.TeacherId == perfil.Id)
+                .ToListAsync();
+
+            _context.DocentesAcademias.RemoveRange(membresias);
             _context.PerfilesDocentes.Remove(perfil);
         }
 
+        // Solo se borra la academia personal; las oficiales que creó quedan sin creador
         var academias = await _context.Academias
             .Where(a => a.TeacherId == userId)
             .ToListAsync();
 
-        if (academias.Any())
+        foreach (var academia in academias)
         {
-            _context.Academias.RemoveRange(academias);
+            if (academia.IsPersonal)
+                _context.Academias.Remove(academia);
+            else
+                academia.TeacherId = null;
         }
 
         _context.Usuarios.Remove(usuario);

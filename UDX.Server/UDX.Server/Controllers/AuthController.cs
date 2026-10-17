@@ -54,7 +54,8 @@ namespace UDX.Server.Controllers
                     var academia = _context.Academias
                         .FirstOrDefault(a => a.Code.ToUpper() == dto.AcademyCode.ToUpper());
 
-                    if (academia == null)
+                    // Mismo mensaje si no existe o si es personal: nadie se une a una academia personal
+                    if (academia == null || academia.IsPersonal)
                         return BadRequest("Código de academia no válido.");
 
                     academiaId = academia.Id;
@@ -75,25 +76,22 @@ namespace UDX.Server.Controllers
             _context.Usuarios.Add(usuario);
             _context.SaveChanges();
 
-            // Step 3: Create academy + perfil for TEACHER
+            // Step 3: Create personal academy + perfil + memberships for TEACHER
             if (role == Usuario.Rol.TEACHER)
             {
-                // If no academy code, create new academy with real TeacherId
-                if (!academiaId.HasValue)
+                // Every teacher always gets a personal (hidden) academy
+                var academiaPersonal = new Academia
                 {
-                    var nuevaAcademia = new Academia
-                    {
-                        Name = $"{dto.Name} Academy",
-                        Description = "",
-                        Code = GenerateAcademyCode(),
-                        CreatedAt = DateTime.UtcNow,
-                        TeacherId = usuario.Id
-                    };
+                    Name = $"{dto.Name} Academy",
+                    Description = "",
+                    Code = GenerateAcademyCode(),
+                    CreatedAt = DateTime.UtcNow,
+                    TeacherId = usuario.Id,
+                    IsPersonal = true
+                };
 
-                    _context.Academias.Add(nuevaAcademia);
-                    _context.SaveChanges();
-                    academiaId = nuevaAcademia.Id;
-                }
+                _context.Academias.Add(academiaPersonal);
+                _context.SaveChanges();
 
                 PerfilDocente perfil = new PerfilDocente
                 {
@@ -105,11 +103,32 @@ namespace UDX.Server.Controllers
                     RatinCount = 0,
                     Availability = "",
                     Verified = false,
-                    ProfileImage = "",
-                    AcademyId = academiaId.Value
+                    ProfileImage = ""
                 };
 
                 _context.PerfilesDocentes.Add(perfil);
+                _context.SaveChanges();
+
+                _context.DocentesAcademias.Add(new DocenteAcademia
+                {
+                    TeacherId = perfil.Id,
+                    AcademyId = academiaPersonal.Id,
+                    Role = DocenteAcademia.AcademyRole.DOCENTE,
+                    JoinedAt = DateTime.UtcNow
+                });
+
+                // If a valid official academy code was provided, join it too
+                if (academiaId.HasValue)
+                {
+                    _context.DocentesAcademias.Add(new DocenteAcademia
+                    {
+                        TeacherId = perfil.Id,
+                        AcademyId = academiaId.Value,
+                        Role = DocenteAcademia.AcademyRole.DOCENTE,
+                        JoinedAt = DateTime.UtcNow
+                    });
+                }
+
                 _context.SaveChanges();
             }
             else if (usuario.Role == Usuario.Rol.PARENT)

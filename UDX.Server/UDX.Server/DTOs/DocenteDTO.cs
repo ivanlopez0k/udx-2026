@@ -34,8 +34,14 @@
         public int RatingCount { get; set; }
         public bool Verified { get; set; }
         public string Availability { get; set; }
-        public string Academy { get; set; }
+        public List<AcademiaResumenDTO> Academias { get; set; }
         public List<MateriaDetalleDTO> Materias { get; set; }
+    }
+
+    public class AcademiaResumenDTO
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
     }
 
     public class MateriaDetalleDTO

@@ -41,11 +41,23 @@ namespace UDX.BD.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Email")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsPersonal")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Location")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("TeacherId")
+                    b.Property<string>("Phone")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("TeacherId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
@@ -149,6 +161,36 @@ namespace UDX.BD.Migrations
                     b.HasIndex("TeacherId");
 
                     b.ToTable("Contenidos");
+                });
+
+            modelBuilder.Entity("UDX.BD.Datos.Entity.DocenteAcademia", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AcademyId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("JoinedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Role")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TeacherId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AcademyId");
+
+                    b.HasIndex("TeacherId", "AcademyId")
+                        .IsUnique();
+
+                    b.ToTable("DocentesAcademias");
                 });
 
             modelBuilder.Entity("UDX.BD.Datos.Entity.DocenteMateria", b =>
@@ -315,9 +357,6 @@ namespace UDX.BD.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("AcademyId")
-                        .HasColumnType("int");
-
                     b.Property<string>("Availability")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -349,8 +388,6 @@ namespace UDX.BD.Migrations
                         .HasColumnType("bit");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("AcademyId");
 
                     b.HasIndex("UserId");
 
@@ -518,8 +555,7 @@ namespace UDX.BD.Migrations
                     b.HasOne("UDX.BD.Datos.Entity.Usuario", "Teacher")
                         .WithMany()
                         .HasForeignKey("TeacherId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.Navigation("Teacher");
                 });
@@ -594,6 +630,25 @@ namespace UDX.BD.Migrations
                     b.Navigation("Teacher");
                 });
 
+            modelBuilder.Entity("UDX.BD.Datos.Entity.DocenteAcademia", b =>
+                {
+                    b.HasOne("UDX.BD.Datos.Entity.Academia", "Academy")
+                        .WithMany("Members")
+                        .HasForeignKey("AcademyId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("UDX.BD.Datos.Entity.PerfilDocente", "Teacher")
+                        .WithMany("DocentesAcademias")
+                        .HasForeignKey("TeacherId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Academy");
+
+                    b.Navigation("Teacher");
+                });
+
             modelBuilder.Entity("UDX.BD.Datos.Entity.DocenteMateria", b =>
                 {
                     b.HasOne("UDX.BD.Datos.Entity.Materia", "Materia")
@@ -664,19 +719,11 @@ namespace UDX.BD.Migrations
 
             modelBuilder.Entity("UDX.BD.Datos.Entity.PerfilDocente", b =>
                 {
-                    b.HasOne("UDX.BD.Datos.Entity.Academia", "Academy")
-                        .WithMany()
-                        .HasForeignKey("AcademyId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
                     b.HasOne("UDX.BD.Datos.Entity.Usuario", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
-
-                    b.Navigation("Academy");
 
                     b.Navigation("User");
                 });
@@ -754,8 +801,15 @@ namespace UDX.BD.Migrations
                     b.Navigation("Parent");
                 });
 
+            modelBuilder.Entity("UDX.BD.Datos.Entity.Academia", b =>
+                {
+                    b.Navigation("Members");
+                });
+
             modelBuilder.Entity("UDX.BD.Datos.Entity.PerfilDocente", b =>
                 {
+                    b.Navigation("DocentesAcademias");
+
                     b.Navigation("DocentesMaterias");
                 });
 #pragma warning restore 612, 618

@@ -12,6 +12,7 @@ namespace UDX.BD.Datos
         public DbSet<ClaseAgendada> ClasesAgendadas { get; set; }
         public DbSet<Contenido> Contenidos { get; set; }
         public DbSet<DocenteMateria> DocentesMaterias { get; set; }
+        public DbSet<DocenteAcademia> DocentesAcademias { get; set; }
         public DbSet<Hijo> Hijos { get; set; }
         public DbSet<Materia> Materias { get; set; }
         public DbSet<Mensaje> Mensajes { get; set; }
@@ -37,6 +38,19 @@ namespace UDX.BD.Datos
                 .HasOne(r => r.Teacher)
                 .WithMany()
                 .HasForeignKey(r => r.TeacherId);
+
+            modelBuilder.Entity<DocenteAcademia>(entity =>
+            {
+                entity.HasOne(da => da.Teacher)
+                    .WithMany(p => p.DocentesAcademias)
+                    .HasForeignKey(da => da.TeacherId);
+
+                entity.HasOne(da => da.Academy)
+                    .WithMany(a => a.Members)
+                    .HasForeignKey(da => da.AcademyId);
+
+                entity.HasIndex(da => new { da.TeacherId, da.AcademyId }).IsUnique();
+            });
 
             foreach (var foreignKey in modelBuilder.Model
               .GetEntityTypes()

@@ -10,8 +10,15 @@ namespace UDX.BD.Datos.Entity
         public string Description { get; set; }
         public string Code { get; set; }
         public DateTime CreatedAt { get; set; }
+        public bool IsPersonal { get; set; }
+        public string? Location { get; set; }
+        public string? Phone { get; set; }
+        public string? Email { get; set; }
 
-        public int TeacherId { get; set; }
-        public Usuario Teacher { get; set; }
+        // Usuario que creó la academia. No otorga permisos (ver DocenteAcademia.Role).
+        public int? TeacherId { get; set; }
+        public Usuario? Teacher { get; set; }
+
+        public ICollection<DocenteAcademia> Members { get; set; }
     }
 }
