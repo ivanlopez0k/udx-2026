@@ -15,7 +15,7 @@ namespace UDX.BD.Datos
                 profesor = new Usuario
                 {
                     Email = "profesor@test.com",
-                    Password = "123456",
+                    Password = BCrypt.Net.BCrypt.HashPassword("123456"),
                     Role = Usuario.Rol.TEACHER,
                     Name = "Profesor de Prueba",
                     Phone = "3511234567",
@@ -23,6 +23,28 @@ namespace UDX.BD.Datos
                 };
 
                 context.Usuarios.Add(profesor);
+                context.SaveChanges();
+            }
+            else if (!profesor.Password.StartsWith("$2"))
+            {
+                profesor.Password = BCrypt.Net.BCrypt.HashPassword("123456");
+                context.SaveChanges();
+            }
+            var academia = context.Academias
+                .FirstOrDefault(a => a.Name == "Academia de Prueba");
+
+            if (academia == null)
+            {
+                academia = new Academia
+                {
+                    Name = "Academia de Prueba",
+                    Description = "Academia creada para realizar pruebas",
+                    Code = "SEED0001",
+                    CreatedAt = DateTime.Now,
+                    TeacherId = profesor.Id
+                };
+
+                context.Academias.Add(academia);
                 context.SaveChanges();
             }
 
@@ -34,13 +56,15 @@ namespace UDX.BD.Datos
                 perfilDocente = new PerfilDocente
                 {
                     UserId = profesor.Id,
+                    AcademyId = academia.Id,
                     Credentials = "",
                     HourlyRate = 0,
                     Location = "",
                     RatingAvg = 0,
                     RatinCount = 0,
                     Availability = "",
-                    Verified = false
+                    Verified = false,
+                    ProfileImage = ""
                 };
 
                 context.PerfilesDocentes.Add(perfilDocente);
@@ -79,15 +103,19 @@ namespace UDX.BD.Datos
                 context.DocentesMaterias.Add(docenteMateria);
                 context.SaveChanges();
             }
+            
+
             var padre = context.Usuarios
                 .FirstOrDefault(u => u.Email == "padre@test.com");
+
+            
 
             if (padre == null)
             {
                 padre = new Usuario
                 {
                     Email = "padre@test.com",
-                    Password = "123456",
+                    Password = BCrypt.Net.BCrypt.HashPassword("123456"),
                     Role = Usuario.Rol.PARENT,
                     Name = "Padre de Prueba",
                     Phone = "3517654321",
@@ -97,23 +125,12 @@ namespace UDX.BD.Datos
                 context.Usuarios.Add(padre);
                 context.SaveChanges();
             }
-
-            var academia = context.Academias
-                .FirstOrDefault(a => a.Name == "Academia de Prueba");
-
-            if (academia == null)
+            else if (!padre.Password.StartsWith("$2"))
             {
-                academia = new Academia
-                {
-                    Name = "Academia de Prueba",
-                    Description = "Academia creada para realizar pruebas",
-                    CreatedAt = DateTime.Now,
-                    TeacherId = profesor.Id
-                };
-
-                context.Academias.Add(academia);
+                padre.Password = BCrypt.Net.BCrypt.HashPassword("123456");
                 context.SaveChanges();
             }
+
         }
     }
 }

@@ -1,56 +1,131 @@
-﻿<div class="modal fade" id="loginModal" tabindex="-1">
+@using UDX.Shared.DTOs
+@using System.Net.Http.Json
+@inject HttpClient Http
+@inject IJSRuntime JS
+
+<div class="modal fade" id="loginModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
 
             <div class="modal-header">
-                <h5 class="modal-title">Iniciar sesión</h5>
 
                 <button type="button"
                         class="btn-close"
                         data-bs-dismiss="modal">
                 </button>
+
             </div>
 
-            <div class="modal-body">
+            <EditForm Model="this" OnValidSubmit="IniciarSesion">
 
-                <div class="mb-3">
-                    <label class="form-label">
-                        Usuario
-                    </label>
+                <div class="modal-body">
 
-                    <input type="text"
-                           class="form-control"
-                           placeholder="Ingrese su usuario" />
+                    @if (!string.IsNullOrEmpty(mensaje))
+                    {
+                        <div class="alert alert-danger">
+                            @mensaje
+                        </div>
+                    }
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            Email
+                        </label>
+
+                        <input type="email"
+                               class="form-control"
+                               placeholder="Ingrese su email"
+                               @bind="email" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            Contraseña
+                        </label>
+
+                        <input type="password"
+                               class="form-control"
+                               placeholder="Ingrese su contraseña"
+                               @bind="password" />
+                    </div>
+
                 </div>
 
-                <div class="mb-3">
-                    <label class="form-label">
-                        Contraseña
-                    </label>
+                <div class="modal-footer">
 
-                    <input type="password"
-                           class="form-control"
-                           placeholder="Ingrese su contraseña" />
+                    <button type="submit"
+                            class="btn btn-primary">
+                        Iniciar Sesion
+                    </button>
+
                 </div>
 
-            </div>
-
-            <div class="modal-footer">
-
-                <button type="button"
-                        class="btn btn-secondary"
-                        data-bs-dismiss="modal">
-                    Cancelar
-                </button>
-
-                <button type="button"
-                        class="btn btn-primary">
-                    Login
-                </button>
-
-            </div>
+            </EditForm>
 
         </div>
     </div>
 </div>
 
+@code
+{
+    private string email = "";
+    private string password = "";
+    private string mensaje = "";
+
+    private async Task IniciarSesion()
+    {
+        mensaje = "";
+
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            mensaje = "El email es obligatorio.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(password))
+        {
+            mensaje = "La contraseña es obligatoria.";
+            return;
+        }
+
+        var datos = new
+        {
+            Email = email,
+            Password = password
+        };
+
+        var respuesta = await Http.PostAsJsonAsync(
+            "api/Auth/login",
+            datos);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            var resultado = await respuesta.Content
+                .ReadFromJsonAsync<LoginResponseDTO>();
+
+            if (resultado != null)
+            {
+                await JS.InvokeVoidAsync(
+                    "localStorage.setItem",
+                    "token",
+                    resultado.Token);
+
+                LimpiarFormulario();
+
+                await JS.InvokeVoidAsync(
+                    "cerrarLoginModal");
+            }
+        }
+        else
+        {
+            mensaje = await respuesta.Content.ReadAsStringAsync();
+        }
+    }
+
+    private void LimpiarFormulario()
+    {
+        email = "";
+        password = "";
+        mensaje = "";
+    }
+}

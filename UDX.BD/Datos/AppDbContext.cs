@@ -51,6 +51,8 @@ namespace UDX.BD.Datos
                 entity.Property(m => m.Grade).HasMaxLength(200);
                 entity.HasIndex(m => new { m.Name, m.Grade }).IsUnique();
             });
+
+            modelBuilder.Entity<Academia>().HasIndex(a => a.Code).IsUnique();
         }
 
 

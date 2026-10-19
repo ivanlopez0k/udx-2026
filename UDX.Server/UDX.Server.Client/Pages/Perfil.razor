@@ -1,5 +1,42 @@
-﻿<h3>MiPerfil</h3>
+﻿@page "/perfil"
 
-@code {
+@inject IJSRuntime JS
+@inject NavigationManager Navigation
 
+<p>Cargando...</p>
+
+@code
+{
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+
+        var token = await JS.InvokeAsync<string>(
+            "localStorage.getItem",
+            "token");
+
+        var role = await JS.InvokeAsync<string>(
+            "localStorage.getItem",
+            "role");
+
+        if (string.IsNullOrEmpty(token))
+        {
+            Navigation.NavigateTo("/");
+            return;
+        }
+
+        if (role == "0")
+        {
+            Navigation.NavigateTo("/perfil-padre");
+        }
+        else if (role == "1")
+        {
+            Navigation.NavigateTo("/perfil-doc");
+        }
+        else
+        {
+            Navigation.NavigateTo("/");
+        }
+    }
 }

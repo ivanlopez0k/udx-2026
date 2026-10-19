@@ -1,4 +1,8 @@
-﻿<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+﻿@implements IDisposable
+@inject IJSRuntime JS
+@inject NavigationManager Navigation
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container-fluid">
 
         <a class="navbar-brand" href="#">
@@ -19,23 +23,41 @@
         <div class="collapse navbar-collapse" id="navbarContenido">
 
             <ul class="navbar-nav d-flex flex-column flex-lg-row
-                align-items-center align-items-lg-start gap-2">
+                       align-items-center align-items-lg-start gap-2">
 
-                <li class="nav-item">
-                    <button class="btn btn-success btn-login"
-                            data-bs-toggle="modal"
-                            data-bs-target="#loginModal">
-                        Iniciar sesión
-                    </button>
-                </li>
+                @if (!estaLogueado)
+                {
+                    <li class="nav-item">
+                        <button class="btn btn-success btn-login"
+                                data-bs-toggle="modal"
+                                data-bs-target="#loginModal">
+                            Iniciar sesión
+                        </button>
+                    </li>
 
-                <li class="nav-item">
-                    <button class="btn btn-primary"
-                            data-bs-toggle="modal"
-                            data-bs-target="#registerModal">
-                        Registrarse
-                    </button>
-                </li>
+                    <li class="nav-item">
+                        <button class="btn btn-primary"
+                                data-bs-toggle="modal"
+                                data-bs-target="#registerModal">
+                            Registrarse
+                        </button>
+                    </li>
+                }
+               else
+{
+    <li class="nav-item">
+        <a class="nav-link" href="/perfil">
+            @nombreUsuario
+        </a>
+    </li>
+
+    <li class="nav-item">
+        <button class="btn btn-danger"
+                @onclick="CerrarSesion">
+            Cerrar sesión
+        </button>
+    </li>
+}
 
             </ul>
 
@@ -44,3 +66,64 @@
     </div>
 </nav>
 
+@code {
+    private bool estaLogueado = false;
+    private string nombreUsuario = "";
+
+    protected override void OnInitialized()
+    {
+        Navigation.LocationChanged += AlCambiarPagina;
+    }
+
+    private async void AlCambiarPagina(object? sender, LocationChangedEventArgs e)
+    {
+        var token = await JS.InvokeAsync<string>(
+            "localStorage.getItem",
+            "token");
+
+        estaLogueado = !string.IsNullOrEmpty(token);
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var token = await JS.InvokeAsync<string>(
+                "localStorage.getItem",
+                "token");
+
+                nombreUsuario = await JS.InvokeAsync<string>(
+    "localStorage.getItem",
+    "name") ?? "";
+            estaLogueado = !string.IsNullOrEmpty(token);
+
+            StateHasChanged();
+        }
+    }
+
+    public void Dispose()
+    {
+        Navigation.LocationChanged -= AlCambiarPagina;
+    }
+
+   private async Task CerrarSesion()
+{
+    await JS.InvokeVoidAsync(
+        "localStorage.removeItem",
+        "token");
+
+    await JS.InvokeVoidAsync(
+        "localStorage.removeItem",
+        "role");
+
+await JS.InvokeVoidAsync(
+    "localStorage.removeItem",
+    "name");
+
+    estaLogueado = false;
+
+    Navigation.NavigateTo("/");
+}
+}}

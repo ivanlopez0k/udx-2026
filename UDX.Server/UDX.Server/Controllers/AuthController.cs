@@ -1,13 +1,14 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
+using System.Security.Claims;
+using System.Text;
 using UDX.BD.Datos;
 using UDX.BD.Datos.Entity;
 using UDX.Server.DTOs;
-using System.Linq;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
-using Microsoft.AspNetCore.Authorization;
 
 namespace UDX.Server.Controllers
 {
@@ -29,8 +30,10 @@ namespace UDX.Server.Controllers
         [HttpPost("register")]
         public IActionResult Register(RegisterDTO dto)
         {
+            var email = dto.Email.Trim().ToLower();
+
             bool existe = _context.Usuarios
-                .Any(u => u.Email == dto.Email);
+                .Any(u => u.Email.ToLower() == email);
 
             if (existe)
             {
@@ -41,10 +44,28 @@ namespace UDX.Server.Controllers
                 ? dto.Role
                 : Usuario.Rol.PARENT;
 
+            // Step 1: Validate academy code BEFORE saving anything
+            int? academiaId = null;
+
+            if (role == Usuario.Rol.TEACHER)
+            {
+                if (!string.IsNullOrEmpty(dto.AcademyCode))
+                {
+                    var academia = _context.Academias
+                        .FirstOrDefault(a => a.Code.ToUpper() == dto.AcademyCode.ToUpper());
+
+                    if (academia == null)
+                        return BadRequest("Código de academia no válido.");
+
+                    academiaId = academia.Id;
+                }
+            }
+
+            // Step 2: Save user first (to get Id)
             Usuario usuario = new Usuario
             {
-                Email = dto.Email,
-                Password = dto.Password,
+                Email = email,
+                Password = BCrypt.Net.BCrypt.HashPassword(dto.Password),
                 Name = dto.Name,
                 Phone = dto.Phone,
                 Role = role,
@@ -52,11 +73,28 @@ namespace UDX.Server.Controllers
             };
 
             _context.Usuarios.Add(usuario);
-
             _context.SaveChanges();
 
-            if (usuario.Role == Usuario.Rol.TEACHER)
+            // Step 3: Create academy + perfil for TEACHER
+            if (role == Usuario.Rol.TEACHER)
             {
+                // If no academy code, create new academy with real TeacherId
+                if (!academiaId.HasValue)
+                {
+                    var nuevaAcademia = new Academia
+                    {
+                        Name = $"{dto.Name} Academy",
+                        Description = "",
+                        Code = GenerateAcademyCode(),
+                        CreatedAt = DateTime.UtcNow,
+                        TeacherId = usuario.Id
+                    };
+
+                    _context.Academias.Add(nuevaAcademia);
+                    _context.SaveChanges();
+                    academiaId = nuevaAcademia.Id;
+                }
+
                 PerfilDocente perfil = new PerfilDocente
                 {
                     UserId = usuario.Id,
@@ -66,12 +104,54 @@ namespace UDX.Server.Controllers
                     RatingAvg = 0,
                     RatinCount = 0,
                     Availability = "",
-                    Verified = false
+                    Verified = false,
+                    ProfileImage = "",
+                    AcademyId = academiaId.Value
                 };
 
                 _context.PerfilesDocentes.Add(perfil);
                 _context.SaveChanges();
             }
+            else if (usuario.Role == Usuario.Rol.PARENT)
+            {
+                Hijo hijo = new Hijo
+                {
+                    Name = "",
+                    Grade = "",
+                    ParentId = usuario.Id
+                };
+
+                _context.Hijos.Add(hijo);
+
+                _context.SaveChanges();
+
+                PerfilPadre perfil = new PerfilPadre
+                {
+                    UserId = usuario.Id,
+                    HijoId = hijo.Id,
+                    Location = "",
+                    Verified = false
+                };
+
+                _context.PerfilesPadres.Add(perfil);
+
+                _context.SaveChanges();
+            }
+
+            try
+            {
+                _context.SaveChanges();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(
+                    ex.InnerException?.InnerException?.Message
+                    ?? ex.InnerException?.Message
+                    ?? ex.Message
+                );
+            }
+
+          
 
             return Ok(usuario);
         }
@@ -79,23 +159,39 @@ namespace UDX.Server.Controllers
         [HttpPost("login")]
         public IActionResult Login(LoginDTO dto)
         {
+            
             var usuario = _context.Usuarios
-                .FirstOrDefault(u =>
-                    u.Email == dto.Email &&
-                    u.Password == dto.Password);
+                .FirstOrDefault(u => u.Email == dto.Email);
 
             if (usuario == null)
             {
-                return Unauthorized("Email o contraseña incorrectos.");
+                return Unauthorized("No existe una cuenta con ese email.");
+            }
+
+            bool passwordValida;
+            try
+            {
+                passwordValida = BCrypt.Net.BCrypt.Verify(dto.Password, usuario.Password);
+            }
+            catch (BCrypt.Net.SaltParseException)
+            {
+                // Contraseña vieja guardada en texto plano (sin hash)
+                passwordValida = false;
+            }
+
+            if (!passwordValida)
+            {
+                return Unauthorized("La contraseña es incorrecta.");
             }
 
             var token = GenerateToken(usuario);
-
+            
             return Ok(new
             {
                 Token = token,
                 usuario.Email,
-                usuario.Role
+                usuario.Role,
+                usuario.Name
             });
         }
 
@@ -115,6 +211,14 @@ namespace UDX.Server.Controllers
                 c.Type,
                 c.Value
             }));
+        }
+
+        private string GenerateAcademyCode()
+        {
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+            var random = new Random();
+            return new string(Enumerable.Range(0, 8)
+                .Select(_ => chars[random.Next(chars.Length)]).ToArray());
         }
 
         private string GenerateToken(Usuario usuario)

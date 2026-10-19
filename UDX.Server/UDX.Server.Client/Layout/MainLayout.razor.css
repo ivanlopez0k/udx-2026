@@ -1,10 +1,10 @@
-.page {
-    position: relative;
+.layout-page  {
+    min-height: 100vh;
     display: flex;
-    /*flex-direction: column;*/
+    flex-direction: column;
 }
 
-main {
+.main-content {
     flex: 1;
 }
 
