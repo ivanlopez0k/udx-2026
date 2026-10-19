@@ -40,30 +40,31 @@ namespace UDX.Server.Controllers
                 return BadRequest("Ya existe un usuario con ese email.");
             }
 
-            var role = dto.Role == Usuario.Rol.PARENT || dto.Role == Usuario.Rol.TEACHER
+            var role = dto.Role == Usuario.Rol.PARENT ||
+                       dto.Role == Usuario.Rol.TEACHER
                 ? dto.Role
                 : Usuario.Rol.PARENT;
 
-            // Step 1: Validate academy code BEFORE saving anything
             int? academiaId = null;
 
-            if (role == Usuario.Rol.TEACHER)
+            // Validar código de academia para docentes.
+            if (role == Usuario.Rol.TEACHER &&
+                !string.IsNullOrWhiteSpace(dto.AcademyCode))
             {
-                if (!string.IsNullOrEmpty(dto.AcademyCode))
+                var codigo = dto.AcademyCode.Trim().ToUpper();
+
+                var academia = _context.Academias
+                    .FirstOrDefault(a => a.Code.ToUpper() == codigo);
+
+                if (academia == null)
                 {
-                    var academia = _context.Academias
-                        .FirstOrDefault(a => a.Code.ToUpper() == dto.AcademyCode.ToUpper());
-
-                    // Mismo mensaje si no existe o si es personal: nadie se une a una academia personal
-                    if (academia == null || academia.IsPersonal)
-                        return BadRequest("Código de academia no válido.");
-
-                    academiaId = academia.Id;
+                    return BadRequest("Código de academia no válido.");
                 }
+
+                academiaId = academia.Id;
             }
 
-            // Step 2: Save user first (to get Id)
-            Usuario usuario = new Usuario
+            var usuario = new Usuario
             {
                 Email = email,
                 Password = BCrypt.Net.BCrypt.HashPassword(dto.Password),
@@ -76,24 +77,27 @@ namespace UDX.Server.Controllers
             _context.Usuarios.Add(usuario);
             _context.SaveChanges();
 
-            // Step 3: Create personal academy + perfil + memberships for TEACHER
             if (role == Usuario.Rol.TEACHER)
             {
-                // Every teacher always gets a personal (hidden) academy
-                var academiaPersonal = new Academia
+                // Si no ingresó código, crea una academia nueva.
+                if (!academiaId.HasValue)
                 {
-                    Name = $"{dto.Name} Academy",
-                    Description = "",
-                    Code = GenerateAcademyCode(),
-                    CreatedAt = DateTime.UtcNow,
-                    TeacherId = usuario.Id,
-                    IsPersonal = true
-                };
+                    var nuevaAcademia = new Academia
+                    {
+                        Name = $"{dto.Name} Academy",
+                        Description = "",
+                        Code = GenerateAcademyCode(),
+                        CreatedAt = DateTime.UtcNow,
+                        TeacherId = usuario.Id
+                    };
 
-                _context.Academias.Add(academiaPersonal);
-                _context.SaveChanges();
+                    _context.Academias.Add(nuevaAcademia);
+                    _context.SaveChanges();
 
-                PerfilDocente perfil = new PerfilDocente
+                    academiaId = nuevaAcademia.Id;
+                }
+
+                var perfil = new PerfilDocente
                 {
                     UserId = usuario.Id,
                     Credentials = "",
@@ -112,28 +116,14 @@ namespace UDX.Server.Controllers
                 _context.DocentesAcademias.Add(new DocenteAcademia
                 {
                     TeacherId = perfil.Id,
-                    AcademyId = academiaPersonal.Id,
-                    Role = DocenteAcademia.AcademyRole.DOCENTE,
+                    AcademyId = academiaId.Value,
                     JoinedAt = DateTime.UtcNow
                 });
-
-                // If a valid official academy code was provided, join it too
-                if (academiaId.HasValue)
-                {
-                    _context.DocentesAcademias.Add(new DocenteAcademia
-                    {
-                        TeacherId = perfil.Id,
-                        AcademyId = academiaId.Value,
-                        Role = DocenteAcademia.AcademyRole.DOCENTE,
-                        JoinedAt = DateTime.UtcNow
-                    });
-                }
-
                 _context.SaveChanges();
             }
-            else if (usuario.Role == Usuario.Rol.PARENT)
+            else if (role == Usuario.Rol.PARENT)
             {
-                Hijo hijo = new Hijo
+                var hijo = new Hijo
                 {
                     Name = "",
                     Grade = "",
@@ -141,10 +131,9 @@ namespace UDX.Server.Controllers
                 };
 
                 _context.Hijos.Add(hijo);
-
                 _context.SaveChanges();
 
-                PerfilPadre perfil = new PerfilPadre
+                var perfil = new PerfilPadre
                 {
                     UserId = usuario.Id,
                     HijoId = hijo.Id,
@@ -153,24 +142,8 @@ namespace UDX.Server.Controllers
                 };
 
                 _context.PerfilesPadres.Add(perfil);
-
                 _context.SaveChanges();
             }
-
-            try
-            {
-                _context.SaveChanges();
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(
-                    ex.InnerException?.InnerException?.Message
-                    ?? ex.InnerException?.Message
-                    ?? ex.Message
-                );
-            }
-
-          
 
             return Ok(usuario);
         }
@@ -178,9 +151,10 @@ namespace UDX.Server.Controllers
         [HttpPost("login")]
         public IActionResult Login(LoginDTO dto)
         {
-            
+            var email = dto.Email.Trim().ToLower();
+
             var usuario = _context.Usuarios
-                .FirstOrDefault(u => u.Email == dto.Email);
+                .FirstOrDefault(u => u.Email.ToLower() == email);
 
             if (usuario == null)
             {
@@ -188,13 +162,16 @@ namespace UDX.Server.Controllers
             }
 
             bool passwordValida;
+
             try
             {
-                passwordValida = BCrypt.Net.BCrypt.Verify(dto.Password, usuario.Password);
+                passwordValida = BCrypt.Net.BCrypt.Verify(
+                    dto.Password,
+                    usuario.Password);
             }
             catch (BCrypt.Net.SaltParseException)
             {
-                // Contraseña vieja guardada en texto plano (sin hash)
+                // Las contraseñas antiguas en texto plano no se aceptan.
                 passwordValida = false;
             }
 
@@ -204,7 +181,7 @@ namespace UDX.Server.Controllers
             }
 
             var token = GenerateToken(usuario);
-            
+
             return Ok(new
             {
                 Token = token,
@@ -236,44 +213,47 @@ namespace UDX.Server.Controllers
         {
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
             var random = new Random();
-            return new string(Enumerable.Range(0, 8)
-                .Select(_ => chars[random.Next(chars.Length)]).ToArray());
+
+            return new string(
+                Enumerable.Range(0, 8)
+                    .Select(_ => chars[random.Next(chars.Length)])
+                    .ToArray());
         }
 
         private string GenerateToken(Usuario usuario)
         {
             var claims = new[]
             {
-        new Claim(ClaimTypes.NameIdentifier,
-            usuario.Id.ToString()),
+                new Claim(
+                    ClaimTypes.NameIdentifier,
+                    usuario.Id.ToString()),
 
-        new Claim(ClaimTypes.Email,
-            usuario.Email),
+                new Claim(
+                    ClaimTypes.Email,
+                    usuario.Email),
 
-        new Claim(ClaimTypes.Role,
-            usuario.Role.ToString())
-    };
+                new Claim(
+                    ClaimTypes.Role,
+                    usuario.Role.ToString())
+            };
 
             var key = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(
-                    _configuration["Jwt:Key"]));
+                    _configuration["Jwt:Key"]!));
 
-            var credentials =
-                new SigningCredentials(
-                    key,
-                    SecurityAlgorithms.HmacSha256);
+            var credentials = new SigningCredentials(
+                key,
+                SecurityAlgorithms.HmacSha256);
 
-            var token =
-                new JwtSecurityToken(
-                    issuer: _configuration["Jwt:Issuer"],
-                    audience: _configuration["Jwt:Audience"],
-                    claims: claims,
-                    expires: DateTime.Now.AddHours(2),
-                    signingCredentials: credentials);
+            var token = new JwtSecurityToken(
+                issuer: _configuration["Jwt:Issuer"],
+                audience: _configuration["Jwt:Audience"],
+                claims: claims,
+                expires: DateTime.Now.AddHours(2),
+                signingCredentials: credentials);
 
             return new JwtSecurityTokenHandler()
                 .WriteToken(token);
         }
-
     }
 }
