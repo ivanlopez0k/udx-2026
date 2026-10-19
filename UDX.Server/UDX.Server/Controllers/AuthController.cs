@@ -40,28 +40,28 @@ namespace UDX.Server.Controllers
                 return BadRequest("Ya existe un usuario con ese email.");
             }
 
+            // ADMIN no se puede registrar: valores no permitidos o inválidos pasan a PARENT.
             var role = dto.Role == Usuario.Rol.PARENT ||
-                       dto.Role == Usuario.Rol.TEACHER
+                       dto.Role == Usuario.Rol.TEACHER ||
+                       dto.Role == Usuario.Rol.ACADEMY
                 ? dto.Role
                 : Usuario.Rol.PARENT;
 
-            int? academiaId = null;
+            Academia? academiaOficial = null;
 
-            // Validar código de academia para docentes.
+            // Validar código de academia para docentes (nadie se une a una academia personal).
             if (role == Usuario.Rol.TEACHER &&
                 !string.IsNullOrWhiteSpace(dto.AcademyCode))
             {
                 var codigo = dto.AcademyCode.Trim().ToUpper();
 
-                var academia = _context.Academias
-                    .FirstOrDefault(a => a.Code.ToUpper() == codigo);
+                academiaOficial = _context.Academias
+                    .FirstOrDefault(a => a.Code.ToUpper() == codigo && !a.IsPersonal);
 
-                if (academia == null)
+                if (academiaOficial == null)
                 {
                     return BadRequest("Código de academia no válido.");
                 }
-
-                academiaId = academia.Id;
             }
 
             var usuario = new Usuario
@@ -79,23 +79,20 @@ namespace UDX.Server.Controllers
 
             if (role == Usuario.Rol.TEACHER)
             {
-                // Si no ingresó código, crea una academia nueva.
-                if (!academiaId.HasValue)
+                // Todo docente tiene siempre su academia personal.
+                var academiaPersonal = new Academia
                 {
-                    var nuevaAcademia = new Academia
-                    {
-                        Name = $"{dto.Name} Academy",
-                        Description = "",
-                        Code = GenerateAcademyCode(),
-                        CreatedAt = DateTime.UtcNow,
-                        TeacherId = usuario.Id
-                    };
+                    Name = $"{dto.Name} Academy",
+                    Description = "",
+                    Code = GenerateAcademyCode(),
+                    CreatedAt = DateTime.UtcNow,
+                    IsPersonal = true,
+                    IsActive = true,
+                    ResponsableId = usuario.Id
+                };
 
-                    _context.Academias.Add(nuevaAcademia);
-                    _context.SaveChanges();
-
-                    academiaId = nuevaAcademia.Id;
-                }
+                _context.Academias.Add(academiaPersonal);
+                _context.SaveChanges();
 
                 var perfil = new PerfilDocente
                 {
@@ -116,9 +113,47 @@ namespace UDX.Server.Controllers
                 _context.DocentesAcademias.Add(new DocenteAcademia
                 {
                     TeacherId = perfil.Id,
-                    AcademyId = academiaId.Value,
-                    JoinedAt = DateTime.UtcNow
+                    AcademyId = academiaPersonal.Id,
+                    JoinedAt = DateTime.UtcNow,
+                    IsActive = true
                 });
+
+                if (academiaOficial != null)
+                {
+                    _context.DocentesAcademias.Add(new DocenteAcademia
+                    {
+                        TeacherId = perfil.Id,
+                        AcademyId = academiaOficial.Id,
+                        JoinedAt = DateTime.UtcNow,
+                        IsActive = true
+                    });
+
+                    // Si la academia estaba inactiva (sin miembros), se reactiva al entrar alguien.
+                    if (!academiaOficial.IsActive)
+                    {
+                        academiaOficial.IsActive = true;
+                    }
+                }
+
+                _context.SaveChanges();
+            }
+            else if (role == Usuario.Rol.ACADEMY)
+            {
+                // La cuenta ACADEMY es responsable de una academia oficial; no tiene PerfilDocente.
+                var academia = new Academia
+                {
+                    Name = dto.Name,
+                    Description = "",
+                    Code = GenerateAcademyCode(),
+                    CreatedAt = DateTime.UtcNow,
+                    IsPersonal = false,
+                    IsActive = true,
+                    Email = email,
+                    Phone = dto.Phone,
+                    ResponsableId = usuario.Id
+                };
+
+                _context.Academias.Add(academia);
                 _context.SaveChanges();
             }
             else if (role == Usuario.Rol.PARENT)

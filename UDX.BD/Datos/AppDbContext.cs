@@ -52,6 +52,11 @@ namespace UDX.BD.Datos
                 entity.HasIndex(da => new { da.TeacherId, da.AcademyId }).IsUnique();
             });
 
+            modelBuilder.Entity<Academia>()
+                .HasOne(a => a.Responsable)
+                .WithMany()
+                .HasForeignKey(a => a.ResponsableId);
+
             foreach (var foreignKey in modelBuilder.Model
               .GetEntityTypes()
               .SelectMany(e => e.GetForeignKeys()))

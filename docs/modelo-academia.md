@@ -1,172 +1,122 @@
-# Modelo de Academia: docentes en muchas academias
+# Modelo de Academia (definido por el cliente)
 
-Rama: `ModeloAcademia` · Migración: `AcademiaMuchosDocentes`
+Rama: `ModeloAcademia` · Migración: `AcademiaModeloCliente`
 
 ## Resumen
 
-Antes cada `PerfilDocente` pertenecía a **una** academia (`PerfilDocente.AcademyId`, obligatorio).
-Ahora la relación es **muchos a muchos** a través de la tabla `DocentesAcademias`, con un rango por academia.
+Antes cada `PerfilDocente` pertenecía a **una** academia (`PerfilDocente.AcademyId`, obligatorio) y la academia tenía un "creador" (`Academia.TeacherId`).
+Ahora:
 
-- Todo docente tiene siempre **exactamente una academia personal** (`IsPersonal = true`), que no se muestra.
-- Además puede ser miembro de varias academias **oficiales** (`IsPersonal = false`).
+- Un docente puede ser miembro de **muchas** academias a través de la tabla `DocentesAcademias`.
+- Las membresías **no tienen rangos**: no hay director/vicedirector. Cada academia tiene un único **responsable** (`Academia.ResponsableId`), que es quien la gestiona.
+- Todo docente tiene siempre **una academia personal** (`IsPersonal = true`), que no se muestra y en la que nadie más puede entrar.
+- Aparece el rol de usuario `ACADEMY`: una cuenta que representa a una academia oficial.
+- Las academias y las membresías se dan de baja de forma **lógica** (`IsActive` / `LeftAt`).
 - `SolicitudClase.AcademyId` y `ClaseAgendada.AcademyId` **no cambian**.
 
 ```
 Usuario 1 ──── 0..1 PerfilDocente 1 ──── * DocenteAcademia * ──── 1 Academia
-   │                                        (Role, JoinedAt)          │
-   └──────────── 0..* (creador, TeacherId nullable) ──────────────────┘
+   │                                   (JoinedAt, IsActive, LeftAt)  │
+   └────────────── 0..* (responsable, ResponsableId nullable) ───────┘
 ```
+
+## Roles de usuario (`Usuario.Rol`)
+
+Se guarda como `int`, por eso **los valores nuevos se agregan siempre al final**.
+
+| Valor | Rol | Registro público | Qué crea `Register` |
+|---|---|---|---|
+| 0 | `PARENT` | Sí (valor por defecto) | `Hijo` + `PerfilPadre` |
+| 1 | `TEACHER` | Sí | Academia personal + `PerfilDocente` + membresía activa en la personal (y en la oficial si trae código válido) |
+| 2 | `ADMIN` | **No** (si viene, se registra como `PARENT`) | — |
+| 3 | `ACADEMY` | Sí | Academia oficial con el usuario como responsable. No tiene `PerfilDocente` ni membresía |
 
 ## Entidades
 
-### Nueva: `DocenteAcademia` (tabla `DocentesAcademias`)
+### `DocenteAcademia` (tabla `DocentesAcademias`)
 
 | Campo | Tipo C# | SQL | Null | Notas |
 |---|---|---|---|---|
 | Id | int | int identity | No | PK (hereda de `EntityBase`) |
-| TeacherId | int | int | No | FK → `PerfilesDocentes.Id` (mismo nombre que en `DocenteMateria`) |
+| TeacherId | int | int | No | FK → `PerfilesDocentes.Id` |
 | AcademyId | int | int | No | FK → `Academias.Id` |
-| Role | `AcademyRole` | int | No | `DOCENTE = 0`, `VICEDIRECTOR = 1`, `DIRECTOR = 2` |
 | JoinedAt | DateTime | datetime2 | No | Fecha de ingreso (UTC) |
+| IsActive | bool | bit (default 1) | No | `false` = salió o fue removido |
+| LeftAt | DateTime? | datetime2 | Sí | Fecha de salida (UTC) |
 
-- Índice único `(TeacherId, AcademyId)`: un docente no puede estar dos veces en la misma academia.
-- Navegaciones: `PerfilDocente.DocentesAcademias` y `Academia.Members` (configuradas con Fluent API).
-- Las FKs quedan con `DeleteBehavior.NoAction`, como el resto del modelo.
+- Índice único `(TeacherId, AcademyId)`: un docente no puede estar dos veces en la misma academia. Si vuelve, se **reactiva** la fila existente (`IsActive = true`, `LeftAt = null`).
+- Navegaciones: `PerfilDocente.DocentesAcademias` y `Academia.Members` (Fluent API).
 
-### Modificada: `Academia` (tabla `Academias`)
+### `Academia` (tabla `Academias`)
 
-| Campo | Tipo C# | SQL | Null | Cambio |
+| Campo | Tipo C# | SQL | Null | Notas |
 |---|---|---|---|---|
-| Id | int | int | No | sin cambios |
-| Name | string | nvarchar(max) | No | sin cambios |
-| Description | string | nvarchar(max) | No | sin cambios |
-| Code | string | nvarchar(450) | No | sin cambios (índice único) |
-| CreatedAt | DateTime | datetime2 | No | sin cambios |
-| **IsPersonal** | bool | bit | No | **nuevo**, default `0` |
-| **Location** | string? | nvarchar(max) | Sí | **nuevo** (vacío en las personales) |
-| **Phone** | string? | nvarchar(max) | Sí | **nuevo** (vacío en las personales) |
-| **Email** | string? | nvarchar(max) | Sí | **nuevo** (vacío en las personales) |
-| **TeacherId** | int? | int | **Sí** | **antes `int` obligatorio**. Ahora significa "usuario que la creó"; no da permisos; queda `null` si ese usuario se elimina |
-| **Members** | `ICollection<DocenteAcademia>` | — | — | **nuevo** (navegación) |
+| Id | int | int identity | No | |
+| Name | string | nvarchar(max) | No | |
+| Description | string | nvarchar(max) | No | |
+| Code | string | nvarchar(450) | No | Único. Es el código con el que un docente se une |
+| CreatedAt | DateTime | datetime2 | No | |
+| IsPersonal | bool | bit (default 0) | No | **Nuevo**. Academia personal oculta del docente |
+| IsActive | bool | bit (default 1) | No | **Nuevo** |
+| Location | string? | nvarchar(max) | Sí | **Nuevo** |
+| Phone | string? | nvarchar(max) | Sí | **Nuevo** |
+| Email | string? | nvarchar(max) | Sí | **Nuevo** |
+| PricePerHour | decimal? | decimal(18,2) | Sí | **Nuevo**. Precio general por hora |
+| PricePerCourse | decimal? | decimal(18,2) | Sí | **Nuevo**. Precio general por curso |
+| ResponsableId | int? | int | Sí | **Reemplaza a `TeacherId`** (renombrada, datos conservados). FK → `Usuarios.Id` |
+| Members | `ICollection<DocenteAcademia>` | — | — | Navegación |
 
-### Modificada: `PerfilDocente` (tabla `PerfilesDocentes`)
+### `PerfilDocente`
 
-| Campo | Tipo C# | SQL | Null | Cambio |
-|---|---|---|---|---|
-| ~~AcademyId~~ | ~~int~~ | ~~int~~ | ~~No~~ | **eliminado** (con su FK `FK_PerfilesDocentes_Academias_AcademyId` e índice `IX_PerfilesDocentes_AcademyId`) |
-| ~~Academy~~ | ~~Academia~~ | — | — | **eliminado** (navegación) |
-| **DocentesAcademias** | `ICollection<DocenteAcademia>` | — | — | **nuevo** (navegación) |
+- **Eliminados** `AcademyId` y `Academy`.
+- **Nuevo** `ICollection<DocenteAcademia> DocentesAcademias`.
 
-## Migración `AcademiaMuchosDocentes`
+Todas las FKs siguen con `DeleteBehavior.NoAction` (loop en `AppDbContext.OnModelCreating`).
 
-EF generaba la migración borrando `PerfilesDocentes.AcademyId` primero, lo que perdía la academia de cada docente.
-El `Up()` se reescribió a mano en este orden (todo dentro de la transacción de la migración, sin IDs hardcodeados):
+## Endpoints afectados
 
-1. **Academias**: agrega `IsPersonal` (bit, not null, default 0), `Location`, `Phone`, `Email` (nullable) y pasa `TeacherId` a nullable.
-2. **Crea `DocentesAcademias`** con sus FKs, índice por `AcademyId` e índice único `(TeacherId, AcademyId)`.
-3. **Copia la relación actual**: por cada `PerfilDocente` inserta una membresía en la academia de su `AcademyId`.
-   `Role = DIRECTOR (2)` si `Academias.TeacherId = PerfilesDocentes.UserId`, si no `DOCENTE (0)`. `JoinedAt = GETUTCDATE()`.
-4. **Detecta academias personales** (ver criterio abajo) y les pone `IsPersonal = 1`.
-5. **Normaliza rangos**: en las academias personales todas las membresías pasan a `DOCENTE (0)`.
-6. **Completa personales faltantes**: a cada docente sin membresía en una academia personal (los que se habían registrado con código)
-   se le crea una (`Name = "{u.Name} Academy"`, `Description = ''`, `Code` de 8 caracteres con `NEWID()` como en
-   `AcademiaCodeAndAcademyIdFix`, `CreatedAt = GETUTCDATE()`, `TeacherId = u.Id`, `IsPersonal = 1`) y luego su membresía `DOCENTE`.
-   Se hace en dos sentencias: 6a crea las academias, 6b vincula cada docente con la academia personal más nueva y sin miembros cuyo creador es él.
-7. **Recién ahora** borra FK, índice y columna `PerfilesDocentes.AcademyId`.
+- **`AuthController.Register`**
+  - Roles permitidos: `PARENT`, `TEACHER`, `ACADEMY`. `ADMIN` o un valor inválido → `PARENT`.
+  - `TEACHER` con `AcademyCode`: se busca por `Code` sin distinguir mayúsculas y que **no** sea personal. Si no existe o es personal → `400 "Código de academia no válido."`. Si la academia estaba inactiva, se reactiva al entrar el docente.
+  - `ACADEMY`: academia oficial con `Name = dto.Name`, `Email`, `Phone`, código generado y `ResponsableId` = el usuario nuevo.
+- **`DocenteController.GetById`**: `academias` lista solo membresías activas en academias activas y no personales.
+- **`DocenteController.EliminarCuenta`**: igual que antes: borra las membresías y la academia personal; en las oficiales donde era responsable deja `ResponsableId = null`. (La baja lógica de cuentas es otra tarjeta.)
+- **`Seed`**: "Academia de Prueba" (`SEED0001`, oficial) con el profesor de prueba como responsable; el profesor tiene su personal y es miembro activo de ambas. Es idempotente y usa BCrypt.
 
-### Criterio para detectar academias personales
+## Migración `AcademiaModeloCliente` paso a paso
 
-Una academia existente se marca como personal si cumple **todo**:
+Se generó con `dotnet ef migrations add` y el `Up()` se reordenó a mano para no perder datos. No tiene IDs hardcodeados.
 
-- `Name = CONCAT(nombre del usuario creador, ' Academy')`
-- `Description = ''` o `NULL`
-- **no tiene miembros distintos de su creador** en `DocentesAcademias` (después del paso 3)
+1. **Academias**: se agregan `IsPersonal` (default 0), `IsActive` (default 1), `Location`, `Phone`, `Email`, `PricePerHour`, `PricePerCourse`. `TeacherId` se **renombra** a `ResponsableId` (`sp_rename`, no drop + add), se hace nullable, y se recrean su índice (`IX_Academias_ResponsableId`) y su FK (`FK_Academias_Usuarios_ResponsableId`).
+2. Se crea `DocentesAcademias` con sus FKs y el índice único.
+3. Cada `PerfilDocente` pasa a ser miembro activo de la academia de su `AcademyId` actual (`JoinedAt = GETUTCDATE()`).
+4. Se marcan como personales las academias existentes que cumplen el **criterio de personal** (ver abajo).
+5. A cada docente que no es miembro de ninguna personal se le crea una (`"{Name} Academy"`, descripción vacía, código de 8 caracteres con `NEWID()`, responsable = el docente), salvo que ya tenga una personal propia sin miembros. Después se vincula a cada uno con esa personal.
+6. Recién al final se borran la FK, el índice y la columna `PerfilesDocentes.AcademyId`.
 
-Son las que creaba automáticamente el `Register` cuando el docente no ingresaba código.
-Si ya tienen más de un miembro (otros docentes se unieron con el código) quedan como **oficiales**, y su creador mantiene el rango `DIRECTOR`.
+`Down()` reconstruye el esquema anterior lo mejor posible; sus limitaciones están documentadas en el propio archivo (una sola academia por docente, academias sin responsable, usuarios `ACADEMY`, etc.).
 
-### `Down()`
+### Criterio para detectar academias personales existentes
 
-1. Vuelve a crear `PerfilesDocentes.AcademyId` (nullable mientras se puebla).
-2. Lo puebla con la academia **oficial** de mayor rango (y, a igual rango, la de `JoinedAt` más antiguo); si no tiene oficiales, la personal.
-3. Borra las academias personales que no quedaron asignadas a ningún perfil ni son usadas por solicitudes/clases (las que creó el paso 6).
-4. Vuelve `TeacherId` a obligatorio. **Limitación**: si un creador fue eliminado (`TeacherId = null`) no se puede recuperar el original;
-   se asigna el usuario del miembro de mayor rango y más antiguo. Si la academia además no tiene miembros, el `Down()` se aborta con
-   `THROW 50000` y hay que corregir esos registros a mano antes de revertir.
-5. Elimina `DocentesAcademias` y las columnas nuevas, y restaura índice y FK de `PerfilesDocentes.AcademyId`.
+Una academia se considera personal si:
 
-## Cambios en endpoints
+- su `Name` es `CONCAT(nombre del responsable, ' Academy')` (el formato que usaba `Register`),
+- su `Description` está vacía o es `NULL`, y
+- no tiene miembros cuyo perfil pertenezca a un usuario distinto del responsable.
 
-### `POST api/Auth/register` (rama TEACHER)
+Si un docente se unió con código a la academia de otro, esa academia queda como **oficial** (tiene un miembro ajeno) y su creador recibe una personal nueva en el paso 5.
 
-- Si viene `AcademyCode`: se busca por `Code` (case-insensitive). Si no existe **o es personal** → `400 "Código de academia no válido."` (mismo mensaje en ambos casos).
-- Siempre se crea la academia personal (`"{Name} Academy"`, `Description = ""`, código aleatorio, `TeacherId = usuario.Id`, `IsPersonal = true`).
-- Se crea el `PerfilDocente` (ya sin `AcademyId`) y la membresía `DOCENTE` en la personal.
-- Si el código era válido, además se crea la membresía `DOCENTE` en esa academia oficial.
-- La rama PARENT, el hashing y el Login no cambiaron.
+## Reglas para los próximos endpoints
 
-### `GET api/Docente/{id}` — **cambio de contrato**
+- **Gestión**: el responsable gestiona la academia: editar datos, remover docentes, regenerar el código y activarla/desactivarla.
+- **Salir / remover**: `IsActive = false` + `LeftAt = now` en la membresía. No se borra nada.
+- **Activación automática**: si una academia se queda sin miembros activos pasa sola a `IsActive = false`, y se reactiva cuando entra alguien.
+- **Desactivación manual**: el responsable puede desactivarla aunque tenga miembros.
+- **Personales**: nadie se une a una academia personal.
+- **Inscripción de padres**: que un padre esté inscripto en una academia = tiene una solicitud de clase **ACEPTADA** en esa academia.
+- **Precio**: profesor solo (academia personal) → `PerfilDocente.HourlyRate`; en una academia → los precios de la academia (`PricePerHour` / `PricePerCourse`).
 
-Antes devolvía `"academy": "<nombre>"` (string). Ahora devuelve `"academias"`: lista de academias **oficiales** del docente.
-La personal nunca se incluye.
+## Pendientes (otras tarjetas)
 
-```json
-"academias": [
-  { "id": 3, "name": "Academia de Prueba" }
-]
-```
-
-El cliente que consumía `academy` tiene que actualizarse (hoy no hay usos en `UDX.Server.Client` ni en `UDX.Shared`).
-
-### `DELETE api/Docente/cuenta`
-
-- Borra las membresías del docente (`DocentesAcademias`).
-- Borra **solo** su academia personal.
-- En las academias oficiales con `TeacherId = userId` pone `TeacherId = null` (no se borran).
-- No reasigna director: eso lo hará otro endpoint (ver reglas).
-
-### Seed
-
-- "Academia de Prueba" (`SEED0001`) es **oficial** (`IsPersonal = false`) con `Location`/`Phone`/`Email` de prueba
-  (si ya existía sin esos datos, se completan).
-- El profesor de prueba tiene su academia personal + membresía `DOCENTE`, y membresía `DIRECTOR` en "Academia de Prueba".
-- Sigue siendo idempotente y usa BCrypt.
-
-## Reglas de negocio para los próximos endpoints
-
-1. Todo docente tiene **exactamente 1** academia personal.
-2. **Nadie se une** a una academia personal (unirse por código debe rechazar academias con `IsPersonal = true`).
-3. La academia personal **no se muestra** en listados ni perfiles.
-4. `Academia.TeacherId` = **creador**. **No da permisos**.
-5. Los permisos salen de `DocenteAcademia.Role` (`DOCENTE`, `VICEDIRECTOR`, `DIRECTOR`).
-6. Si una academia oficial se queda sin `DIRECTOR`, se asigna `DIRECTOR` al miembro más antiguo (`JoinedAt` menor).
-7. El `Code` de una academia solo lo ven `DIRECTOR` y `VICEDIRECTOR`.
-8. Ver una academia requiere estar logueado.
-
-## Pendientes a confirmar con el cliente
-
-- ¿Un docente puede realmente estar en varias academias oficiales a la vez? (el modelo lo permite)
-- ¿A qué academia va el pago de una clase (`PagoDocente`)? Hoy el pago se relaciona con el docente y la clase, no con la academia.
-- ¿Existen los rangos `VICEDIRECTOR`? (está en el enum pero ningún flujo lo asigna todavía)
-
-## Problemas conocidos detectados (sin arreglar)
-
-- **`EliminarCuenta` puede fallar por FKs**: todas las FKs son `NoAction`, y el endpoint no borra `DocentesMaterias`, `Resenas`,
-  `SolicitudesClases`, `ClasesAgendadas`, `PagosDocentes`, `Contenidos` ni `Mensajes` que referencian al perfil/usuario.
-  Si existen, el `SaveChanges` lanza excepción.
-- **`EliminarCuenta` y la academia personal**: si la personal está referenciada por `SolicitudesClases.AcademyId` o
-  `ClasesAgendadas.AcademyId` (las solicitudes viejas apuntaban a la academia autogenerada), su borrado también falla por FK.
-- **`EliminarCuenta` no borra la foto** de perfil subida a `wwwroot/uploads/perfiles`.
-- **`EliminarCuenta` no reasigna director** en las oficiales donde el docente era `DIRECTOR` (queda pendiente para otro endpoint).
-- **`Register` hace varios `SaveChanges` sin transacción**: si falla a mitad puede quedar un usuario sin perfil o una academia personal huérfana.
-  El `try/catch` del final no cubre los `SaveChanges` anteriores.
-- **`GenerateAcademyCode` no verifica colisiones** con el índice único de `Code` (poco probable, pero posible).
-- `Usuario.Name` no es único: dos usuarios con el mismo nombre generan academias personales con el mismo `Name` (no rompe nada, el `Code` es el único).
-
-## Después de mergear
-
-Cada integrante del equipo tiene que actualizar su base local:
-
-```bash
-dotnet ef database update --project UDX.BD --startup-project UDX.Server\UDX.Server
-```
+- Precios personalizados por materia o por profesor dentro de la academia (si no hay uno personalizado, se usa el precio general).
+- Baja lógica de cuentas (`EliminarCuenta`).

@@ -41,8 +41,9 @@ namespace UDX.BD.Datos
                     Description = "Academia creada para realizar pruebas",
                     Code = "SEED0001",
                     CreatedAt = DateTime.Now,
-                    TeacherId = profesor.Id,
+                    ResponsableId = profesor.Id,
                     IsPersonal = false,
+                    IsActive = true,
                     Location = "Córdoba, Argentina",
                     Phone = "3510000000",
                     Email = "academia@test.com"
@@ -60,7 +61,7 @@ namespace UDX.BD.Datos
             }
 
             var academiaPersonal = context.Academias
-                .FirstOrDefault(a => a.IsPersonal && a.TeacherId == profesor.Id);
+                .FirstOrDefault(a => a.IsPersonal && a.ResponsableId == profesor.Id);
 
             if (academiaPersonal == null)
             {
@@ -70,8 +71,9 @@ namespace UDX.BD.Datos
                     Description = "",
                     Code = GenerarCodigoAcademia(),
                     CreatedAt = DateTime.UtcNow,
-                    TeacherId = profesor.Id,
-                    IsPersonal = true
+                    ResponsableId = profesor.Id,
+                    IsPersonal = true,
+                    IsActive = true
                 };
 
                 context.Academias.Add(academiaPersonal);
@@ -100,8 +102,8 @@ namespace UDX.BD.Datos
                 context.SaveChanges();
             }
 
-            CrearMembresiaSiNoExiste(context, perfilDocente.Id, academiaPersonal.Id, DocenteAcademia.AcademyRole.DOCENTE);
-            CrearMembresiaSiNoExiste(context, perfilDocente.Id, academia.Id, DocenteAcademia.AcademyRole.DIRECTOR);
+            CrearMembresiaActiva(context, perfilDocente.Id, academiaPersonal.Id);
+            CrearMembresiaActiva(context, perfilDocente.Id, academia.Id);
 
             var materia = context.Materias
     .FirstOrDefault(m => m.Name == "Matemática" && m.Grade == "1");
@@ -165,20 +167,26 @@ namespace UDX.BD.Datos
 
         }
 
-        private static void CrearMembresiaSiNoExiste(AppDbContext context, int teacherId, int academyId, DocenteAcademia.AcademyRole role)
+        private static void CrearMembresiaActiva(AppDbContext context, int teacherId, int academyId)
         {
-            var existe = context.DocentesAcademias
-                .Any(da => da.TeacherId == teacherId && da.AcademyId == academyId);
+            var membresia = context.DocentesAcademias
+                .FirstOrDefault(da => da.TeacherId == teacherId && da.AcademyId == academyId);
 
-            if (!existe)
+            if (membresia == null)
             {
                 context.DocentesAcademias.Add(new DocenteAcademia
                 {
                     TeacherId = teacherId,
                     AcademyId = academyId,
-                    Role = role,
-                    JoinedAt = DateTime.UtcNow
+                    JoinedAt = DateTime.UtcNow,
+                    IsActive = true
                 });
+                context.SaveChanges();
+            }
+            else if (!membresia.IsActive)
+            {
+                membresia.IsActive = true;
+                membresia.LeftAt = null;
                 context.SaveChanges();
             }
         }

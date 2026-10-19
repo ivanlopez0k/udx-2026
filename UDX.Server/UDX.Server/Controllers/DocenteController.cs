@@ -140,9 +140,12 @@ public class DocenteController : ControllerBase
             RatingCount = perfil.RatinCount,
             Verified = perfil.Verified,
             Availability = perfil.Availability,
-            // Solo academias oficiales: la personal nunca se muestra
+            // Solo membresías activas en academias oficiales activas: la personal nunca se muestra
             Academias = perfil.DocentesAcademias?
-                .Where(da => da.Academy != null && !da.Academy.IsPersonal)
+                .Where(da => da.IsActive &&
+                             da.Academy != null &&
+                             da.Academy.IsActive &&
+                             !da.Academy.IsPersonal)
                 .Select(da => new AcademiaResumenDTO
                 {
                     Id = da.Academy.Id,
@@ -342,9 +345,9 @@ public class DocenteController : ControllerBase
             _context.PerfilesDocentes.Remove(perfil);
         }
 
-        // Solo se borra la academia personal; las oficiales que creó quedan sin creador
+        // Solo se borra la academia personal; las oficiales donde era responsable quedan sin responsable
         var academias = await _context.Academias
-            .Where(a => a.TeacherId == userId)
+            .Where(a => a.ResponsableId == userId)
             .ToListAsync();
 
         foreach (var academia in academias)
@@ -352,7 +355,7 @@ public class DocenteController : ControllerBase
             if (academia.IsPersonal)
                 _context.Academias.Remove(academia);
             else
-                academia.TeacherId = null;
+                academia.ResponsableId = null;
         }
 
         _context.Usuarios.Remove(usuario);
