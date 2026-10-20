@@ -41,10 +41,42 @@ namespace UDX.BD.Datos
                     Description = "Academia creada para realizar pruebas",
                     Code = "SEED0001",
                     CreatedAt = DateTime.Now,
-                    TeacherId = profesor.Id
+                    ResponsableId = profesor.Id,
+                    IsPersonal = false,
+                    IsActive = true,
+                    Location = "Córdoba, Argentina",
+                    Phone = "3510000000",
+                    Email = "academia@test.com"
                 };
 
                 context.Academias.Add(academia);
+                context.SaveChanges();
+            }
+            else if (academia.Location == null && academia.Phone == null && academia.Email == null)
+            {
+                academia.Location = "Córdoba, Argentina";
+                academia.Phone = "3510000000";
+                academia.Email = "academia@test.com";
+                context.SaveChanges();
+            }
+
+            var academiaPersonal = context.Academias
+                .FirstOrDefault(a => a.IsPersonal && a.ResponsableId == profesor.Id);
+
+            if (academiaPersonal == null)
+            {
+                academiaPersonal = new Academia
+                {
+                    Name = $"{profesor.Name} Academy",
+                    Description = "",
+                    Code = GenerarCodigoAcademia(),
+                    CreatedAt = DateTime.UtcNow,
+                    ResponsableId = profesor.Id,
+                    IsPersonal = true,
+                    IsActive = true
+                };
+
+                context.Academias.Add(academiaPersonal);
                 context.SaveChanges();
             }
 
@@ -56,7 +88,6 @@ namespace UDX.BD.Datos
                 perfilDocente = new PerfilDocente
                 {
                     UserId = profesor.Id,
-                    AcademyId = academia.Id,
                     Credentials = "",
                     HourlyRate = 0,
                     Location = "",
@@ -70,6 +101,9 @@ namespace UDX.BD.Datos
                 context.PerfilesDocentes.Add(perfilDocente);
                 context.SaveChanges();
             }
+
+            CrearMembresiaActiva(context, perfilDocente.Id, academiaPersonal.Id);
+            CrearMembresiaActiva(context, perfilDocente.Id, academia.Id);
 
             var materia = context.Materias
     .FirstOrDefault(m => m.Name == "Matemática" && m.Grade == "1");
@@ -131,6 +165,35 @@ namespace UDX.BD.Datos
                 context.SaveChanges();
             }
 
+        }
+
+        private static void CrearMembresiaActiva(AppDbContext context, int teacherId, int academyId)
+        {
+            var membresia = context.DocentesAcademias
+                .FirstOrDefault(da => da.TeacherId == teacherId && da.AcademyId == academyId);
+
+            if (membresia == null)
+            {
+                context.DocentesAcademias.Add(new DocenteAcademia
+                {
+                    TeacherId = teacherId,
+                    AcademyId = academyId,
+                    JoinedAt = DateTime.UtcNow,
+                    IsActive = true
+                });
+                context.SaveChanges();
+            }
+            else if (!membresia.IsActive)
+            {
+                membresia.IsActive = true;
+                membresia.LeftAt = null;
+                context.SaveChanges();
+            }
+        }
+
+        private static string GenerarCodigoAcademia()
+        {
+            return Guid.NewGuid().ToString("N").Substring(0, 8).ToUpper();
         }
     }
 }

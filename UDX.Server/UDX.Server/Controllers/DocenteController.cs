@@ -120,9 +120,8 @@ public class DocenteController : ControllerBase
             .Include(p => p.User)
             .Include(p => p.DocentesMaterias)
                 .ThenInclude(dm => dm.Materia)
-            .Include(p => p.Academy);
-
-        var perfil = await consultaPerfil
+            .Include(p => p.DocentesAcademias)
+                .ThenInclude(da => da.Academy)
             .FirstOrDefaultAsync(p => p.Id == id);
 
         perfil ??= await consultaPerfil
@@ -143,8 +142,20 @@ public class DocenteController : ControllerBase
             RatingCount = perfil.RatinCount,
             Verified = perfil.Verified,
             Availability = perfil.Availability,
-            Academy = perfil.Academy?.Name,
+
+            // Solo membresías activas en academias oficiales activas: la personal nunca se muestra
+            Academias = perfil.DocentesAcademias?
+                .Where(da => da.IsActive &&
+                             da.Academy != null &&
+                             da.Academy.IsActive &&
+                             !da.Academy.IsPersonal)
+                .Select(da => new AcademiaResumenDTO
+                {
+                    Id = da.Academy.Id,
+                    Name = da.Academy.Name
+                }).ToList() ?? new List<AcademiaResumenDTO>(),
             Foto = perfil.ProfileImage,
+
             Materias = perfil.DocentesMaterias?
             
                 .Select(dm => new MateriaDetalleDTO
@@ -479,16 +490,25 @@ public class DocenteController : ControllerBase
 
         if (perfil != null)
         {
+            var membresias = await _context.DocentesAcademias
+                .Where(da => da.TeacherId == perfil.Id)
+                .ToListAsync();
+
+            _context.DocentesAcademias.RemoveRange(membresias);
             _context.PerfilesDocentes.Remove(perfil);
         }
 
+        // Solo se borra la academia personal; las oficiales donde era responsable quedan sin responsable
         var academias = await _context.Academias
-            .Where(a => a.TeacherId == userId)
+            .Where(a => a.ResponsableId == userId)
             .ToListAsync();
 
-        if (academias.Any())
+        foreach (var academia in academias)
         {
-            _context.Academias.RemoveRange(academias);
+            if (academia.IsPersonal)
+                _context.Academias.Remove(academia);
+            else
+                academia.ResponsableId = null;
         }
 
         _context.Usuarios.Remove(usuario);

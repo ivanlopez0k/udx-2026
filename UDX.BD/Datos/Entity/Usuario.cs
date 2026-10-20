@@ -10,7 +10,8 @@ namespace UDX.BD.Datos.Entity
         [Required]
         public string Email { get; set; }
         public string Password { get; set; }
-        public enum Rol { PARENT, TEACHER, ADMIN }
+        // Se guarda como int: agregar valores nuevos siempre al final.
+        public enum Rol { PARENT, TEACHER, ADMIN, ACADEMY }
         public Rol Role { get; set; }
         public string Name { get; set; }
         public string Phone { get; set; }
