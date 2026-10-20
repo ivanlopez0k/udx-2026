@@ -69,7 +69,7 @@ namespace UDX.BD.Migrations
                     b.Property<int>("AcademyId")
                         .HasColumnType("int");
 
-                    b.Property<int>("ContentId")
+                    b.Property<int?>("ContentId")
                         .HasColumnType("int");
 
                     b.Property<int>("Duration")
@@ -549,8 +549,7 @@ namespace UDX.BD.Migrations
                     b.HasOne("UDX.BD.Datos.Entity.Contenido", "Content")
                         .WithMany()
                         .HasForeignKey("ContentId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("UDX.BD.Datos.Entity.PerfilPadre", "Parent")
                         .WithMany()
