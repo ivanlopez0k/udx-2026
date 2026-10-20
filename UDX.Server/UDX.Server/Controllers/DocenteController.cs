@@ -116,7 +116,7 @@ public class DocenteController : ControllerBase
     [HttpGet("{id:int}")]
     public async Task<ActionResult<DocenteDetalleDTO>> GetById(int id)
     {
-        var consultaPerfil = _context.PerfilesDocentes
+        var perfil = await _context.PerfilesDocentes
             .Include(p => p.User)
             .Include(p => p.DocentesMaterias)
                 .ThenInclude(dm => dm.Materia)
@@ -124,7 +124,12 @@ public class DocenteController : ControllerBase
                 .ThenInclude(da => da.Academy)
             .FirstOrDefaultAsync(p => p.Id == id);
 
-        perfil ??= await consultaPerfil
+        perfil ??= await _context.PerfilesDocentes
+            .Include(p => p.User)
+            .Include(p => p.DocentesMaterias)
+                .ThenInclude(dm => dm.Materia)
+            .Include(p => p.DocentesAcademias)
+                .ThenInclude(da => da.Academy)
             .FirstOrDefaultAsync(p => p.UserId == id);
 
         if (perfil == null)
