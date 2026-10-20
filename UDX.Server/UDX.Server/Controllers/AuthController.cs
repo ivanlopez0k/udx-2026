@@ -177,6 +177,7 @@ namespace UDX.Server.Controllers
                 };
 
                 _context.PerfilesPadres.Add(perfil);
+
                 _context.SaveChanges();
             }
 

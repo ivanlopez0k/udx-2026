@@ -2,6 +2,7 @@
 @using System.Net.Http.Json
 @inject HttpClient Http
 @inject IJSRuntime JS
+@inject NavigationManager Navigation
 
 <div class="modal fade" id="loginModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
@@ -103,18 +104,32 @@
             var resultado = await respuesta.Content
                 .ReadFromJsonAsync<LoginResponseDTO>();
 
-            if (resultado != null)
-            {
-                await JS.InvokeVoidAsync(
-                    "localStorage.setItem",
-                    "token",
-                    resultado.Token);
+           if (resultado != null)
+{
+    await JS.InvokeVoidAsync(
+        "localStorage.setItem",
+        "token",
+        resultado.Token);
 
-                LimpiarFormulario();
+    await JS.InvokeVoidAsync(
+        "localStorage.setItem",
+        "name",
+        resultado.Name);
 
-                await JS.InvokeVoidAsync(
-                    "cerrarLoginModal");
-            }
+    await JS.InvokeVoidAsync(
+        "localStorage.setItem",
+        "role",
+        resultado.Role.ToString());
+
+    LimpiarFormulario();
+
+    await JS.InvokeVoidAsync(
+        "cerrarLoginModal");
+
+    Navigation.NavigateTo(
+        Navigation.Uri,
+        forceLoad: true);
+}
         }
         else
         {
