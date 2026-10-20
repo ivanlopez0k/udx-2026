@@ -86,6 +86,31 @@ public class AcademiaController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = academia.Id }, result);
     }
 
+    // GET: api/Academia (lista academias activas, no personales)
+    [HttpGet]
+    public async Task<ActionResult<List<AcademiaDTO>>> GetAll()
+    {
+        var academias = await _context.Academias
+            .Where(a => !a.IsPersonal && a.IsActive)
+            .OrderBy(a => a.Name)
+            .Select(a => new AcademiaDTO
+            {
+                Id = a.Id,
+                Name = a.Name,
+                Description = a.Description,
+                Code = a.Code,
+                CreatedAt = a.CreatedAt,
+                Location = a.Location,
+                Phone = a.Phone,
+                Email = a.Email,
+                ResponsableId = a.ResponsableId,
+                IsActive = a.IsActive
+            })
+            .ToListAsync();
+
+        return Ok(academias);
+    }
+
     // GET: api/Academia/{id}
     [HttpGet("{id:int}")]
     public async Task<ActionResult<AcademiaDTO>> GetById(int id)
