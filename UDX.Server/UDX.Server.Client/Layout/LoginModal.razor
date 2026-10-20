@@ -76,6 +76,18 @@
     {
         mensaje = "";
 
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            mensaje = "El email es obligatorio.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(password))
+        {
+            mensaje = "La contraseña es obligatoria.";
+            return;
+        }
+
         var datos = new
         {
             Email = email,
@@ -98,26 +110,22 @@
                     "token",
                     resultado.Token);
 
-                await JS.InvokeVoidAsync(
-                    "localStorage.setItem",
-                    "role",
-                    resultado.Role.ToString());
-
-                await JS.InvokeVoidAsync(
-                    "localStorage.setItem",
-                    "name",
-                    resultado.Name);
+                LimpiarFormulario();
 
                 await JS.InvokeVoidAsync(
                     "cerrarLoginModal");
-
-                await JS.InvokeVoidAsync(
-                    "location.reload");
             }
         }
         else
         {
-            mensaje = "Email o contraseña incorrectos.";
+            mensaje = await respuesta.Content.ReadAsStringAsync();
         }
+    }
+
+    private void LimpiarFormulario()
+    {
+        email = "";
+        password = "";
+        mensaje = "";
     }
 }
