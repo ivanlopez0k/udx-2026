@@ -1,16 +1,20 @@
 ﻿@page "/profesores"
 
+@using UDX.Shared.DTOs
+@using System.Net.Http.Json
+@inject HttpClient Http
+
 <PageTitle>Profesores</PageTitle>
 
-
-
 <div class="profesores-container">
-    
+
     <h1>Profesores Disponibles</h1>
+
+    @* TARJETAS ORIGINALES: SE CONSERVAN *@
 
     <div class="profesores-lista">
 
-        <!-- PROFESOR 1 Lukita Doncic -->
+        @* Profesor 1: Luka Doncic *@
         <div class="profesor-card"
              @onclick='() => AbrirModal("/IMG/luka.jpg", "Luka Doncic", "Matemáticas", "Buenos Aires")'>
 
@@ -19,7 +23,6 @@
             </div>
 
             <div class="profesor-info">
-
                 <h2>
                     Luka Doncic
                     <img src="/IMG/verificado.png"
@@ -27,9 +30,7 @@
                          class="verificado">
                 </h2>
 
-                <p class="profesor-materia">
-                    Matemáticas
-                </p>
+                <p class="profesor-materia">Matemáticas</p>
 
                 <p class="profesor-dato">
                     <img src="/IMG/PIN.png" alt="">
@@ -40,15 +41,10 @@
                     <img src="/IMG/estrella.png" alt="">
                     5.0
                 </p>
-
             </div>
-
         </div>
 
-
-
-
-        <!-- Profesor 2 Pepe -->
+        @* Profesor 2: Pepe Reina *@
         <div class="profesor-card"
              @onclick='() => AbrirModal("/IMG/pepe.jpg", "Pepe Reina", "Historia", "Córdoba")'>
 
@@ -57,14 +53,9 @@
             </div>
 
             <div class="profesor-info">
+                <h2>Pepe Reina</h2>
 
-                <h2>
-                    Pepe Reina
-                </h2>
-
-                <p class="profesor-materia">
-                    Historia
-                </p>
+                <p class="profesor-materia">Historia</p>
 
                 <p class="profesor-dato">
                     <img src="/IMG/PIN.png" alt="">
@@ -75,13 +66,10 @@
                     <img src="/IMG/estrella.png" alt="">
                     3.0
                 </p>
-
             </div>
-
         </div>
 
-
-        <!-- Profesor 3 Messi -->
+        @* Profesor 3: Lionel Messi *@
         <div class="profesor-card"
              @onclick='() => AbrirModal("/IMG/messi.jpg", "Lionel Messi", "Educación Física", "Rosario, Santa Fe")'>
 
@@ -90,7 +78,6 @@
             </div>
 
             <div class="profesor-info">
-
                 <h2>
                     Lionel Messi
                     <img src="/IMG/verificado.png"
@@ -98,9 +85,7 @@
                          class="verificado">
                 </h2>
 
-                <p class="profesor-materia">
-                    Educación Física
-                </p>
+                <p class="profesor-materia">Educación Física</p>
 
                 <p class="profesor-dato">
                     <img src="/IMG/PIN.png" alt="">
@@ -111,13 +96,10 @@
                     <img src="/IMG/estrella.png" alt="">
                     4.9
                 </p>
-
             </div>
-
         </div>
 
-
-        <!-- Profesor 4 Momo -->
+        @* Profesor 4: Gerónimo Benavidez *@
         <div class="profesor-card"
              @onclick='() => AbrirModal("/IMG/momo.jpg", "Gerónimo Benavidez", "Historia", "Buenos Aires")'>
 
@@ -126,14 +108,9 @@
             </div>
 
             <div class="profesor-info">
+                <h2>Gerónimo Benavidez</h2>
 
-                <h2>
-                    Gerónimo Benavidez
-                </h2>
-
-                <p class="profesor-materia">
-                    Historia
-                </p>
+                <p class="profesor-materia">Historia</p>
 
                 <p class="profesor-dato">
                     <img src="/IMG/PIN.png" alt="">
@@ -144,16 +121,10 @@
                     <img src="/IMG/estrella.png" alt="">
                     4.1
                 </p>
-
             </div>
-
         </div>
 
-
-
-
-
-        <!-- Profesor 5 Duki -->
+        @* Profesor 5: Mauro Lombardo *@
         <div class="profesor-card"
              @onclick='() => AbrirModal("/IMG/duki.jpg", "Mauro Lombardo", "Música", "Córdoba")'>
 
@@ -162,7 +133,6 @@
             </div>
 
             <div class="profesor-info">
-
                 <h2>
                     Mauro Lombardo
                     <img src="/IMG/verificado.png"
@@ -170,9 +140,7 @@
                          class="verificado">
                 </h2>
 
-                <p class="profesor-materia">
-                    Música
-                </p>
+                <p class="profesor-materia">Música</p>
 
                 <p class="profesor-dato">
                     <img src="/IMG/PIN.png" alt="">
@@ -183,16 +151,10 @@
                     <img src="/IMG/estrella.png" alt="">
                     4.4
                 </p>
-
             </div>
-
         </div>
 
-
-
-
-
-        <!-- Profesor 6 Araujo -->
+        @* Profesor 6: Ronald Araujo *@
         <div class="profesor-card"
              @onclick='() => AbrirModal("/IMG/araujo.jpg", "Ronald Araujo", "Educación Física", "Tucumán")'>
 
@@ -201,7 +163,6 @@
             </div>
 
             <div class="profesor-info">
-
                 <h2>
                     Ronald Araujo
                     <img src="/IMG/verificado.png"
@@ -209,9 +170,7 @@
                          class="verificado">
                 </h2>
 
-                <p class="profesor-materia">
-                    Educación Física
-                </p>
+                <p class="profesor-materia">Educación Física</p>
 
                 <p class="profesor-dato">
                     <img src="/IMG/PIN.png" alt="">
@@ -222,14 +181,102 @@
                     <img src="/IMG/estrella.png" alt="">
                     4.3
                 </p>
-
             </div>
-
         </div>
 
     </div>
 
+    @* PROFESORES REGISTRADOS DESDE LA API *@
+
+
+    @if (cargando)
+    {
+        <p>Cargando profesores...</p>
+    }
+    else if (!string.IsNullOrEmpty(mensajeError))
+    {
+        <p>@mensajeError</p>
+    }
+    else if (profesores.Count == 0)
+    {
+        <p>Todavía no hay profesores registrados.</p>
+    }
+    else
+    {
+        <div class="profesores-lista">
+
+            @foreach (var profesor in profesores)
+            {
+                <div class="profesor-card"
+                     @onclick='() => AbrirModal(
+                         string.IsNullOrWhiteSpace(profesor.Foto)
+                             ? "images/default-avatar.avif"
+                             : profesor.Foto,
+                         profesor.Nombre,
+                         profesor.Materias.FirstOrDefault() ?? "Sin materias",
+                         profesor.Location)'>
+
+<div class="profesor-foto">
+                        <img src="@(string.IsNullOrWhiteSpace(profesor.Foto)
+                             ? "images/default-avatar.avif"
+                             : profesor.Foto)"
+                             alt="Foto de @profesor.Nombre">
+                    </div>
+
+                    <div class="profesor-info">
+                        <h2>
+                            @profesor.Nombre
+
+                            @if (profesor.Verified)
+                            {
+                                <img src="/IMG/verificado.png"
+                                     alt="Verificado"
+                                     class="verificado">
+                            }
+                        </h2>
+
+                        <p class="profesor-materia">
+                            @(profesor.Materias.FirstOrDefault() ?? "Sin materias")
+                        </p>
+
+                        <p class="profesor-dato">
+                            <img src="/IMG/PIN.png" alt="">
+                            @(string.IsNullOrWhiteSpace(profesor.Location)
+                                ? "Ubicación no especificada"
+                                : profesor.Location)
+                        </p>
+
+                        <p class="profesor-dato">
+                            <img src="/IMG/estrella.png" alt="">
+                            @profesor.RatingAvg.ToString("0.0")
+                        </p>
+
+                        @if (profesor.HourlyRate > 0)
+                        {
+                            <p class="profesor-dato">
+                                Precio por hora:
+                                $@profesor.HourlyRate.ToString("N0")
+                            </p>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(profesor.Availability))
+                        {
+                            <p class="profesor-dato">
+                                Disponibilidad:
+                                @profesor.Availability
+                            </p>
+                        }
+                    </div>
+                </div>
+            }
+
+        </div>
+    }
+
 </div>
+
+@* MODAL DE DETALLE DEL PROFESOR *@
+
 <ProfesorModal Mostrar="@mostrarModal"
                Foto="@fotoSeleccionada"
                Nombre="@nombreSeleccionado"
@@ -237,10 +284,12 @@
                Ubicacion="@ubicacionSeleccionada"
                CerrarModal="@CerrarModal" />
 
-
-
-
 @code {
+    private List<ProfesorDto> profesores = new();
+
+    private bool cargando = true;
+    private string mensajeError = "";
+
     private bool mostrarModal = false;
 
     private string fotoSeleccionada = "";
@@ -248,7 +297,32 @@
     private string materiaSeleccionada = "";
     private string ubicacionSeleccionada = "";
 
-    private void AbrirModal(string foto, string nombre, string materia, string ubicacion)
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var respuesta =
+                await Http.GetFromJsonAsync<ProfesoresPaginadosDto>(
+                    "api/Docente/buscar"
+                );
+
+            profesores = respuesta?.Items ?? new List<ProfesorDto>();
+        }
+        catch (Exception)
+        {
+            mensajeError = "No se pudieron cargar los profesores.";
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private void AbrirModal(
+        string foto,
+        string nombre,
+        string materia,
+        string ubicacion)
     {
         fotoSeleccionada = foto;
         nombreSeleccionado = nombre;
