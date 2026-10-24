@@ -23,5 +23,9 @@ namespace UDX.BD.Datos.Entity
 
         public int HijoId { get; set; }
         public Hijo Hijo { get; set; }
+
+        // Academia en la que se dio la clase. Nullable por las filas viejas.
+        public int? AcademyId { get; set; }
+        public Academia? Academy { get; set; }
     }
 }

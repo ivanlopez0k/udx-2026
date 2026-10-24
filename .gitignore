@@ -364,3 +364,5 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+# Archivos de material subidos por los docentes (se guardan fuera de wwwroot)
+UDX.Server/UDX.Server/Storage/
