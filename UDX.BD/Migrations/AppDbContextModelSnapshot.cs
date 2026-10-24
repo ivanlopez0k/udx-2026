@@ -146,6 +146,9 @@ namespace UDX.BD.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int?>("AcademyId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -174,6 +177,8 @@ namespace UDX.BD.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("AcademyId");
 
                     b.HasIndex("HijoId");
 
@@ -641,6 +646,11 @@ namespace UDX.BD.Migrations
 
             modelBuilder.Entity("UDX.BD.Datos.Entity.Contenido", b =>
                 {
+                    b.HasOne("UDX.BD.Datos.Entity.Academia", "Academy")
+                        .WithMany()
+                        .HasForeignKey("AcademyId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.HasOne("UDX.BD.Datos.Entity.Hijo", "Hijo")
                         .WithMany()
                         .HasForeignKey("HijoId")
@@ -664,6 +674,8 @@ namespace UDX.BD.Migrations
                         .HasForeignKey("TeacherId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
+
+                    b.Navigation("Academy");
 
                     b.Navigation("Hijo");
 
