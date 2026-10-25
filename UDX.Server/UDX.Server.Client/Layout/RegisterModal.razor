@@ -47,7 +47,19 @@
 
                     </select>
                 </div>
+                @if (rol == 1)
+                {
+                    <div class="mb-3">
+                        <label class="form-label">
+                            Código de academia (opcional)
+                        </label>
 
+                        <input type="text"
+                               class="form-control"
+                               placeholder="Ej.: SEED0001"
+                               @bind="academyCode" />
+                    </div>
+                }
                 <div class="mb-3">
                     <label class="form-label">
                         Email
@@ -144,6 +156,8 @@
     private string mensaje = "";
     private bool registroExitoso = false;
 
+    private string academyCode = "";
+
     private async Task Registrar()
     {
         mensaje = "";
@@ -197,7 +211,10 @@
             Password = password,
             Name = nombre,
             Phone = telefono,
-            Role = rol
+            Role = rol,
+            AcademyCode = rol == 1 && !string.IsNullOrWhiteSpace(academyCode)
+            ? academyCode.Trim()
+            : null
         };
 
         try
@@ -253,6 +270,7 @@
         telefono = "";
         password = "";
         repetirPassword = "";
+        academyCode = "";
         rol = 0;
     }
 }

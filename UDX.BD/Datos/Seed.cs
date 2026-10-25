@@ -52,11 +52,13 @@ namespace UDX.BD.Datos
                 context.Academias.Add(academia);
                 context.SaveChanges();
             }
-            else if (academia.Location == null && academia.Phone == null && academia.Email == null)
+            else
             {
+                academia.Code = "SEED0001";
                 academia.Location = "Córdoba, Argentina";
                 academia.Phone = "3510000000";
                 academia.Email = "academia@test.com";
+
                 context.SaveChanges();
             }
 
