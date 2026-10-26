@@ -87,6 +87,7 @@ public class DocenteController : ControllerBase
 
         var total = await query.CountAsync();
 
+
         var items = await query
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
@@ -94,13 +95,16 @@ public class DocenteController : ControllerBase
             {
                 Id = p.Id,
                 Nombre = p.User.Name,
+                Foto = p.ProfileImage,
                 Location = p.Location,
                 HourlyRate = p.HourlyRate,
                 RatingAvg = p.RatingAvg,
                 RatingCount = p.RatinCount,
                 Verified = p.Verified,
                 Availability = p.Availability,
-                Materias = p.DocentesMaterias.Select(dm => dm.Materia.Name).ToList()
+                Materias = p.DocentesMaterias
+                    .Select(dm => dm.Materia.Name)
+                    .ToList()
             })
             .ToListAsync();
 

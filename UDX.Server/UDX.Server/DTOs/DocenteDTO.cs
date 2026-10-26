@@ -11,6 +11,8 @@
         public bool Verified { get; set; }
         public string Availability { get; set; }
         public List<string> Materias { get; set; }
+
+        public string Foto { get; set; } = "";
     }
 
     public class BusquedaDocenteResponseDTO
