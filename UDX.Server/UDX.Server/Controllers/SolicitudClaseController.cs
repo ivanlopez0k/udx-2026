@@ -34,7 +34,7 @@ public class SolicitudClaseController : ControllerBase
             return BadRequest("No se encontró el perfil del padre.");
 
         if (parent.UserId != userId)
-            return Forbid("No podés crear solicitudes para otro padre.");
+            return StatusCode(StatusCodes.Status403Forbidden, "No podés crear solicitudes para otro padre.");
 
         // Validate teacher exists
         var docente = await _context.PerfilesDocentes.FindAsync(dto.DocenteId);
@@ -93,7 +93,7 @@ public class SolicitudClaseController : ControllerBase
             return NotFound("No se encontró el perfil del docente.");
 
         if (perfil.UserId != userId)
-            return Forbid("No podés ver solicitudes de otro docente.");
+            return StatusCode(StatusCodes.Status403Forbidden, "No podés ver solicitudes de otro docente.");
 
         var query = _context.SolicitudesClases
             .Include(s => s.Parent).ThenInclude(p => p.User)
@@ -176,7 +176,7 @@ public class SolicitudClaseController : ControllerBase
 
         // Verify the authenticated teacher owns this solicitud
         if (solicitud.Docente.UserId != userId)
-            return Forbid("No podés modificar solicitudes de otro docente.");
+            return StatusCode(StatusCodes.Status403Forbidden, "No podés modificar solicitudes de otro docente.");
 
         if (solicitud.Status != SolicitudClase.Stat.PENDING)
             return BadRequest("Solo se pueden modificar solicitudes en estado PENDING.");
