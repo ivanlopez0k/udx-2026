@@ -86,6 +86,42 @@ public class AcademiaController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = academia.Id }, result);
     }
 
+    // POST: api/Academia/{id}/regenerar-codigo (solo el responsable)
+    [Authorize]
+    [HttpPost("{id:int}/regenerar-codigo")]
+    public async Task<IActionResult> RegenerarCodigo(int id)
+    {
+        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
+        var academia = await _context.Academias
+            .FirstOrDefaultAsync(a => a.Id == id);
+
+        if (academia == null)
+            return NotFound("Academia no encontrada.");
+
+        if (academia.ResponsableId != userId)
+            return StatusCode(StatusCodes.Status403Forbidden, "Solo el responsable puede regenerar el código.");
+
+        if (academia.IsPersonal)
+            return BadRequest("No se puede regenerar el código de una academia personal.");
+
+        // Generar un código nuevo que no exista ya en la base
+        string nuevoCodigo;
+        do
+        {
+            nuevoCodigo = GenerateAcademyCode();
+        } while (await _context.Academias.AnyAsync(a => a.Code == nuevoCodigo));
+
+        academia.Code = nuevoCodigo;
+        await _context.SaveChangesAsync();
+
+        return Ok(new
+        {
+            Mensaje = "Código regenerado. El anterior ya no es válido.",
+            Code = academia.Code
+        });
+    }
+
     // GET: api/Academia (lista academias activas, no personales)
     [HttpGet]
     public async Task<ActionResult<List<AcademiaDTO>>> GetAll()
