@@ -116,7 +116,7 @@ public class DocenteController : ControllerBase
     [HttpGet("{id:int}")]
     public async Task<ActionResult<DocenteDetalleDTO>> GetById(int id)
     {
-        var consultaPerfil = _context.PerfilesDocentes
+        var perfil = await _context.PerfilesDocentes
             .Include(p => p.User)
             .Include(p => p.DocentesMaterias)
                 .ThenInclude(dm => dm.Materia)
@@ -124,7 +124,12 @@ public class DocenteController : ControllerBase
                 .ThenInclude(da => da.Academy)
             .FirstOrDefaultAsync(p => p.Id == id);
 
-        perfil ??= await consultaPerfil
+        perfil ??= await _context.PerfilesDocentes
+            .Include(p => p.User)
+            .Include(p => p.DocentesMaterias)
+                .ThenInclude(dm => dm.Materia)
+            .Include(p => p.DocentesAcademias)
+                .ThenInclude(da => da.Academy)
             .FirstOrDefaultAsync(p => p.UserId == id);
 
         if (perfil == null)
@@ -519,5 +524,74 @@ public class DocenteController : ControllerBase
     
 
 
+    }
+
+    // POST: api/Docente/academia (unirse a una academia oficial con código)
+    [Authorize(Roles = "TEACHER")]
+    [HttpPost("academia")]
+    public async Task<IActionResult> UnirseAcademia([FromBody] UnirseAcademiaDTO dto)
+    {
+        if (string.IsNullOrWhiteSpace(dto.Code))
+            return BadRequest("El código es obligatorio.");
+
+        var userId = int.Parse(
+            User.FindFirst(
+                System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
+
+        var perfil = await _context.PerfilesDocentes
+            .FirstOrDefaultAsync(p => p.UserId == userId);
+
+        if (perfil == null)
+            return NotFound("No se encontró el perfil docente.");
+
+        var codigo = dto.Code.Trim().ToUpper();
+
+        var academia = await _context.Academias
+            .FirstOrDefaultAsync(a => a.Code.ToUpper() == codigo);
+
+        if (academia == null)
+            return BadRequest("Código de academia no válido.");
+
+        if (academia.IsPersonal)
+            return BadRequest("No podés unirte a una academia personal.");
+
+        var membresia = await _context.DocentesAcademias
+            .FirstOrDefaultAsync(da => da.TeacherId == perfil.Id && da.AcademyId == academia.Id);
+
+        if (membresia != null && membresia.IsActive)
+            return BadRequest("Ya sos miembro activo de esta academia.");
+
+        if (membresia != null)
+        {
+            // Reactivar la membresía existente en vez de crear otra fila
+            membresia.IsActive = true;
+            membresia.LeftAt = null;
+        }
+        else
+        {
+            _context.DocentesAcademias.Add(new DocenteAcademia
+            {
+                TeacherId = perfil.Id,
+                AcademyId = academia.Id,
+                JoinedAt = DateTime.UtcNow,
+                IsActive = true
+            });
+        }
+
+        // Si la academia estaba inactiva (sin miembros), se reactiva al entrar alguien
+        if (!academia.IsActive)
+            academia.IsActive = true;
+
+        await _context.SaveChangesAsync();
+
+        return Ok(new
+        {
+            Mensaje = "Te uniste a la academia.",
+            Academia = new AcademiaResumenDTO
+            {
+                Id = academia.Id,
+                Name = academia.Name
+            }
+        });
     }
 }

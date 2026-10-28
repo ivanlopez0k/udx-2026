@@ -45,6 +45,11 @@
         public string Name { get; set; }
     }
 
+    public class UnirseAcademiaDTO
+    {
+        public string Code { get; set; }
+    }
+
     public class MateriaDetalleDTO
     {
         public string Name { get; set; }
