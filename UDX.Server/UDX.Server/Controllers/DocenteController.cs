@@ -447,8 +447,6 @@ public class DocenteController : ControllerBase
     }
 
     [Authorize(Roles = "TEACHER")]
-
-    [Authorize(Roles = "TEACHER")]
     [HttpPut("materias/precio")]
     public async Task<IActionResult> ActualizarPrecioMateria(
         ActualizarPrecioMateriaDTO dto)
