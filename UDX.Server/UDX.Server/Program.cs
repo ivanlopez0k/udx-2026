@@ -16,6 +16,17 @@ string connectionString = builder.Configuration.GetConnectionString("DefaultConn
 
 builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlServer(connectionString));
 
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped(sp =>
+{
+    var accessor = sp.GetRequiredService<IHttpContextAccessor>();
+    var request = accessor.HttpContext?.Request;
+    var baseAddress = request != null
+        ? $"{request.Scheme}://{request.Host.Value}"
+        : "http://localhost";
+    return new HttpClient { BaseAddress = new Uri(baseAddress) };
+});
+
 builder.Services.AddControllers();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -73,6 +84,11 @@ builder.Services.AddRazorComponents()
     .AddInteractiveWebAssemblyComponents();
 
 var app = builder.Build();
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    Seed.Inicializar(context);
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -89,7 +105,7 @@ else
 }
 //app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseHttpsRedirection();
-
+app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
 

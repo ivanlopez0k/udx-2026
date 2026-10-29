@@ -1,0 +1,58 @@
+﻿@if (Mostrar)
+{
+    <div class="modal-overlay" @onclick="Cerrar">
+
+        <div class="profesor-modal" @onclick:stopPropagation="true">
+
+            <button class="modal-cerrar" @onclick="Cerrar">
+                ×
+            </button>
+
+            <img src="@Foto"
+                 alt="@Nombre"
+                 class="modal-foto" />
+
+            <h2>@Nombre</h2>
+
+            <p class="modal-materia">
+                @Materia
+            </p>
+
+            <p class="modal-ubicacion">
+                 @Ubicacion
+            </p>
+
+            <button class="modal-docente">
+                Ver Docente
+            </button>
+
+        </div>
+
+    </div>
+}
+
+@code {
+
+    [Parameter]
+    public bool Mostrar { get; set; }
+
+    [Parameter]
+    public string Foto { get; set; } = "";
+
+    [Parameter]
+    public string Nombre { get; set; } = "";
+
+    [Parameter]
+    public string Materia { get; set; } = "";
+
+    [Parameter]
+    public string Ubicacion { get; set; } = "";
+
+    [Parameter]
+    public EventCallback CerrarModal { get; set; }
+
+    private async Task Cerrar()
+    {
+        await CerrarModal.InvokeAsync();
+    }
+}

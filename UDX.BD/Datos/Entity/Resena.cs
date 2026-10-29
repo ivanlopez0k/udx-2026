@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
+
 namespace UDX.BD.Datos.Entity
 {
     public class Resena : EntityBase

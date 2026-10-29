@@ -12,6 +12,7 @@ namespace UDX.BD.Datos
         public DbSet<ClaseAgendada> ClasesAgendadas { get; set; }
         public DbSet<Contenido> Contenidos { get; set; }
         public DbSet<DocenteMateria> DocentesMaterias { get; set; }
+        public DbSet<DocenteAcademia> DocentesAcademias { get; set; }
         public DbSet<Hijo> Hijos { get; set; }
         public DbSet<Materia> Materias { get; set; }
         public DbSet<Mensaje> Mensajes { get; set; }
@@ -28,6 +29,34 @@ namespace UDX.BD.Datos
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<Resena>()
+                .HasOne(r => r.Author)
+                .WithMany()
+                .HasForeignKey(r => r.authorResena);
+
+            modelBuilder.Entity<Resena>()
+                .HasOne(r => r.Teacher)
+                .WithMany()
+                .HasForeignKey(r => r.TeacherId);
+
+            modelBuilder.Entity<DocenteAcademia>(entity =>
+            {
+                entity.HasOne(da => da.Teacher)
+                    .WithMany(p => p.DocentesAcademias)
+                    .HasForeignKey(da => da.TeacherId);
+
+                entity.HasOne(da => da.Academy)
+                    .WithMany(a => a.Members)
+                    .HasForeignKey(da => da.AcademyId);
+
+                entity.HasIndex(da => new { da.TeacherId, da.AcademyId }).IsUnique();
+            });
+
+            modelBuilder.Entity<Academia>()
+                .HasOne(a => a.Responsable)
+                .WithMany()
+                .HasForeignKey(a => a.ResponsableId);
+
             foreach (var foreignKey in modelBuilder.Model
               .GetEntityTypes()
               .SelectMany(e => e.GetForeignKeys()))
@@ -35,6 +64,14 @@ namespace UDX.BD.Datos
                 foreignKey.DeleteBehavior = DeleteBehavior.NoAction;
             }
 
+            modelBuilder.Entity<Materia>(entity =>
+            {
+                entity.Property(m => m.Name).HasMaxLength(200);
+                entity.Property(m => m.Grade).HasMaxLength(200);
+                entity.HasIndex(m => new { m.Name, m.Grade }).IsUnique();
+            });
+
+            modelBuilder.Entity<Academia>().HasIndex(a => a.Code).IsUnique();
         }
 
 

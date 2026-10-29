@@ -4,6 +4,8 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
 
 namespace UDX.BD.Datos.Entity
+
+
 {
     public class PerfilDocente : EntityBase
     {
@@ -15,12 +17,13 @@ namespace UDX.BD.Datos.Entity
         public int RatinCount { get; set; }
         public string Availability { get; set; }
         public bool Verified { get; set; }
+        public string? ProfileImage { get; set; }
 
         public int UserId { get; set; }
         public Usuario User { get; set; }
 
-        public int? AcademyId { get; set; }
-        public Academia Academy { get; set; }
+        public ICollection<DocenteMateria> DocentesMaterias { get; set; }
+        public ICollection<DocenteAcademia> DocentesAcademias { get; set; }
 
     }
 }

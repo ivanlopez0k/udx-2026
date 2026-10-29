@@ -1,0 +1,527 @@
+﻿@page "/perfil-padre"
+@using UDX.Shared.DTOs
+@using Microsoft.AspNetCore.Components.Forms
+@using System.Net.Http.Headers
+@layout MainLayout
+@inject HttpClient Http
+@inject IJSRuntime JS
+@inject NavigationManager Navigation
+
+<PageTitle>UDX</PageTitle>
+
+@if (cargando)
+{
+    <div class="text-center" style="padding-top: 150px;">
+        <h4>Cargando perfil...</h4>
+    </div>
+}
+else
+{
+    <div class="container" style="max-width: 1000px; padding-top: 80px;">
+
+        <div class="row">
+
+            <!-- FOTO DE PERFIL -->
+            <div class="col-md-4 text-center" style="margin-top: 50px;">
+
+                <div class="text-center">
+
+                    <img src="@(string.IsNullOrWhiteSpace(fotoPerfil)
+                                            ? "images/default-avatar.avif"
+                                            : fotoPerfil)"
+                         class="avatar img-circle img-thumbnail"
+                         style="width: 180px; height: 180px; object-fit: cover;"
+                         alt="Foto de perfil" />
+
+                    @if (!string.IsNullOrEmpty(mensajeFoto))
+                    {
+                        <div class="alert alert-danger mt-2"
+                             style="display: inline-block; white-space: nowrap;">
+                            @mensajeFoto
+                        </div>
+                    }
+
+                    <div style="display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 8px;
+                        max-width: 100%;">
+
+                        <label class="btn btn-primary button text-nowrap"
+                               style="margin-bottom: 0;">
+
+                            Elegir foto
+
+                            <InputFile OnChange="SeleccionarFoto"
+                                       style="display: none;"
+                                       accept="image/*" />
+
+                        </label>
+
+                    </div>
+
+                </div>
+
+                <hr />
+
+            </div>
+
+
+            <!-- DATOS DEL PERFIL -->
+            <div class="col-md-8" style="margin-top: 50px;">
+
+                <ul class="nav nav-tabs">
+                    <li class="nav-item">
+                        <a class="nav-link active">
+                            Mi Perfil
+                        </a>
+                    </li>
+                </ul>
+
+                <div class="tab-content">
+
+                    <div class="tab-pane active">
+
+                        <hr />
+
+                        <!-- NOMBRE Y TELÉFONO -->
+                        <div class="row">
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">
+                                    Nombre
+                                </label>
+
+                                <input type="text"
+                                       class="form-control"
+                                       @bind="nombre" />
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">
+                                    Teléfono
+                                </label>
+
+                                <input type="text"
+                                       class="form-control"
+                                       @bind="telefono" />
+                            </div>
+
+                        </div>
+
+
+                        <!-- EMAIL Y CIUDAD -->
+                        <div class="row">
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">
+                                    Email
+                                </label>
+
+                                <input type="email"
+                                       class="form-control"
+                                       @bind="email"
+                                       readonly />
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">
+                                    Ciudad
+                                </label>
+
+                                <input type="text"
+                                       class="form-control"
+                                       @bind="ciudad" />
+                            </div>
+
+                        </div>
+
+
+                        <!-- HIJO Y GRADO -->
+                        <div class="row">
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">
+                                    Hijo/a
+                                </label>
+
+                                <input type="text"
+                                       class="form-control"
+                                       @bind="hijo" />
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">
+                                    Grado
+                                </label>
+
+                                <input type="text"
+                                       class="form-control"
+                                       @bind="grado" />
+                            </div>
+
+                        </div>
+
+
+                        <!-- BOTONES PRINCIPALES -->
+                        <div class="row">
+
+                            <div class="col-md-12">
+
+                                <br />
+
+                                <button class="btn btn-primary"
+        @onclick="GuardarCambios">
+    Guardar
+</button>
+
+<button class="btn btn-secondary ms-2"
+        type="button"
+        @onclick="CerrarSesion">
+    Cerrar sesión
+</button>
+
+@if (!string.IsNullOrEmpty(mensaje))
+{
+    <div class="alert @(guardadoCorrectamente ? "alert-success" : "alert-danger") mt-3">
+        @mensaje
+    </div>
+}
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- ELIMINAR CUENTA -->
+                        <hr />
+
+                        <div class="mt-4 pt-3 border-top">
+
+                            <p class="text-muted mb-2">
+                                Zona de peligro
+                            </p>
+
+                            <button class="btn btn-danger"
+                                    type="button"
+                                    @onclick="MostrarConfirmacionEliminar">
+                                Eliminar cuenta
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+}
+
+
+<!-- MODAL DE CONFIRMACIÓN -->
+@if (mostrarConfirmacionEliminar)
+{
+    <div class="modal fade show d-block"
+         tabindex="-1"
+         style="background-color: rgba(0,0,0,0.5);">
+
+        <div class="modal-dialog modal-dialog-centered">
+
+            <div class="modal-content">
+
+                <div class="modal-header">
+
+                    <h5 class="modal-title">
+                        Eliminar cuenta
+                    </h5>
+
+                    <button type="button"
+                            class="btn-close"
+                            @onclick="CancelarEliminar">
+                    </button>
+
+                </div>
+
+                <div class="modal-body">
+
+                    <p>
+                        ¿Estás seguro de que querés eliminar tu cuenta?
+                    </p>
+
+                    <p class="text-danger">
+                        Esta acción no se puede deshacer.
+                    </p>
+
+                </div>
+
+                <div class="modal-footer">
+
+                    <button type="button"
+                            class="btn btn-success"
+                            @onclick="CancelarEliminar">
+                        Cancelar
+                    </button>
+
+                    <button type="button"
+                            class="btn btn-danger"
+                            @onclick="EliminarCuenta">
+                        Eliminar cuenta
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+}
+
+
+@code
+{
+    private string nombre = "";
+    private string email = "";
+    private string telefono = "";
+    private string ciudad = "";
+    private string hijo = "";
+    private string grado = "";
+    private string fotoPerfil = "";
+
+    private bool cargando = true;
+    private string mensajeFoto = "";
+    private string mensaje = "";
+    private bool guardadoCorrectamente = false;
+    private bool mostrarConfirmacionEliminar = false;
+
+    private IBrowserFile? fotoSeleccionada;
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+
+        var token = await JS.InvokeAsync<string>(
+            "localStorage.getItem",
+            "token");
+
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            Navigation.NavigateTo("/");
+            return;
+        }
+
+        Http.DefaultRequestHeaders.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue(
+                "Bearer",
+                token);
+
+        var respuesta = await Http.GetAsync(
+            "api/Padre/perfil");
+
+        Console.WriteLine(
+            $"Estado perfil: {respuesta.StatusCode}");
+
+        if (respuesta.StatusCode ==
+            System.Net.HttpStatusCode.Unauthorized ||
+            respuesta.StatusCode ==
+            System.Net.HttpStatusCode.Forbidden)
+        {
+            Navigation.NavigateTo("/");
+            return;
+        }
+
+        var contenidoRespuesta =
+            await respuesta.Content.ReadAsStringAsync();
+
+        Console.WriteLine(
+            $"Respuesta perfil: {contenidoRespuesta}");
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            var perfil = await respuesta.Content
+                .ReadFromJsonAsync<PerfilPadreDTO>();
+
+            if (perfil != null)
+            {
+                nombre = perfil.Nombre;
+                email = perfil.Email;
+                telefono = perfil.Telefono;
+                ciudad = perfil.Ciudad;
+                hijo = perfil.Hijo;
+                grado = perfil.Grado;
+                fotoPerfil = perfil.FotoPerfil;
+            }
+        }
+
+        cargando = false;
+
+        StateHasChanged();
+    }
+
+
+    private async Task GuardarCambios()
+    {
+        if (string.IsNullOrWhiteSpace(fotoPerfil))
+        {
+            mensajeFoto = "La foto de perfil es obligatoria.";
+            return;
+        }
+
+        mensajeFoto = "";
+
+        if (fotoSeleccionada != null)
+        {
+            using var contenido =
+                new MultipartFormDataContent();
+
+            var stream =
+                fotoSeleccionada.OpenReadStream(
+                    5 * 1024 * 1024);
+
+            var archivo =
+                new StreamContent(stream);
+
+            contenido.Add(
+                archivo,
+                "foto",
+                fotoSeleccionada.Name);
+
+            var respuestaFoto =
+                await Http.PostAsync(
+                    "api/Padre/foto",
+                    contenido);
+
+            if (!respuestaFoto.IsSuccessStatusCode)
+            {
+                Console.WriteLine(
+                    $"Error al subir foto: {respuestaFoto.StatusCode}");
+
+                return;
+            }
+
+            fotoSeleccionada = null;
+        }
+
+
+        var datos = new PerfilPadreDTO
+        {
+            Nombre = nombre,
+            Email = email,
+            Telefono = telefono,
+            Ciudad = ciudad,
+            Hijo = hijo,
+            Grado = grado
+        };
+
+        var respuesta =
+            await Http.PutAsJsonAsync(
+                "api/Padre/perfil",
+                datos);
+
+       if (!respuesta.IsSuccessStatusCode)
+{
+    mensaje = "❌ No se pudieron guardar los cambios.";
+    guardadoCorrectamente = false;
+
+    Console.WriteLine(
+        $"Error al actualizar perfil: {respuesta.StatusCode}");
+
+    return;
+}
+
+mensaje = "✅ Perfil actualizado correctamente.";
+guardadoCorrectamente = true;
+    }
+
+
+    private async Task SeleccionarFoto(
+        InputFileChangeEventArgs e)
+    {
+        fotoSeleccionada = e.File;
+
+        var buffer =
+            new byte[fotoSeleccionada.Size];
+
+        await fotoSeleccionada
+            .OpenReadStream(5 * 1024 * 1024)
+            .ReadExactlyAsync(buffer);
+
+        var base64 =
+            Convert.ToBase64String(buffer);
+
+        fotoPerfil =
+            $"data:{fotoSeleccionada.ContentType};base64,{base64}";
+
+        StateHasChanged();
+    }
+
+
+    private async Task CerrarSesion()
+    {
+        await JS.InvokeVoidAsync(
+            "localStorage.removeItem",
+            "token");
+
+        Navigation.NavigateTo("/");
+    }
+
+
+    private void MostrarConfirmacionEliminar()
+    {
+        mostrarConfirmacionEliminar = true;
+    }
+
+
+    private void CancelarEliminar()
+    {
+        mostrarConfirmacionEliminar = false;
+    }
+
+
+   private async Task EliminarCuenta()
+{
+    var token = await JS.InvokeAsync<string>(
+        "localStorage.getItem",
+        "token");
+
+    if (string.IsNullOrEmpty(token))
+    {
+        Navigation.NavigateTo("/login");
+        return;
+    }
+
+    using var request = new HttpRequestMessage(
+        HttpMethod.Delete,
+        "api/Padre/cuenta");
+
+    request.Headers.Authorization =
+        new AuthenticationHeaderValue(
+            "Bearer",
+            token);
+
+    var respuesta =
+        await Http.SendAsync(request);
+
+    if (!respuesta.IsSuccessStatusCode)
+    {
+        Console.WriteLine(
+            $"Error al eliminar cuenta: {respuesta.StatusCode}");
+
+        mostrarConfirmacionEliminar = false;
+
+        return;
+    }
+
+    await JS.InvokeVoidAsync(
+        "localStorage.removeItem",
+        "token");
+
+    Navigation.NavigateTo("/");
+}
+}

@@ -9,13 +9,18 @@
     <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.9" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.9" />
+		
+	</ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\UDX.Servicios\UDX.Servicios.csproj" />
     <ProjectReference Include="..\..\UDX.Shared\UDX.Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="wwwroot\images\" />
   </ItemGroup>
 
 </Project>
