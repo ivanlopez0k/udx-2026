@@ -32,4 +32,32 @@ namespace UDX.Server.DTOs
         public decimal? PricePerHour { get; set; }
         public decimal? PricePerCourse { get; set; }
     }
+
+    public class EditarAcademiaDTO
+    {
+        [Required(ErrorMessage = "La descripción es obligatoria")]
+        public string Description { get; set; } = string.Empty;
+
+        public string? Location { get; set; }
+        public string? Phone { get; set; }
+
+        [EmailAddress(ErrorMessage = "Email inválido")]
+        public string? Email { get; set; }
+    }
+
+    public class EditarPreciosAcademiaDTO
+    {
+        public decimal? PricePerHour { get; set; }
+        public decimal? PricePerCourse { get; set; }
+    }
+
+    public class CambiarEstadoAcademiaDTO
+    {
+        public bool? IsActive { get; set; }
+    }
+
+    public class CambiarResponsableAcademiaDTO
+    {
+        public int ResponsableId { get; set; }
+    }
 }

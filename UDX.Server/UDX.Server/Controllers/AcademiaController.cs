@@ -182,4 +182,127 @@ public class AcademiaController : ControllerBase
                 .Select(_ => chars[random.Next(chars.Length)])
                 .ToArray());
     }
+
+    // PUT: api/Academia/{id} (solo el responsable) - descripción, ubicación, teléfono y mail
+    [Authorize]
+    [HttpPut("{id:int}")]
+    public async Task<IActionResult> Editar(
+        int id,
+        [FromBody] EditarAcademiaDTO dto)
+    {
+        var (academia, error) = await ObtenerDelResponsable(id);
+        if (error != null) return error;
+
+        academia!.Description = dto.Description.Trim();
+        academia.Location = dto.Location?.Trim();
+        academia.Phone = dto.Phone?.Trim();
+        academia.Email = dto.Email?.Trim();
+
+        await _context.SaveChangesAsync();
+
+        return Ok(MapearDTO(academia));
+    }
+
+    // PUT: api/Academia/{id}/precios (solo el responsable) - precios generales opcionales
+    [Authorize]
+    [HttpPut("{id:int}/precios")]
+    public async Task<IActionResult> EditarPrecios(
+        int id,
+        [FromBody] EditarPreciosAcademiaDTO dto)
+    {
+        var (academia, error) = await ObtenerDelResponsable(id);
+        if (error != null) return error;
+
+        if (dto.PricePerHour < 0 || dto.PricePerCourse < 0)
+            return BadRequest("Los precios no pueden ser negativos.");
+
+        academia!.PricePerHour = dto.PricePerHour;
+        academia.PricePerCourse = dto.PricePerCourse;
+
+        await _context.SaveChangesAsync();
+
+        return Ok(MapearDTO(academia));
+    }
+
+    // PUT: api/Academia/{id}/estado (solo el responsable) - activar o desactivar a mano
+    [Authorize]
+    [HttpPut("{id:int}/estado")]
+    public async Task<IActionResult> CambiarEstado(
+        int id,
+        [FromBody] CambiarEstadoAcademiaDTO dto)
+    {
+        var (academia, error) = await ObtenerDelResponsable(id);
+        if (error != null) return error;
+
+        if (dto.IsActive == null)
+            return BadRequest("El campo isActive es obligatorio.");
+
+        academia!.IsActive = dto.IsActive.Value;
+
+        await _context.SaveChangesAsync();
+
+        return Ok(MapearDTO(academia));
+    }
+
+    // PUT: api/Academia/{id}/responsable (solo el responsable actual)
+    [Authorize]
+    [HttpPut("{id:int}/responsable")]
+    public async Task<IActionResult> CambiarResponsable(
+        int id,
+        [FromBody] CambiarResponsableAcademiaDTO dto)
+    {
+        var (academia, error) = await ObtenerDelResponsable(id);
+        if (error != null) return error;
+
+        var nuevo = await _context.Usuarios
+            .FirstOrDefaultAsync(u => u.Id == dto.ResponsableId);
+
+        if (nuevo == null)
+            return BadRequest("El usuario indicado no existe.");
+
+        if (nuevo.Role != Usuario.Rol.TEACHER && nuevo.Role != Usuario.Rol.ACADEMY)
+            return BadRequest("El responsable debe ser un docente o una cuenta de academia.");
+
+        academia!.ResponsableId = nuevo.Id;
+
+        await _context.SaveChangesAsync();
+
+        return Ok(MapearDTO(academia));
+    }
+
+    // Devuelve la academia si el usuario autenticado es su responsable; si no, el error a devolver.
+    private async Task<(Academia? academia, IActionResult? error)> ObtenerDelResponsable(int id)
+    {
+        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
+        var academia = await _context.Academias
+            .FirstOrDefaultAsync(a => a.Id == id);
+
+        if (academia == null)
+            return (null, NotFound("Academia no encontrada."));
+
+        if (academia.ResponsableId != userId)
+            return (null, StatusCode(StatusCodes.Status403Forbidden, "Solo el responsable puede editar la academia."));
+
+        if (academia.IsPersonal)
+            return (null, BadRequest("No se puede editar una academia personal."));
+
+        return (academia, null);
+    }
+
+    private static AcademiaDTO MapearDTO(Academia academia) => new()
+    {
+        Id = academia.Id,
+        Name = academia.Name,
+        Description = academia.Description,
+        Code = academia.Code,
+        CreatedAt = academia.CreatedAt,
+        Location = academia.Location,
+        Phone = academia.Phone,
+        Email = academia.Email,
+        ResponsableId = academia.ResponsableId,
+        IsActive = academia.IsActive,
+        PricePerHour = academia.PricePerHour,
+        PricePerCourse = academia.PricePerCourse
+    };
 }
