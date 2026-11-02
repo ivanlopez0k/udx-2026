@@ -142,6 +142,36 @@ public class AcademiaController : ControllerBase
         });
     }
 
+    // PUT: api/Academia/{id}/precios (solo el responsable, incluye academias personales)
+    [Authorize]
+    [HttpPut("{id:int}/precios")]
+    public async Task<IActionResult> ActualizarPrecios(int id, [FromBody] ActualizarPreciosAcademiaDTO dto)
+    {
+        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
+        var academia = await _context.Academias
+            .FirstOrDefaultAsync(a => a.Id == id);
+
+        if (academia == null)
+            return NotFound("Academia no encontrada.");
+
+        if (academia.ResponsableId != userId)
+            return StatusCode(StatusCodes.Status403Forbidden, "Solo el responsable puede modificar los precios.");
+
+        // null borra el precio
+        academia.PricePerHour = dto.PricePerHour;
+        academia.PricePerCourse = dto.PricePerCourse;
+
+        await _context.SaveChangesAsync();
+
+        return Ok(new
+        {
+            academia.Id,
+            academia.PricePerHour,
+            academia.PricePerCourse
+        });
+    }
+
     private string GenerateAcademyCode()
     {
         const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";

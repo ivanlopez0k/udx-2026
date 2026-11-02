@@ -1,0 +1,297 @@
+﻿@page "/quiero-ensenar"
+@using System.ComponentModel.DataAnnotations
+@using System.Net.Http.Json
+@inject HttpClient Http
+
+
+<PageTitle>Quiero enseñar</PageTitle>
+
+<div class="container mt-4 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+
+                    <h1 class="text-center mb-2">Quiero enseñar</h1>
+
+                    <p class="text-center text-muted mb-4">
+                        Completá tus datos para ofrecer tus clases.
+                    </p>
+
+                    <EditForm Model="@formulario"
+                              OnValidSubmit="@EnviarFormulario">
+
+                        <DataAnnotationsValidator />
+
+                        <ValidationSummary />
+
+                        <h4 class="mb-3">Datos personales</h4>
+
+                        <div class="mb-3">
+                            <label class="form-label">Nombre completo</label>
+
+                            <InputText class="form-control"
+                                       @bind-Value="formulario.Nombre"
+                                       placeholder="Ingresá tu nombre completo" />
+
+                            <ValidationMessage For="@(() => formulario.Nombre)" />
+                        </div>
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Correo electrónico</label>
+                            <InputText id="email"
+                                       class="form-control"
+                                       type="email"
+                                       @bind-Value="formulario.Email" />
+                            <ValidationMessage For="@(() => formulario.Email)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Contraseña</label>
+                            <InputText id="password"
+                                       class="form-control"
+                                       type="password"
+                                       @bind-Value="formulario.Password" />
+                            <ValidationMessage For="@(() => formulario.Password)" />
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label">Zona donde das clases</label>
+
+                            <InputText class="form-control"
+                                       @bind-Value="formulario.Zona"
+                                       placeholder="Ej.: Córdoba Capital" />
+
+                            <ValidationMessage For="@(() => formulario.Zona)" />
+                        </div>
+
+                        <hr />
+
+                        
+                        <h4 class="mb-3">Materias y precios</h4>
+
+                        <p class="text-muted">
+                            Seleccioná los grados que querés enseñar para cada materia
+                            e indicá tu precio por hora.
+                        </p>
+
+                        @foreach (var grupo in materiasDisponibles
+                            .GroupBy(m => m.Name)
+                            .OrderBy(g => g.Key))
+                        {
+                            <div class="card mb-3" @key="grupo.Key">
+                                <div class="card-body">
+                                    <h5 class="card-title">@grupo.Key</h5>
+
+                                    <div class="d-flex flex-wrap gap-3">
+                                        @foreach (var materia in grupo.OrderBy(m => m.Grade))
+                                        {
+                                            <div class="form-check" @key="materia.Id">
+                                                <input class="form-check-input"
+                                                       type="checkbox"
+                                                       id="grado-@materia.Id"
+                                                       checked="@materia.Seleccionada"
+                                                       @onchange="(e) => CambiarSeleccion(materia, e)" />
+
+                                                <label class="form-check-label"
+                                                       for="grado-@materia.Id">
+                                                    @materia.Grade°
+                                                </label>
+                                            </div>
+                                        }
+                                    </div>
+
+                                    @foreach (var materia in grupo.Where(m => m.Seleccionada)
+                                        .OrderBy(m => m.Grade))
+                                    {
+                                        <div class="mt-3">
+                                            <label class="form-label">
+                                                Precio por hora para grado @materia.Grade ($)
+                                            </label>
+
+                                            <InputNumber class="form-control"
+                                                         @bind-Value="materia.Precio"
+                                                         min="1" />
+
+                                            @if (materia.Precio <= 0)
+                                            {
+                                                <small class="text-danger">
+                                                    El precio debe ser mayor que cero.
+                                                </small>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+
+                        @if (!string.IsNullOrEmpty(errorMaterias))
+                        {
+                            <div class="alert alert-danger">
+                                @errorMaterias
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrEmpty(mensajeExito))
+                        {
+                            <div class="alert alert-success">
+                                @mensajeExito
+                            </div>
+                        }
+
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                Registrarse
+                            </button>
+                        </div>
+
+                    </EditForm>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@code {
+    private FormularioDocente formulario = new();
+
+    private string errorMaterias = "";
+    private string mensajeExito = "";
+    private bool cargandoMaterias = true;
+    private string errorCargaMaterias = "";
+    private List<MateriaFormulario> materiasDisponibles = new();
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            materiasDisponibles = await Http.GetFromJsonAsync<List<MateriaFormulario>>(
+                "api/Materia") ?? new List<MateriaFormulario>();
+        }
+        catch
+        {
+            errorCargaMaterias = "No se pudieron cargar las materias.";
+        }
+        finally
+        {
+            cargandoMaterias = false;
+        }
+    }
+    private void CambiarSeleccion(
+        MateriaFormulario materia,
+        ChangeEventArgs e)
+    {
+        materia.Seleccionada = e.Value is bool seleccionado && seleccionado;
+
+        errorMaterias = "";
+        mensajeExito = "";
+    }
+
+
+    private async Task EnviarFormulario()
+    {
+        errorMaterias = "";
+        mensajeExito = "";
+
+        var materiasSeleccionadas = materiasDisponibles
+            .Where(m => m.Seleccionada)
+            .ToList();
+
+        if (materiasSeleccionadas.Count == 0)
+        {
+            errorMaterias = "Tenés que seleccionar al menos un grado.";
+            return;
+        }
+
+        if (materiasSeleccionadas.Any(m => m.Precio <= 0))
+        {
+            errorMaterias = "Todos los precios deben ser mayores que cero.";
+            return;
+        }
+
+        var dto = new
+        {
+            Name = formulario.Nombre.Trim(),
+            Email = formulario.Email.Trim(),
+            Password = formulario.Password,
+            Zona = formulario.Zona.Trim(),
+            Materias = materiasSeleccionadas.Select(m => new
+            {
+                MateriaId = m.Id,
+                Nivel = m.Grade,
+                PrecioPorHora = m.Precio
+            }).ToList()
+        };
+
+        try
+        {
+            var respuesta = await Http.PostAsJsonAsync(
+                "api/Auth/registro-docente", dto);
+
+            if (respuesta.IsSuccessStatusCode)
+            {
+                mensajeExito =
+                    "La cuenta docente se creó correctamente. Ya podés iniciar sesión.";
+
+                formulario = new FormularioDocente();
+
+                foreach (var materia in materiasDisponibles)
+                {
+                    materia.Seleccionada = false;
+                    materia.Precio = 1000;
+                }
+            }
+            else
+            {
+                var detalle = await respuesta.Content.ReadAsStringAsync();
+
+                errorMaterias = string.IsNullOrWhiteSpace(detalle)
+                    ? "No se pudo registrar el docente."
+                    : detalle;
+            }
+        }
+        catch (HttpRequestException)
+        {
+            errorMaterias =
+                "No pudimos completar tu registro. Ocurrió un problema de conexión. Por favor, intentá nuevamente en unos minutos.";
+        }
+    }
+
+
+    public class FormularioDocente
+    {
+        [Required(ErrorMessage = "Ingresá tu nombre completo.")]
+        [StringLength(100, ErrorMessage = "El nombre no puede superar los 100 caracteres.")]
+        public string Nombre { get; set; } = "";
+
+        [Required(ErrorMessage = "Ingresá tu correo electrónico.")]
+        [EmailAddress(ErrorMessage = "El correo electrónico no es válido.")]
+        [StringLength(254, ErrorMessage = "El correo no puede superar los 254 caracteres.")]
+        public string Email { get; set; } = "";
+
+        [Required(ErrorMessage = "Ingresá una contraseña.")]
+        [StringLength(100, MinimumLength = 8,
+            ErrorMessage = "La contraseña debe tener entre 8 y 100 caracteres.")]
+        public string Password { get; set; } = "";
+
+        [Required(ErrorMessage = "Ingresá la zona donde das clases.")]
+        [StringLength(100, ErrorMessage = "La zona no puede superar los 100 caracteres.")]
+        public string Zona { get; set; } = "";
+    }
+
+
+    public class MateriaFormulario
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = "";
+        public string Grade { get; set; } = "";
+        public string Category { get; set; } = "";
+        public bool Seleccionada { get; set; }
+        public decimal Precio { get; set; } = 1000;
+        public string Nivel { get; set; } = "Inicial";
+    }
+
+    
+}

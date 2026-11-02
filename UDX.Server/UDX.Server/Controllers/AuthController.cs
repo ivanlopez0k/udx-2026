@@ -291,5 +291,147 @@ namespace UDX.Server.Controllers
             return new JwtSecurityTokenHandler()
                 .WriteToken(token);
         }
+
+
+        [HttpPost("registro-docente")]
+        public IActionResult RegistrarDocente(RegistroDocenteDTO dto)
+        {
+            var email = dto.Email.Trim().ToLowerInvariant();
+
+            if (_context.Usuarios.Any(u => u.Email.ToLower() == email))
+            {
+                return BadRequest("Ya existe un usuario con ese correo electrónico.");
+            }
+
+            if (dto.Materias == null || dto.Materias.Count == 0)
+            {
+                return BadRequest("Tenés que seleccionar al menos una materia.");
+            }
+
+            if (dto.Materias.Any(m =>
+                m.MateriaId <= 0 ||
+                string.IsNullOrWhiteSpace(m.Nivel) ||
+                m.PrecioPorHora <= 0))
+            {
+                return BadRequest(
+                    "Cada materia debe tener un identificador válido, un nivel y un precio mayor que cero.");
+            }
+
+            // Evitar que se repita la misma materia para el mismo nivel.
+            bool materiasRepetidas = dto.Materias
+                .GroupBy(m => new
+                {
+                    m.MateriaId,
+                    Nivel = m.Nivel.Trim().ToLowerInvariant()
+                })
+                .Any(g => g.Count() > 1);
+
+            if (materiasRepetidas)
+            {
+                return BadRequest(
+                    "No podés registrar la misma materia dos veces para el mismo nivel.");
+            }
+
+            var idsMaterias = dto.Materias
+                .Select(m => m.MateriaId)
+                .Distinct()
+                .ToList();
+
+            var materiasExistentes = _context.Materias
+                .Where(m => idsMaterias.Contains(m.Id))
+                .Select(m => m.Id)
+                .ToList();
+
+            if (materiasExistentes.Count != idsMaterias.Count)
+            {
+                return BadRequest("Una o más materias no existen.");
+            }
+
+            using var transaction = _context.Database.BeginTransaction();
+
+            try
+            {
+                var usuario = new Usuario
+                {
+                    Name = dto.Name.Trim(),
+                    Email = email,
+                    Phone = "",
+                    Password = BCrypt.Net.BCrypt.HashPassword(dto.Password),
+                    Role = Usuario.Rol.TEACHER,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                _context.Usuarios.Add(usuario);
+                _context.SaveChanges();
+
+                var academiaPersonal = new Academia
+                {
+                    Name = $"{usuario.Name} Academy",
+                    Description = "",
+                    Code = GenerateAcademyCode(),
+                    CreatedAt = DateTime.UtcNow,
+                    IsPersonal = true,
+                    IsActive = true,
+                    ResponsableId = usuario.Id
+                };
+
+                _context.Academias.Add(academiaPersonal);
+
+                var perfil = new PerfilDocente
+                {
+                    UserId = usuario.Id,
+                    Credentials = "",
+                    HourlyRate = 0,
+                    Location = dto.Zona.Trim(),
+                    RatingAvg = 0,
+                    RatinCount = 0,
+                    Availability = "",
+                    Verified = false,
+                    ProfileImage = ""
+                };
+
+                _context.PerfilesDocentes.Add(perfil);
+                _context.SaveChanges();
+
+                _context.DocentesAcademias.Add(new DocenteAcademia
+                {
+                    TeacherId = perfil.Id,
+                    AcademyId = academiaPersonal.Id,
+                    JoinedAt = DateTime.UtcNow,
+                    IsActive = true
+                });
+
+                foreach (var materia in dto.Materias)
+                {
+                    _context.DocentesMaterias.Add(new DocenteMateria
+                    {
+                        TeacherId = perfil.Id,
+                        MateriaId = materia.MateriaId,
+                        Level = materia.Nivel.Trim(),
+                        HourlyRate = materia.PrecioPorHora
+                    });
+                }
+
+                _context.SaveChanges();
+                transaction.Commit();
+
+                return Ok(new
+                {
+                    mensaje = "La cuenta docente se creó correctamente.",
+                    usuario.Email,
+                    usuario.Name,
+                    zona = perfil.Location,
+                    materiasRegistradas = dto.Materias.Count
+                });
+            }
+            catch
+            {
+                transaction.Rollback();
+                return StatusCode(
+                    500,
+                    "No se pudo completar el registro docente. No se guardaron los cambios.");
+            }
+        }
+
     }
 }
