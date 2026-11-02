@@ -29,5 +29,7 @@ namespace UDX.Server.DTOs
         public string? Email { get; set; }
         public int? ResponsableId { get; set; }
         public bool IsActive { get; set; }
+        public decimal? PricePerHour { get; set; }
+        public decimal? PricePerCourse { get; set; }
     }
 }
