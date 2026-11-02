@@ -164,12 +164,7 @@ public class AcademiaController : ControllerBase
 
         await _context.SaveChangesAsync();
 
-        return Ok(new
-        {
-            academia.Id,
-            academia.PricePerHour,
-            academia.PricePerCourse
-        });
+        return Ok(MapearDTO(academia));
     }
 
     private string GenerateAcademyCode()
@@ -197,27 +192,6 @@ public class AcademiaController : ControllerBase
         academia.Location = dto.Location?.Trim();
         academia.Phone = dto.Phone?.Trim();
         academia.Email = dto.Email?.Trim();
-
-        await _context.SaveChangesAsync();
-
-        return Ok(MapearDTO(academia));
-    }
-
-    // PUT: api/Academia/{id}/precios (solo el responsable) - precios generales opcionales
-    [Authorize]
-    [HttpPut("{id:int}/precios")]
-    public async Task<IActionResult> EditarPrecios(
-        int id,
-        [FromBody] EditarPreciosAcademiaDTO dto)
-    {
-        var (academia, error) = await ObtenerDelResponsable(id);
-        if (error != null) return error;
-
-        if (dto.PricePerHour < 0 || dto.PricePerCourse < 0)
-            return BadRequest("Los precios no pueden ser negativos.");
-
-        academia!.PricePerHour = dto.PricePerHour;
-        academia.PricePerCourse = dto.PricePerCourse;
 
         await _context.SaveChangesAsync();
 
