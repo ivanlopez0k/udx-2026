@@ -71,6 +71,15 @@ namespace UDX.BD.Datos
                 entity.HasIndex(m => new { m.Name, m.Grade }).IsUnique();
             });
 
+
+            modelBuilder.Entity<DocenteMateria>()
+    .HasIndex(dm => new
+    {
+        dm.TeacherId,
+        dm.MateriaId,
+        dm.Level
+    })
+    .IsUnique();
             modelBuilder.Entity<Academia>().HasIndex(a => a.Code).IsUnique();
         }
 

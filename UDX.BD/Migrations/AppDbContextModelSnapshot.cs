@@ -237,7 +237,7 @@ namespace UDX.BD.Migrations
 
                     b.Property<string>("Level")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<int>("MateriaId")
                         .HasColumnType("int");
@@ -249,7 +249,8 @@ namespace UDX.BD.Migrations
 
                     b.HasIndex("MateriaId");
 
-                    b.HasIndex("TeacherId");
+                    b.HasIndex("TeacherId", "MateriaId", "Level")
+                        .IsUnique();
 
                     b.ToTable("DocentesMaterias");
                 });
