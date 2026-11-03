@@ -45,12 +45,6 @@ namespace UDX.Server.DTOs
         public string? Email { get; set; }
     }
 
-    public class EditarPreciosAcademiaDTO
-    {
-        public decimal? PricePerHour { get; set; }
-        public decimal? PricePerCourse { get; set; }
-    }
-
     public class CambiarEstadoAcademiaDTO
     {
         public bool? IsActive { get; set; }
