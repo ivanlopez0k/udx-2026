@@ -34,7 +34,7 @@ public class SolicitudClaseController : ControllerBase
             return BadRequest("No se encontró el perfil del padre.");
 
         if (parent.UserId != userId)
-            return Forbid("No podés crear solicitudes para otro padre.");
+            return StatusCode(StatusCodes.Status403Forbidden, "No podés crear solicitudes para otro padre.");
 
         // Validate academy exists and is active
         var academia = await _context.Academias.FindAsync(dto.AcademyId);
@@ -118,7 +118,7 @@ public class SolicitudClaseController : ControllerBase
             return NotFound("No se encontró el perfil del docente.");
 
         if (perfil.UserId != userId)
-            return Forbid("No podés ver solicitudes de otro docente.");
+            return StatusCode(StatusCodes.Status403Forbidden, "No podés ver solicitudes de otro docente.");
 
         var query = _context.SolicitudesClases
             .Include(s => s.Parent).ThenInclude(p => p.User)
