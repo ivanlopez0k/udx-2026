@@ -34,8 +34,8 @@ namespace UDX.BD.Datos.Entity
         public int AcademyId { get; set; }
         public Academia Academy { get; set; }
 
-        public int DocenteId { get; set; }
-        public PerfilDocente Docente { get; set; }
+        public int? DocenteId { get; set; }
+        public PerfilDocente? Docente { get; set; }
 
         public int MateriaId { get; set; }
         public Materia Materia { get; set; }

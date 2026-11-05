@@ -503,7 +503,7 @@ namespace UDX.BD.Migrations
                     b.Property<int>("AcademyId")
                         .HasColumnType("int");
 
-                    b.Property<int>("DocenteId")
+                    b.Property<int?>("DocenteId")
                         .HasColumnType("int");
 
                     b.Property<int>("Duration")
@@ -834,8 +834,7 @@ namespace UDX.BD.Migrations
                     b.HasOne("UDX.BD.Datos.Entity.PerfilDocente", "Docente")
                         .WithMany()
                         .HasForeignKey("DocenteId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("UDX.BD.Datos.Entity.Materia", "Materia")
                         .WithMany()

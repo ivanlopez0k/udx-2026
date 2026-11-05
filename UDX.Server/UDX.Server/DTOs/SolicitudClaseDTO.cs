@@ -3,7 +3,7 @@ namespace UDX.Server.DTOs
     public class CrearSolicitudDTO
     {
         public int ParentId { get; set; }
-        public int DocenteId { get; set; }
+        public int? DocenteId { get; set; }
         public int AcademyId { get; set; }
         public int MateriaId { get; set; }
         public DateTime Schedule { get; set; }
@@ -27,7 +27,7 @@ namespace UDX.Server.DTOs
         public int ParentId { get; set; }
         public string ParentName { get; set; }
 
-        public int DocenteId { get; set; }
+        public int? DocenteId { get; set; }
         public string DocenteName { get; set; }
 
         public int AcademyId { get; set; }
@@ -40,5 +40,8 @@ namespace UDX.Server.DTOs
     public class ActualizarEstadoSolicitudDTO
     {
         public string Status { get; set; }
+
+        // Obligatorio al aceptar en una academia oficial; en una personal se ignora.
+        public int? DocenteId { get; set; }
     }
 }
