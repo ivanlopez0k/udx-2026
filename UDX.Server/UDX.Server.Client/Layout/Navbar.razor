@@ -1,70 +1,153 @@
-﻿
 @implements IDisposable
 @inject IJSRuntime JS
 @inject NavigationManager Navigation
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-    <div class="container-fluid">
-
-        <a class="navbar-brand" href="/">
-            <img src="/favicon.ico" alt="UDX" width="40" height="40">
+<header class="header-floating-wrap">
+    <div class="nav-island">
+        <!-- Brand Logo -->
+        <a href="/" class="brand-group">
+            <img src="/assets/images/UDX.jpg" alt="UDX" class="brand-logo-img" />
+            <div class="brand-info">
+                <span class="brand-title">UDX</span>
+                <span class="brand-subtitle">PRIMARIA &bull; APOYO ESCOLAR</span>
+            </div>
         </a>
 
-        <button class="navbar-toggler"
-                type="button"
-                data-bs-toggle="collapse"
-                data-bs-target="#navbarContenido"
-                aria-controls="navbarContenido"
-                aria-expanded="false"
-                aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
+        <!-- Center Links & Dropdown -->
+        <nav class="nav-center-menu @(mobileMenuAbierto ? "mobile-open" : "")" id="navMenu">
+            <NavLink href="/" class="nav-item-link" Match="NavLinkMatch.All" @onclick="CerrarMobileMenu">
+                <span>Inicio</span>
+            </NavLink>
 
-        <div class="collapse navbar-collapse" id="navbarContenido">
-            <ul class="navbar-nav d-flex flex-column flex-lg-row
-                       align-items-center align-items-lg-start gap-2">
+            <div class="nav-dropdown-trigger">
+                <NavLink href="/profesores" class="nav-item-link" @onclick="CerrarMobileMenu">
+                    <span>Profesores</span>
+                    <svg class="chevron-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M6 9l6 6 6-6"/>
+                    </svg>
+                </NavLink>
 
-                @if (!estaLogueado)
-                {
-                    <li class="nav-item">
-                        <button class="btn btn-success btn-login"
-                                data-bs-toggle="modal"
-                                data-bs-target="#loginModal">
-                            Iniciar sesión
-                        </button>
-                    </li>
-
-                    <li class="nav-item">
-                        <button class="btn btn-primary"
-                                data-bs-toggle="modal"
-                                data-bs-target="#registerModal">
-                            Registrarse
-                        </button>
-                    </li>
-                }
-                else
-                {
-                    <li class="nav-item">
-                        <a class="nav-link" href="/perfil">
-                            @nombreUsuario
+                <!-- Flyout Mega-menu -->
+                <div class="nav-dropdown-menu">
+                    <div class="dropdown-section">
+                        <span class="dropdown-heading">Por Ciclo Primario</span>
+                        <a href="/profesores?ciclo=primer" class="dropdown-item" @onclick="CerrarMobileMenu">
+                            <div class="dropdown-icon">🧒</div>
+                            <div>
+                                <strong>1° Ciclo (1° a 3° Grado)</strong>
+                                <p>Alfabetización, sumas, restas y lectura inicial</p>
+                            </div>
                         </a>
-                    </li>
+                        <a href="/profesores?ciclo=segundo" class="dropdown-item" @onclick="CerrarMobileMenu">
+                            <div class="dropdown-icon">📚</div>
+                            <div>
+                                <strong>2° Ciclo (4° a 7° Grado)</strong>
+                                <p>Fracciones, ciencias y comprensión lectora</p>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="dropdown-section">
+                        <span class="dropdown-heading">Modalidad de Apoyo</span>
+                        <a href="/profesores" class="dropdown-item" @onclick="CerrarMobileMenu">
+                            <div class="dropdown-icon">👩‍🏫</div>
+                            <div>
+                                <strong>Maestras Particulares</strong>
+                                <p>Clases personalizadas 1 a 1 a domicilio u online</p>
+                            </div>
+                        </a>
+                        <a href="/profesores" class="dropdown-item" @onclick="CerrarMobileMenu">
+                            <div class="dropdown-icon">🏢</div>
+                            <div>
+                                <strong>Academias Oficiales</strong>
+                                <p>Institutos verificados con talleres y psicopedagogía</p>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
 
-                    <li class="nav-item">
-                        <button class="btn btn-danger"
-                                @onclick="CerrarSesion">
-                            Cerrar sesión
+            @if (estaLogueado)
+            {
+                <NavLink href="@ObtenerRutaPanel()" class="nav-item-link" @onclick="CerrarMobileMenu">
+                    <span>Mi Panel</span>
+                </NavLink>
+            }
+
+            <a href="/#como-funciona" class="nav-item-link" @onclick="CerrarMobileMenu">
+                <span>Cómo Funciona</span>
+            </a>
+
+            <NavLink href="/quiero-ensenar" class="nav-item-link nav-special-link" @onclick="CerrarMobileMenu">
+                <span class="pulse-indicator"></span>
+                <span>Quiero Enseñar</span>
+            </NavLink>
+        </nav>
+
+        <!-- Right Actions (Guest vs User) -->
+        <div class="nav-end-actions">
+            @if (!estaLogueado)
+            {
+                <div class="guest-action-group">
+                    <a href="/login" class="btn-clean-login">
+                        Ingresar
+                    </a>
+                    <a href="/registro" class="btn-elevated-cta">
+                        <span>Registrarse</span>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                        </svg>
+                    </a>
+                </div>
+            }
+            else
+            {
+                <div class="user-action-group">
+                    <div class="user-profile-toggle" @onclick="ToggleUserMenu">
+                        <div class="user-avatar-hex">@ObtenerInicial()</div>
+                        <span class="user-short-name">@nombreUsuario</span>
+                        <svg class="chevron-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <path d="M6 9l6 6 6-6"/>
+                        </svg>
+                    </div>
+
+                    <!-- User Flyout Dropdown -->
+                    <div class="user-flyout-menu @(userMenuAbierto ? "open" : "")">
+                        <div class="flyout-user-meta">
+                            <strong>@nombreUsuario</strong>
+                            <span class="flyout-badge">@(string.IsNullOrWhiteSpace(rolUsuario) ? "Usuario" : rolUsuario)</span>
+                        </div>
+                        <div class="flyout-divider"></div>
+                        <a href="@ObtenerRutaPanel()" class="flyout-item" @onclick="CerrarMenus">
+                            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                            </svg>
+                            <span>Mi Panel</span>
+                        </a>
+                        <button type="button" class="flyout-item flyout-logout" @onclick="CerrarSesion">
+                            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                            </svg>
+                            <span>Cerrar Sesión</span>
                         </button>
-                    </li>
-                }
-            </ul>
+                    </div>
+                </div>
+            }
+
+            <!-- Mobile Toggle Button -->
+            <button type="button" class="mobile-toggle-btn @(mobileMenuAbierto ? "active" : "")" @onclick="ToggleMobileMenu" aria-label="Menu">
+                <span></span>
+                <span></span>
+            </button>
         </div>
     </div>
-</nav>
+</header>
 
 @code {
     private bool estaLogueado = false;
     private string nombreUsuario = "";
+    private string rolUsuario = "";
+    private bool userMenuAbierto = false;
+    private bool mobileMenuAbierto = false;
 
     protected override void OnInitialized()
     {
@@ -82,33 +165,102 @@
 
     private async Task ActualizarEstadoSesion()
     {
-        var token = await JS.InvokeAsync<string?>(
-            "localStorage.getItem", "token");
+        try
+        {
+            var token = await JS.InvokeAsync<string?>("localStorage.getItem", "token")
+                        ?? await JS.InvokeAsync<string?>("localStorage.getItem", "udx_token");
 
-        var nombre = await JS.InvokeAsync<string?>(
-            "localStorage.getItem", "name");
+            var nombre = await JS.InvokeAsync<string?>("localStorage.getItem", "name")
+                         ?? await JS.InvokeAsync<string?>("localStorage.getItem", "udx_name");
 
-        estaLogueado = !string.IsNullOrWhiteSpace(token);
-        nombreUsuario = nombre ?? "";
+            var rol = await JS.InvokeAsync<string?>("localStorage.getItem", "role")
+                      ?? await JS.InvokeAsync<string?>("localStorage.getItem", "udx_role");
+
+            estaLogueado = !string.IsNullOrWhiteSpace(token);
+            nombreUsuario = nombre ?? "Usuario";
+            rolUsuario = rol ?? "";
+        }
+        catch
+        {
+            // Prerender safe fallback
+        }
     }
 
-    private async void AlCambiarPagina(
-        object? sender, LocationChangedEventArgs e)
+    private async void AlCambiarPagina(object? sender, LocationChangedEventArgs e)
     {
+        userMenuAbierto = false;
+        mobileMenuAbierto = false;
         await ActualizarEstadoSesion();
         await InvokeAsync(StateHasChanged);
     }
 
+    private void ToggleUserMenu()
+    {
+        userMenuAbierto = !userMenuAbierto;
+    }
+
+    private void ToggleMobileMenu()
+    {
+        mobileMenuAbierto = !mobileMenuAbierto;
+    }
+
+    private void CerrarMobileMenu()
+    {
+        mobileMenuAbierto = false;
+        userMenuAbierto = false;
+    }
+
+    private void CerrarMenus()
+    {
+        userMenuAbierto = false;
+        mobileMenuAbierto = false;
+    }
+
+    private string ObtenerInicial()
+    {
+        if (string.IsNullOrWhiteSpace(nombreUsuario)) return "U";
+        return nombreUsuario.Trim().Substring(0, 1).ToUpper();
+    }
+
+    private string ObtenerRutaPanel()
+    {
+        if (string.Equals(rolUsuario, "Docente", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(rolUsuario, "TEACHER", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(rolUsuario, "Profesor", StringComparison.OrdinalIgnoreCase))
+        {
+            return "/perfil-doc";
+        }
+        if (string.Equals(rolUsuario, "Padre", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(rolUsuario, "PARENT", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(rolUsuario, "Tutor", StringComparison.OrdinalIgnoreCase))
+        {
+            return "/perfil-padre";
+        }
+        return "/perfil";
+    }
+
     private async Task CerrarSesion()
     {
-        await JS.InvokeVoidAsync("localStorage.removeItem", "token");
-        await JS.InvokeVoidAsync("localStorage.removeItem", "role");
-        await JS.InvokeVoidAsync("localStorage.removeItem", "name");
+        userMenuAbierto = false;
+        try
+        {
+            await JS.InvokeVoidAsync("localStorage.removeItem", "token");
+            await JS.InvokeVoidAsync("localStorage.removeItem", "name");
+            await JS.InvokeVoidAsync("localStorage.removeItem", "role");
+            await JS.InvokeVoidAsync("localStorage.removeItem", "udx_token");
+            await JS.InvokeVoidAsync("localStorage.removeItem", "udx_name");
+            await JS.InvokeVoidAsync("localStorage.removeItem", "udx_role");
+            await JS.InvokeVoidAsync("localStorage.removeItem", "udx_email");
+        }
+        catch
+        {
+        }
 
         estaLogueado = false;
         nombreUsuario = "";
+        rolUsuario = "";
 
-        Navigation.NavigateTo("/");
+        Navigation.NavigateTo("/", forceLoad: true);
     }
 
     public void Dispose()
@@ -116,4 +268,3 @@
         Navigation.LocationChanged -= AlCambiarPagina;
     }
 }
-

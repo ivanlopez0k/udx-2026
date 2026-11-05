@@ -1,64 +1,96 @@
-﻿<section class="hero py-5">
+@inject NavigationManager Navigation
+
+<!-- Hero Section -->
+<section class="hero">
     <div class="container">
-        <div class="row align-items-center">
-
-            
-            <div class="col-lg-6">
-
-                <h1 class="display-4 fw-bold">
-                    Aprender y enseñar nunca fue tan fácil.
+        <div class="hero-layout">
+            <div class="hero-copy">
+                <div class="hero-pill">
+                    <span>🎒</span> Apoyo Escolar Exclusivo de Primaria
+                </div>
+                <h1 class="hero-title">
+                    El profesor ideal para <span class="gradient-text">aprender y disfrutar</span> la escuela primaria.
                 </h1>
-
-                <p class="lead mt-3">
-                    Conectamos alumnos que necesitan apoyo escolar
-                    con profesores que quieren compartir sus conocimientos.
+                <p class="hero-subtitle">
+                    Maestras particulares y academias verificadas para 1° a 7° grado. Matemáticas, lectoescritura, tareas y técnicas de estudio con paciencia y dedicación pedagógica.
                 </p>
 
-                
-                <div class="mt-4">
+                <!-- Floating Search Box -->
+                <form class="hero-search" @onsubmit="BuscarMateria" @onsubmit:preventDefault>
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color: var(--slate-400); margin-left: 0.5rem;">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                    <input 
+                        type="text" 
+                        class="form-control" 
+                        placeholder="¿Qué necesita reforzar? (Ej: Matemáticas, Lectura, Fracciones...)" 
+                        @bind="terminoBusqueda"
+                        required
+                    />
+                    <div class="hero-search-divider"></div>
+                    <button type="submit" class="btn btn-primary">
+                        <span>Buscar</span>
+                    </button>
+                </form>
 
-                    <label class="form-label fw-semibold">
-                        ¿Qué materia necesitás?
-                    </label>
+                <!-- Quick category pills -->
+                <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                    <span style="font-size: 0.8rem; color: var(--slate-400); font-weight: 600;">Materias de Primaria:</span>
+                    <a href="/profesores?materia=Matemáticas" class="badge badge-outline">Matemáticas Primaria</a>
+                    <a href="/profesores?materia=Lenguaje" class="badge badge-outline">Prácticas del Lenguaje</a>
+                    <a href="/profesores?materia=Naturales" class="badge badge-outline">Ciencias Naturales</a>
+                    <a href="/profesores?materia=Inglés" class="badge badge-outline">Inglés Escolar</a>
+                </div>
+            </div>
 
-                    <div class="input-group">
-
-                        <select class="form-select">
-                            <option value="">Seleccioná una materia</option>
-                            <option value="matematica">Matemática</option>
-                            <option value="lengua">Lengua</option>
-                            <option value="ciencias-sociales">Ciencias Sociales</option>
-                            <option value="ciencias-naturales">Ciencias Naturales</option>
-                            <option value="ingles">Inglés</option>
-                        </select>
-
-                        <button class="btn btn-primary">
-                            Buscar
-                        </button>
-
+            <div class="hero-visual">
+                <div class="hero-visual-card">
+                    <img src="/assets/images/hero-main.png" alt="Estudiantes de Primaria UDX" />
+                </div>
+                <div class="hero-floating-stat">
+                    <div class="hero-stat-badge">★</div>
+                    <div>
+                        <strong style="font-size: 1.1rem; color: var(--slate-900); display: block;">4.9 / 5.0</strong>
+                        <span style="font-size: 0.8rem; color: var(--slate-500);">Más de 1.800 familias de primaria acompañadas</span>
                     </div>
-
                 </div>
-
-                
-                <div class="mt-3">
-                    <a href="/quiero-ensenar" class="btn btn-outline-primary">
-                        <i class="bi bi-mortarboard-fill fs-4 me-2"></i>
-                        Quiero enseñar
-                    </a>
-                </div>
-
             </div>
-
-            
-            <div class="col-lg-6 mt-4 mt-lg-0">
-
-                <img src="/IMG/hero-main.png"
-                     alt="Profesor dando clases a un alumno"
-                     class="img-fluid rounded-4">
-
-            </div>
-
         </div>
     </div>
 </section>
+
+<!-- Stats Strip -->
+<section class="stats-bar">
+    <div class="container">
+        <div class="stats-grid">
+            <div>
+                <div class="stat-num">+180</div>
+                <div class="stat-label">Maestras y Profesores de Primaria</div>
+            </div>
+            <div>
+                <div class="stat-num">1° a 7°</div>
+                <div class="stat-label">Grados Escolares Cubiertos</div>
+            </div>
+            <div>
+                <div class="stat-num">100%</div>
+                <div class="stat-label">Docentes Verificados</div>
+            </div>
+            <div>
+                <div class="stat-num">99%</div>
+                <div class="stat-label">Familias Satisfechas</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@code {
+    private string terminoBusqueda = "";
+
+    private void BuscarMateria()
+    {
+        if (!string.IsNullOrWhiteSpace(terminoBusqueda))
+        {
+            Navigation.NavigateTo($"/profesores?materia={Uri.EscapeDataString(terminoBusqueda.Trim())}");
+        }
+    }
+}

@@ -1,24 +1,20 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
 
 <div class="layout-page">
-
     <Navbar />
 
     <main class="main-content">
-        <article class="content px-4">
-            @Body
-        </article>
+        @Body
     </main>
 
     <Footer />
-
 </div>
 
 <LoginModal />
 <RegisterModal />
 
 <div id="blazor-error-ui" data-nosnippet>
-    An unhandled error has occurred.
-    <a href="." class="reload">Reload</a>
+    Ocurrió un error inesperado.
+    <a href="." class="reload">Recargar</a>
     <span class="dismiss">🗙</span>
 </div>
