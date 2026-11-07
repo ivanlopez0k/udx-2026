@@ -707,13 +707,20 @@
   color: var(--slate-500);
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .footer-columns {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
     gap: 2.5rem;
   }
   .nav-menu {
     display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .footer-columns {
+    grid-template-columns: 1fr;
+    gap: 2rem;
   }
 }
 
@@ -793,7 +800,7 @@
   color: var(--slate-600);
   font-weight: 700;
 }
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .panel-grid {
     grid-template-columns: 1fr;
   }

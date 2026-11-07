@@ -10,15 +10,17 @@
   left: 0;
   right: 0;
   z-index: 1000;
-  width: 100%;
   padding: 0 1.5rem;
   pointer-events: none; /* Allows clicks around the pill */
   transition: all var(--transition-normal);
+  box-sizing: border-box;
 }
 
 /* The Floating Island Container */
 .nav-island {
+  position: relative;
   pointer-events: auto;
+  width: 100%;
   max-width: 1200px;
   margin: 0 auto;
   height: 4.25rem;
@@ -36,6 +38,7 @@
   justify-content: space-between;
   padding: 0 1.25rem 0 1.5rem;
   transition: all var(--transition-normal);
+  box-sizing: border-box;
 }
 
 .header-floating-wrap.scrolled .nav-island {
@@ -188,7 +191,7 @@
   left: 50%;
   transform: translateX(-50%) translateY(10px);
   width: 580px;
-  max-width: calc(100vw - 2rem);
+  max-width: 580px;
   background: rgba(255, 255, 255, 0.98);
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
@@ -205,6 +208,7 @@
   visibility: hidden;
   transition: all var(--transition-normal);
   z-index: 1000;
+  box-sizing: border-box;
 }
 
 .nav-dropdown-trigger:hover .nav-dropdown-menu,
@@ -501,7 +505,28 @@
 }
 
 /* Responsive Media Queries */
-@media (max-width: 960px) {
+@media (min-width: 1041px) and (max-width: 1220px) {
+  .nav-center-menu {
+    gap: 0.2rem;
+  }
+  .nav-item-link {
+    padding: 0.5rem 0.65rem;
+    font-size: 0.825rem;
+  }
+  .brand-subtitle {
+    display: none;
+  }
+  .btn-clean-login {
+    padding: 0.5rem 0.8rem;
+    font-size: 0.825rem;
+  }
+  .btn-elevated-cta {
+    padding: 0.5rem 0.95rem;
+    font-size: 0.825rem;
+  }
+}
+
+@media (max-width: 1040px) {
   .header-floating-wrap {
     top: 0.5rem;
     padding: 0 0.75rem;
@@ -520,6 +545,7 @@
     flex-direction: column;
     align-items: stretch;
     gap: 0.5rem;
+    box-sizing: border-box;
   }
   .nav-center-menu.open,
   .nav-center-menu.mobile-open {
@@ -529,6 +555,7 @@
     position: static;
     transform: none;
     width: 100%;
+    max-width: 100%;
     grid-template-columns: 1fr;
     opacity: 1;
     visibility: visible;
@@ -537,6 +564,7 @@
     background: var(--slate-50);
     padding: 0.75rem;
     margin-top: 0.5rem;
+    box-sizing: border-box;
   }
   .mobile-toggle-btn {
     display: flex;
