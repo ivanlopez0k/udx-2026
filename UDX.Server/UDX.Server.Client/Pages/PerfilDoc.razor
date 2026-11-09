@@ -214,6 +214,71 @@ else
                     }
                 </div>
 
+
+                   <!-- Clases Asignadas -->
+                <div class="content-box">
+                    <div style="border-bottom: 1px solid var(--border-light); padding-bottom: 0.75rem; margin-bottom: 1.25rem;">
+                        <h3 style="font-size: 1.25rem; font-weight: 800; margin: 0;">
+                            Mis Clases Asignadas
+                        </h3>
+                        <p style="font-size: 0.85rem; color: var(--slate-500); margin-top: 0.2rem;">
+                            Consultá las clases que tenés programadas.
+                        </p>
+                    </div>
+
+                    @if (cargandoClases)
+                    {
+                        <p style="color: var(--slate-500); font-size: 0.875rem;">
+                            Cargando clases...
+                        </p>
+                    }
+                    else if (!string.IsNullOrEmpty(mensajeClases))
+                    {
+                        <p style="color: #dc2626; font-size: 0.875rem;">
+                            @mensajeClases
+                        </p>
+                    }
+                    else if (clasesDocente.Count == 0)
+                    {
+                        <p style="color: var(--slate-500); font-size: 0.875rem;">
+                            Todavía no tenés clases asignadas.
+                        </p>
+                    }
+                    else
+                    {
+                        <table class="panel-table">
+                            <thead>
+                                <tr>
+                                    <th>Fecha y hora</th>
+                                    <th>Alumno</th>
+                                    <th>Materia</th>
+                                    <th>Duración</th>
+                                    <th>Estado</th>
+                                    <th>Academia</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var clase in clasesDocente)
+                                {
+                                    <tr>
+                                        <td>@clase.ScheduledAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                        <td>@clase.ParentName</td>
+                                        <td>@clase.SubjectName</td>
+                                        <td>@clase.Duration min</td>
+                                        <td>
+                                            <span class="badge badge-outline">
+                                                @clase.Status
+                                            </span>
+                                        </td>
+                                        <td>@clase.AcademyName</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+
+
                 <!-- Danger Zone -->
                 <div class="content-box" style="border-color: #fecaca; background: #fffdfd;">
                     <h3 style="font-size: 1.15rem; font-weight: 800; color: #991b1b; margin-bottom: 0.25rem;">Zona de Peligro</h3>
@@ -284,6 +349,93 @@ else
     private int materiaIdSeleccionada;
     private string nivelMateria = "";
     private decimal precioMateria;
+
+    private bool cargandoClases = true;
+    private string mensajeClases = "";
+    private List<ClaseAgendadaDTO> clasesDocente = new();
+    
+    public class ClaseAgendadaDTO
+{
+    public int Id { get; set; }
+    public DateTime ScheduledAt { get; set; }
+    public int Duration { get; set; }
+    public string Status { get; set; } = "";
+    public float Price { get; set; }
+    public string Location { get; set; } = "";
+
+    public int RequestId { get; set; }
+
+    public int ParentId { get; set; }
+    public string ParentName { get; set; } = "";
+
+    public int TeacherId { get; set; }
+    public string TeacherName { get; set; } = "";
+
+    public int SubjectId { get; set; }
+    public string SubjectName { get; set; } = "";
+
+    public int AcademyId { get; set; }
+    public string AcademyName { get; set; } = "";
+}
+
+    private async Task CargarClases()
+    {
+        cargandoClases = true;
+        mensajeClases = "";
+
+        try
+        {
+            var token = await JS.InvokeAsync<string>(
+                "localStorage.getItem", "token");
+
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                token = await JS.InvokeAsync<string>(
+                    "localStorage.getItem", "udx_token");
+            }
+
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                mensajeClases = "No se encontró el token de sesión.";
+                return;
+            }
+
+            if (perfil == null || perfil.Id <= 0)
+            {
+                mensajeClases = "No se pudo identificar el perfil del docente.";
+                return;
+            }
+
+            using var request = new HttpRequestMessage(
+                HttpMethod.Get,
+                $"api/ClaseAgendada/docente/{perfil.Id}");
+
+            request.Headers.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue(
+                    "Bearer", token);
+
+            var response = await Http.SendAsync(request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                clasesDocente =
+                    await response.Content.ReadFromJsonAsync<List<ClaseAgendadaDTO>>()
+                    ?? new List<ClaseAgendadaDTO>();
+            }
+            else
+            {
+                mensajeClases = $"No se pudieron cargar las clases. Código: {(int)response.StatusCode}";
+            }
+        }
+        catch (Exception ex)
+        {
+            mensajeClases = $"Error al cargar las clases: {ex.Message}";
+        }
+        finally
+        {
+            cargandoClases = false;
+        }
+    }
 
     public class RespuestaFoto
     {
@@ -505,6 +657,7 @@ else
         if (!firstRender) return;
 
         await CargarPerfil();
+        await CargarClases();
         await CargarFoto();
         await CargarMaterias();
         StateHasChanged();
