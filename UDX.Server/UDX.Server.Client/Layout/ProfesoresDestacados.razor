@@ -1,152 +1,190 @@
-﻿<section class="profesores-destacados py-5">
+@using UDX.Shared.DTOs
+@using System.Net.Http.Json
+@inject HttpClient Http
 
+<!-- Featured Teachers -->
+<section class="section-pad">
     <div class="container">
-
-        
-        <div class="text-center mb-5">
-
-            <h2 class="fw-bold">
-                Profesores destacados
-            </h2>
-
-            <p class="text-muted">
-                Conocé algunos de los profesores disponibles en nuestra plataforma.
-            </p>
-
+        <div class="section-head">
+            <span class="section-tag">Docentes Destacados de Primaria</span>
+            <h2 class="section-heading">Aprende con Maestras de Excelencia</h2>
+            <p class="section-subheading">Profesionales de la educación con títulos habilitantes, paciencia y métodos lúdicos de enseñanza.</p>
         </div>
 
-
-        
-        <div class="row g-4">
-
-            
-            <div class="col-12 col-md-6 col-lg-4">
-
-                <div class="profesor-card">
-
-                    <img src="/IMG/profesor1.jpg"
-                         alt="María González"
-                         class="profesor-img">
-
-                    <div class="profesor-info">
-
-                        <h3>
-                            María González
-                        </h3>
-
-                        <div class="profesor-rating">
-                            ⭐ 4.9
+        <div class="teacher-grid">
+            @if (docentesReales.Count > 0)
+            {
+                @foreach (var doc in docentesReales.Take(3))
+                {
+                    <article class="teacher-card">
+                        <div class="teacher-cover">
+                            <img src="@(string.IsNullOrWhiteSpace(doc.Foto) ? "/assets/images/default-avatar.avif" : doc.Foto)" 
+                                 alt="@doc.Nombre" />
+                            <div class="teacher-cover-overlay"></div>
+                            @if (doc.Verified)
+                            {
+                                <div class="teacher-floating-badge">
+                                    <span class="badge badge-verified">✓ Verificada</span>
+                                </div>
+                            }
                         </div>
-
-                        <p class="profesor-materia">
-                            Matemática
-                        </p>
-
-                        <p>
-                            Profesora especializada en nivel primario.
-                        </p>
-
-                        <a href="/profesores-demo/maria-gonzalez"
-                           class="btn btn-outline-primary w-100">
-                            Ver perfil
-                        </a>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-
-            
-            <div class="col-12 col-md-6 col-lg-4">
-
-                <div class="profesor-card">
-
-                    <img src="/IMG/profesor2.jpg"
-                         alt="Juan Pérez"
-                         class="profesor-img">
-
-                    <div class="profesor-info">
-
-                        <h3>
-                            Juan Pérez
-                        </h3>
-
-                        <div class="profesor-rating">
-                            ⭐ 4.8
+                        <div class="teacher-body">
+                            <div class="teacher-header">
+                                <h3 class="teacher-name">@doc.Nombre</h3>
+                                <div class="teacher-rating-box">★ @doc.RatingAvg.ToString("0.0")</div>
+                            </div>
+                            <p style="font-size: 0.82rem; color: var(--slate-500); margin: 0.2rem 0 0.4rem; font-weight: 600;">
+                                @(string.IsNullOrWhiteSpace(doc.Location) ? "Docente Particular" : doc.Location)
+                            </p>
+                            <div class="teacher-tags" style="margin-top: 0.6rem;">
+                                <span class="badge badge-primary">@(doc.Materias.FirstOrDefault() ?? "Apoyo Escolar")</span>
+                            </div>
                         </div>
-
-                        <p class="profesor-materia">
-                            Lengua
-                        </p>
-
-                        <p>
-                            Clases de apoyo para alumnos de primaria.
-                        </p>
-
-                        <a href="/profesores-demo/juan-perez"
-                           class="btn btn-outline-primary w-100">
-                            Ver perfil
-                        </a>
-                    </div>
-
-                </div>
-
-            </div>
-
-
-            
-            <div class="col-12 col-md-6 col-lg-4">
-
-                <div class="profesor-card">
-
-                    <img src="/IMG/profesor3.jpg"
-                         alt="Laura Gómez"
-                         class="profesor-img">
-
-                    <div class="profesor-info">
-
-                        <h3>
-                            Laura Gómez
-                        </h3>
-
-                        <div class="profesor-rating">
-                            ⭐ 5.0
+                        <div class="teacher-footer">
+                            <div class="teacher-rate">
+                                @if (doc.HourlyRate > 0)
+                                {
+                                    <span>Por hora: <strong>$@doc.HourlyRate.ToString("N0")</strong></span>
+                                }
+                                else
+                                {
+                                    <span>Tarifa a coordinar</span>
+                                }
+                            </div>
+                            <a href="/profesores" class="btn btn-primary btn-sm">Ver Perfil</a>
                         </div>
-
-                        <p class="profesor-materia">
-                            Inglés
-                        </p>
-
-                        <p>
-                            Profesora de inglés para nivel primario.
-                        </p>
-
-                        <a href="/profesores-demo/laura-gomez"
-                           class="btn btn-outline-primary w-100">
-                            Ver perfil
-                        </a>
-
+                    </article>
+                }
+            }
+            else
+            {
+                <!-- Fallback Curated Teachers -->
+                <article class="teacher-card">
+                    <div class="teacher-cover">
+                        <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&h=400&fit=crop&crop=faces" alt="Prof. Laura Giménez" />
+                        <div class="teacher-cover-overlay"></div>
+                        <div class="teacher-floating-badge">
+                            <span class="badge badge-verified">✓ Verificada</span>
+                        </div>
                     </div>
+                    <div class="teacher-body">
+                        <div class="teacher-header">
+                            <h3 class="teacher-name">Prof. Laura Giménez</h3>
+                            <div class="teacher-rating-box">★ 4.9</div>
+                        </div>
+                        <p style="font-size: 0.82rem; color: var(--slate-500); margin: 0.2rem 0 0.4rem; font-weight: 600;">Profesora en Educación Primaria (ENS N° 1)</p>
+                        <div style="margin-bottom: 0.5rem;">
+                            <span class="badge" style="background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; font-size: 0.72rem; font-weight: 700;">🏢 Academia Pedagógica Sarmiento</span>
+                        </div>
+                        <div class="teacher-location">
+                            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
+                            <span>Belgrano, CABA • Presencial y Online</span>
+                        </div>
+                        <div class="teacher-tags" style="margin-top: 0.6rem;">
+                            <span class="badge badge-primary">Matemáticas Primaria</span>
+                            <span class="badge badge-outline">3° a 7° Grado</span>
+                        </div>
+                    </div>
+                    <div class="teacher-footer">
+                        <div class="teacher-rate">
+                            Por hora: <strong>$7.500</strong>
+                        </div>
+                        <a href="/profesores" class="btn btn-primary btn-sm">Ver Perfil</a>
+                    </div>
+                </article>
 
-                </div>
+                <article class="teacher-card">
+                    <div class="teacher-cover">
+                        <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&fit=crop&crop=faces" alt="Lic. Valentina Rossi" />
+                        <div class="teacher-cover-overlay"></div>
+                        <div class="teacher-floating-badge">
+                            <span class="badge badge-verified">✓ Verificada</span>
+                        </div>
+                    </div>
+                    <div class="teacher-body">
+                        <div class="teacher-header">
+                            <h3 class="teacher-name">Lic. Valentina Rossi</h3>
+                            <div class="teacher-rating-box">★ 5.0</div>
+                        </div>
+                        <p style="font-size: 0.82rem; color: var(--slate-500); margin: 0.2rem 0 0.4rem; font-weight: 600;">Lic. en Psicopedagogía & Maestra de Grado</p>
+                        <div style="margin-bottom: 0.5rem;">
+                            <span class="badge" style="background: #f8fafc; color: #475569; border: 1px solid #e2e8f0; font-size: 0.72rem; font-weight: 600;">🧑‍🏫 Docente Independiente</span>
+                        </div>
+                        <div class="teacher-location">
+                            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
+                            <span>Palermo / Recoleta, CABA</span>
+                        </div>
+                        <div class="teacher-tags" style="margin-top: 0.6rem;">
+                            <span class="badge badge-primary">Lectoescritura</span>
+                            <span class="badge badge-outline">1° a 3° Grado</span>
+                        </div>
+                    </div>
+                    <div class="teacher-footer">
+                        <div class="teacher-rate">
+                            Por hora: <strong>$8.200</strong>
+                        </div>
+                        <a href="/profesores" class="btn btn-primary btn-sm">Ver Perfil</a>
+                    </div>
+                </article>
 
-            </div>
-
+                <article class="teacher-card">
+                    <div class="teacher-cover">
+                        <img src="https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400&h=400&fit=crop&crop=faces" alt="Prof. Clara Zavaleta" />
+                        <div class="teacher-cover-overlay"></div>
+                        <div class="teacher-floating-badge">
+                            <span class="badge badge-verified">✓ Verificada</span>
+                        </div>
+                    </div>
+                    <div class="teacher-body">
+                        <div class="teacher-header">
+                            <h3 class="teacher-name">Prof. Clara Zavaleta</h3>
+                            <div class="teacher-rating-box">★ 5.0</div>
+                        </div>
+                        <p style="font-size: 0.82rem; color: var(--slate-500); margin: 0.2rem 0 0.4rem; font-weight: 600;">Docente de Inglés Primaria (Cambridge YLE)</p>
+                        <div style="margin-bottom: 0.5rem;">
+                            <span class="badge" style="background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; font-size: 0.72rem; font-weight: 700;">🏢 Instituto Belgrano Primaria</span>
+                        </div>
+                        <div class="teacher-location">
+                            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
+                            <span>Belgrano, CABA • Online Interactivo</span>
+                        </div>
+                        <div class="teacher-tags" style="margin-top: 0.6rem;">
+                            <span class="badge badge-primary">Inglés Primaria</span>
+                            <span class="badge badge-outline">1° a 7° Grado</span>
+                        </div>
+                    </div>
+                    <div class="teacher-footer">
+                        <div class="teacher-rate">
+                            Por hora: <strong>$7.500</strong>
+                        </div>
+                        <a href="/profesores" class="btn btn-primary btn-sm">Ver Perfil</a>
+                    </div>
+                </article>
+            }
         </div>
 
-
-        
-        <div class="text-center mt-5">
-
-            <a href="/profesores"
-               class="btn btn-primary">
-                Ver todos los profesores →
-            </a>
-
+        <div style="text-align: center; margin-top: 3.5rem;">
+            <a href="/profesores" class="btn btn-outline btn-lg">Explorar todas las maestras y profesores &rarr;</a>
         </div>
-
     </div>
-
 </section>
+
+@code {
+    private List<ProfesorDto> docentesReales = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var res = await Http.GetFromJsonAsync<ProfesoresPaginadosDto>("api/Docente/buscar?limite=3");
+            if (res?.Items != null && res.Items.Count > 0)
+            {
+                docentesReales = res.Items;
+            }
+        }
+        catch
+        {
+            // Silent fallback to curated
+        }
+    }
+}

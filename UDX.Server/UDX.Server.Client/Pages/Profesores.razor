@@ -1,5 +1,4 @@
-﻿@page "/profesores"
-
+@page "/profesores"
 @using UDX.Shared.DTOs
 @using System.Net.Http.Json
 @inject HttpClient Http
@@ -11,13 +10,107 @@
 
     <h1>Profesores Disponibles</h1>
 
+    @* FILTROS *@
+    <div class="filter-sidebar-box" style="margin-bottom: 2rem; padding: 1.5rem;">
+        <h3 style="font-size: 1.1rem; font-weight: 800; margin-bottom: 1rem;">
+            Filtrar profesores
+        </h3>
+
+        <form @onsubmit="CargarProfesores" @onsubmit:preventDefault>
+
+            <div class="form-group">
+                <label class="form-label">Materia</label>
+                <select class="form-control" @bind="filtroMateria">
+                    <option value="">Todas las materias</option>
+                    <option value="Matemáticas">Matemáticas</option>
+                    <option value="Lenguaje">Lenguaje</option>
+                    <option value="Naturales">Ciencias Naturales</option>
+                    <option value="Sociales">Ciencias Sociales</option>
+                    <option value="Inglés">Inglés</option>
+                    <option value="Historia">Historia</option>
+                    <option value="Educación Física">Educación Física</option>
+                    <option value="Música">Música</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Ubicación</label>
+                <input type="text"
+                       class="form-control"
+                       placeholder="Ej: Córdoba, Buenos Aires..."
+                       @bind="filtroUbicacion" />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Precio máximo por hora</label>
+                <input type="range"
+                       min="3000"
+                       max="25000"
+                       step="500"
+                       @bind="filtroMaxPrecio"
+                       @bind:event="oninput"
+                       style="width: 100%; accent-color: var(--primary);" />
+
+                <div style="display: flex; justify-content: space-between;">
+                    <span>$3.000</span>
+                    <strong>$@filtroMaxPrecio.ToString("N0")</strong>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Calificación mínima</label>
+                <select class="form-control" @bind="filtroMinRating">
+                    <option value="0">Cualquier calificación</option>
+                    <option value="4.5">4.5 o más</option>
+                    <option value="4.8">4.8 o más</option>
+                    <option value="4.9">4.9 o más</option>
+                </select>
+            </div>
+
+            <div class="form-group"
+                 style="display: flex; align-items: center; gap: 0.6rem;">
+                <input type="checkbox"
+                       id="soloVerificados"
+                       @bind="filtroSoloVerificados" />
+
+                <label for="soloVerificados">
+                    Solo docentes verificados
+                </label>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Ordenar por</label>
+                <select class="form-control" @bind="filtroOrden">
+                    <option value="rating_desc">Mejor puntuación</option>
+                    <option value="precio_asc">Menor precio</option>
+                    <option value="precio_desc">Mayor precio</option>
+                </select>
+            </div>
+
+            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                <button type="submit"
+                        class="btn btn-primary"
+                        disabled="@cargando">
+                    Filtrar profesores
+                </button>
+
+                <button type="button"
+                        class="btn btn-outline"
+                        @onclick="LimpiarFiltros"
+                        disabled="@cargando">
+                    Limpiar filtros
+                </button>
+            </div>
+
+        </form>
+    </div>
+
     @* TARJETAS ORIGINALES: SE CONSERVAN *@
 
     <div class="profesores-lista">
 
         @* Profesor 1: Luka Doncic *@
         <div class="profesor-card">
-
             <div class="profesor-foto">
                 <img src="/IMG/luka.jpg" alt="Luka Doncic">
             </div>
@@ -46,7 +139,6 @@
 
         @* Profesor 2: Pepe Reina *@
         <div class="profesor-card">
-
             <div class="profesor-foto">
                 <img src="/IMG/pepe.jpg" alt="Pepe Reina">
             </div>
@@ -70,7 +162,6 @@
 
         @* Profesor 3: Lionel Messi *@
         <div class="profesor-card">
-
             <div class="profesor-foto">
                 <img src="/IMG/messi.jpg" alt="Lionel Messi">
             </div>
@@ -99,7 +190,6 @@
 
         @* Profesor 4: Gerónimo Benavidez *@
         <div class="profesor-card">
-
             <div class="profesor-foto">
                 <img src="/IMG/momo.jpg" alt="Gerónimo Benavidez">
             </div>
@@ -123,7 +213,6 @@
 
         @* Profesor 5: Mauro Lombardo *@
         <div class="profesor-card">
-
             <div class="profesor-foto">
                 <img src="/IMG/duki.jpg" alt="Mauro Lombardo">
             </div>
@@ -152,7 +241,6 @@
 
         @* Profesor 6: Ronald Araujo *@
         <div class="profesor-card">
-
             <div class="profesor-foto">
                 <img src="/IMG/araujo.jpg" alt="Ronald Araujo">
             </div>
@@ -183,6 +271,7 @@
 
     @* PROFESORES REGISTRADOS DESDE LA API *@
 
+    <h2 style="margin-top: 2.5rem;">Docentes registrados</h2>
 
     @if (cargando)
     {
@@ -194,7 +283,7 @@
     }
     else if (profesores.Count == 0)
     {
-        <p>Todavía no hay profesores registrados.</p>
+        <p>No se encontraron profesores con esos filtros.</p>
     }
     else
     {
@@ -204,10 +293,10 @@
             {
                 <div class="profesor-card">
 
-<div class="profesor-foto">
+                    <div class="profesor-foto">
                         <img src="@(string.IsNullOrWhiteSpace(profesor.Foto)
-                             ? "images/default-avatar.avif"
-                             : profesor.Foto)"
+                            ? "images/default-avatar.avif"
+                            : profesor.Foto)"
                              alt="Foto de @profesor.Nombre">
                     </div>
 
@@ -224,7 +313,7 @@
                         </h2>
 
                         <p class="profesor-materia">
-                            @(profesor.Materias.FirstOrDefault() ?? "Sin materias")
+                            @(profesor.Materias?.FirstOrDefault() ?? "Sin materias")
                         </p>
 
                         <p class="profesor-dato">
@@ -254,35 +343,81 @@
                                 @profesor.Availability
                             </p>
                         }
+
                         <button class="btn btn-primary mt-2"
                                 style="width: 120px;"
-                                @onclick="() => IrAlPerfil(profesor.Id)"
-                                @onclick:stopPropagation="true">
+                                @onclick="() => IrAlPerfil(profesor.Id)">
                             Ver perfil
                         </button>
                     </div>
                 </div>
             }
-            
+
         </div>
     }
 
 </div>
 
-
 @code {
+    [SupplyParameterFromQuery(Name = "materia")]
+    public string? QueryMateria { get; set; }
+
     private List<ProfesorDto> profesores = new();
+
+    private string filtroMateria = "";
+    private string filtroUbicacion = "";
+    private decimal filtroMaxPrecio = 25000;
+    private double filtroMinRating = 0;
+    private bool filtroSoloVerificados = false;
+    private string filtroOrden = "rating_desc";
 
     private bool cargando = true;
     private string mensajeError = "";
 
     protected override async Task OnInitializedAsync()
     {
+        if (!string.IsNullOrWhiteSpace(QueryMateria))
+        {
+            filtroMateria = QueryMateria;
+        }
+
+        await CargarProfesores();
+    }
+
+    private async Task CargarProfesores()
+    {
+        cargando = true;
+        mensajeError = "";
+
         try
         {
+            var query = new List<string>();
+
+            if (!string.IsNullOrWhiteSpace(filtroMateria))
+                query.Add($"materia={Uri.EscapeDataString(filtroMateria)}");
+
+            if (!string.IsNullOrWhiteSpace(filtroUbicacion))
+                query.Add($"ubicacion={Uri.EscapeDataString(filtroUbicacion)}");
+
+            if (filtroMaxPrecio < 25000)
+                query.Add($"maxPrecio={filtroMaxPrecio}");
+
+            if (filtroMinRating > 0)
+                query.Add($"minRating={filtroMinRating}");
+
+            if (filtroSoloVerificados)
+                query.Add("soloVerificados=true");
+
+            if (!string.IsNullOrWhiteSpace(filtroOrden))
+                query.Add($"orden={Uri.EscapeDataString(filtroOrden)}");
+
+            var queryString = query.Count > 0
+                ? "?" + string.Join("&", query)
+                : "";
+
             var respuesta =
                 await Http.GetFromJsonAsync<ProfesoresPaginadosDto>(
-                    "api/Docente/buscar"
+                    $"api/Docente/buscar{queryString}"
                 );
 
             profesores = respuesta?.Items ?? new List<ProfesorDto>();
@@ -297,7 +432,18 @@
         }
     }
 
-    
+    private async Task LimpiarFiltros()
+    {
+        filtroMateria = "";
+        filtroUbicacion = "";
+        filtroMaxPrecio = 25000;
+        filtroMinRating = 0;
+        filtroSoloVerificados = false;
+        filtroOrden = "rating_desc";
+
+        await CargarProfesores();
+    }
+
     private void IrAlPerfil(int docenteId)
     {
         Navigation.NavigateTo($"/profesores/{docenteId}");
