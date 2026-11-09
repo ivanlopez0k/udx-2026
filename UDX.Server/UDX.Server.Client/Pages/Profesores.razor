@@ -1,316 +1,372 @@
-﻿@page "/profesores"
-
+@page "/profesores"
 @using UDX.Shared.DTOs
 @using System.Net.Http.Json
 @inject HttpClient Http
+@inject NavigationManager Navigation
 
-<PageTitle>Profesores</PageTitle>
+<PageTitle>Directorio de Profesores y Academias | UDX</PageTitle>
 
-<div class="profesores-container">
+<main class="container">
+    <div class="search-page-layout">
+        <!-- Sticky Filter Sidebar -->
+        <aside>
+            <div class="filter-sidebar-box">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <h3 style="font-size: 1.1rem; font-weight: 800;">Filtros de Primaria</h3>
+                    <button type="button" class="btn btn-ghost btn-sm" style="color: var(--primary); padding: 0;" @onclick="LimpiarFiltros">
+                        Limpiar
+                    </button>
+                </div>
 
-    <h1>Profesores Disponibles</h1>
-
-    @* TARJETAS ORIGINALES: SE CONSERVAN *@
-
-    <div class="profesores-lista">
-
-        @* Profesor 1: Luka Doncic *@
-        <div class="profesor-card"
-             @onclick='() => AbrirModal("/IMG/luka.jpg", "Luka Doncic", "Matemáticas", "Buenos Aires")'>
-
-            <div class="profesor-foto">
-                <img src="/IMG/luka.jpg" alt="Luka Doncic">
-            </div>
-
-            <div class="profesor-info">
-                <h2>
-                    Luka Doncic
-                    <img src="/IMG/verificado.png"
-                         alt="Verificado"
-                         class="verificado">
-                </h2>
-
-                <p class="profesor-materia">Matemáticas</p>
-
-                <p class="profesor-dato">
-                    <img src="/IMG/PIN.png" alt="">
-                    Buenos Aires
-                </p>
-
-                <p class="profesor-dato">
-                    <img src="/IMG/estrella.png" alt="">
-                    5.0
-                </p>
-            </div>
-        </div>
-
-        @* Profesor 2: Pepe Reina *@
-        <div class="profesor-card"
-             @onclick='() => AbrirModal("/IMG/pepe.jpg", "Pepe Reina", "Historia", "Córdoba")'>
-
-            <div class="profesor-foto">
-                <img src="/IMG/pepe.jpg" alt="Pepe Reina">
-            </div>
-
-            <div class="profesor-info">
-                <h2>Pepe Reina</h2>
-
-                <p class="profesor-materia">Historia</p>
-
-                <p class="profesor-dato">
-                    <img src="/IMG/PIN.png" alt="">
-                    Córdoba
-                </p>
-
-                <p class="profesor-dato">
-                    <img src="/IMG/estrella.png" alt="">
-                    3.0
-                </p>
-            </div>
-        </div>
-
-        @* Profesor 3: Lionel Messi *@
-        <div class="profesor-card"
-             @onclick='() => AbrirModal("/IMG/messi.jpg", "Lionel Messi", "Educación Física", "Rosario, Santa Fe")'>
-
-            <div class="profesor-foto">
-                <img src="/IMG/messi.jpg" alt="Lionel Messi">
-            </div>
-
-            <div class="profesor-info">
-                <h2>
-                    Lionel Messi
-                    <img src="/IMG/verificado.png"
-                         alt="Verificado"
-                         class="verificado">
-                </h2>
-
-                <p class="profesor-materia">Educación Física</p>
-
-                <p class="profesor-dato">
-                    <img src="/IMG/PIN.png" alt="">
-                    Rosario, Santa Fe
-                </p>
-
-                <p class="profesor-dato">
-                    <img src="/IMG/estrella.png" alt="">
-                    4.9
-                </p>
-            </div>
-        </div>
-
-        @* Profesor 4: Gerónimo Benavidez *@
-        <div class="profesor-card"
-             @onclick='() => AbrirModal("/IMG/momo.jpg", "Gerónimo Benavidez", "Historia", "Buenos Aires")'>
-
-            <div class="profesor-foto">
-                <img src="/IMG/momo.jpg" alt="Gerónimo Benavidez">
-            </div>
-
-            <div class="profesor-info">
-                <h2>Gerónimo Benavidez</h2>
-
-                <p class="profesor-materia">Historia</p>
-
-                <p class="profesor-dato">
-                    <img src="/IMG/PIN.png" alt="">
-                    Buenos Aires
-                </p>
-
-                <p class="profesor-dato">
-                    <img src="/IMG/estrella.png" alt="">
-                    4.1
-                </p>
-            </div>
-        </div>
-
-        @* Profesor 5: Mauro Lombardo *@
-        <div class="profesor-card"
-             @onclick='() => AbrirModal("/IMG/duki.jpg", "Mauro Lombardo", "Música", "Córdoba")'>
-
-            <div class="profesor-foto">
-                <img src="/IMG/duki.jpg" alt="Mauro Lombardo">
-            </div>
-
-            <div class="profesor-info">
-                <h2>
-                    Mauro Lombardo
-                    <img src="/IMG/verificado.png"
-                         alt="Verificado"
-                         class="verificado">
-                </h2>
-
-                <p class="profesor-materia">Música</p>
-
-                <p class="profesor-dato">
-                    <img src="/IMG/PIN.png" alt="">
-                    Córdoba
-                </p>
-
-                <p class="profesor-dato">
-                    <img src="/IMG/estrella.png" alt="">
-                    4.4
-                </p>
-            </div>
-        </div>
-
-        @* Profesor 6: Ronald Araujo *@
-        <div class="profesor-card"
-             @onclick='() => AbrirModal("/IMG/araujo.jpg", "Ronald Araujo", "Educación Física", "Tucumán")'>
-
-            <div class="profesor-foto">
-                <img src="/IMG/araujo.jpg" alt="Ronald Araujo">
-            </div>
-
-            <div class="profesor-info">
-                <h2>
-                    Ronald Araujo
-                    <img src="/IMG/verificado.png"
-                         alt="Verificado"
-                         class="verificado">
-                </h2>
-
-                <p class="profesor-materia">Educación Física</p>
-
-                <p class="profesor-dato">
-                    <img src="/IMG/PIN.png" alt="">
-                    Tucumán
-                </p>
-
-                <p class="profesor-dato">
-                    <img src="/IMG/estrella.png" alt="">
-                    4.3
-                </p>
-            </div>
-        </div>
-
-    </div>
-
-    @* PROFESORES REGISTRADOS DESDE LA API *@
-
-
-    @if (cargando)
-    {
-        <p>Cargando profesores...</p>
-    }
-    else if (!string.IsNullOrEmpty(mensajeError))
-    {
-        <p>@mensajeError</p>
-    }
-    else if (profesores.Count == 0)
-    {
-        <p>Todavía no hay profesores registrados.</p>
-    }
-    else
-    {
-        <div class="profesores-lista">
-
-            @foreach (var profesor in profesores)
-            {
-                <div class="profesor-card"
-                     @onclick='() => AbrirModal(
-                         string.IsNullOrWhiteSpace(profesor.Foto)
-                             ? "images/default-avatar.avif"
-                             : profesor.Foto,
-                         profesor.Nombre,
-                         profesor.Materias.FirstOrDefault() ?? "Sin materias",
-                         profesor.Location)'>
-
-<div class="profesor-foto">
-                        <img src="@(string.IsNullOrWhiteSpace(profesor.Foto)
-                             ? "images/default-avatar.avif"
-                             : profesor.Foto)"
-                             alt="Foto de @profesor.Nombre">
+                <form @onsubmit="CargarProfesores" @onsubmit:preventDefault>
+                    <div class="form-group">
+                        <label class="form-label" for="filterMateria">Materia de Primaria</label>
+                        <select id="filterMateria" class="form-control" @bind="filtroMateria">
+                            <option value="">Todas las materias</option>
+                            <option value="Matemáticas">Matemáticas Primaria (Fracciones, Geometría)</option>
+                            <option value="Lenguaje">Prácticas del Lenguaje / Lectoescritura</option>
+                            <option value="Naturales">Ciencias Naturales</option>
+                            <option value="Sociales">Ciencias Sociales</option>
+                            <option value="Inglés">Inglés Escolar Inicial</option>
+                            <option value="Apoyo">Apoyo Escolar Integral y Tareas</option>
+                        </select>
                     </div>
 
-                    <div class="profesor-info">
-                        <h2>
-                            @profesor.Nombre
+                    <div class="form-group">
+                        <label class="form-label" for="filterUbicacion">Zona / Barrio</label>
+                        <input type="text" id="filterUbicacion" class="form-control" placeholder="Ej: Belgrano, Palermo, Caballito..." @bind="filtroUbicacion" />
+                    </div>
 
+                    <div class="form-group">
+                        <label class="form-label">Tarifa Máxima / Hora</label>
+                        <input type="range" min="3000" max="25000" step="500" @bind="filtroMaxPrecio" @bind:event="oninput" style="width: 100%; accent-color: var(--primary);" />
+                        <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--slate-500); margin-top: 0.35rem;">
+                            <span>$3.000</span>
+                            <span style="font-weight: 700; color: var(--primary);">$@filtroMaxPrecio.ToString("N0")</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="filterMinRating">Calificación Mínima</label>
+                        <select id="filterMinRating" class="form-control" @bind="filtroMinRating">
+                            <option value="0">Cualquier calificación</option>
+                            <option value="4.9">★ 4.9 o más</option>
+                            <option value="4.8">★ 4.8 o más</option>
+                            <option value="4.5">★ 4.5 o más</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" style="flex-direction: row; align-items: center; gap: 0.6rem; margin: 1.25rem 0;">
+                        <input type="checkbox" id="filterSoloVerificados" @bind="filtroSoloVerificados" style="width: 18px; height: 18px; accent-color: var(--primary);" />
+                        <label for="filterSoloVerificados" class="form-label" style="margin-bottom: 0; cursor: pointer;">Solo docentes verificados</label>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-full" style="margin-top: 0.5rem;" disabled="@cargando">
+                        @if (cargando)
+                        {
+                            <span>Buscando...</span>
+                        }
+                        else
+                        {
+                            <span>Filtrar Docentes</span>
+                        }
+                    </button>
+                </form>
+            </div>
+        </aside>
+
+        <!-- Main Results Column -->
+        <section>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+                <div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span class="badge badge-primary" style="font-size: 0.75rem;">1° a 7° Grado</span>
+                        <span class="badge badge-outline" style="font-size: 0.75rem;">Nivel Primario Exclusivo</span>
+                    </div>
+                    <h1 style="font-size: 1.85rem; font-weight: 800; letter-spacing: -0.02em; margin-top: 0.25rem;">Docentes de Apoyo Primario</h1>
+                    <p style="font-size: 0.875rem; color: var(--slate-500); margin-top: 0.25rem;">
+                        @if (cargando)
+                        {
+                            <span>Buscando profesores disponibles...</span>
+                        }
+                        else
+                        {
+                            <span>@listaMostrada.Count profesores disponibles</span>
+                        }
+                    </p>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <label for="selectOrden" style="font-size: 0.85rem; color: var(--slate-500); font-weight: 600;">Ordenar por:</label>
+                    <select id="selectOrden" class="form-control" style="width: auto; padding: 0.45rem 0.85rem;" @bind="filtroOrden" @bind:after="CargarProfesores">
+                        <option value="rating_desc">Más Puntuados & Calificados</option>
+                        <option value="precio_asc">Menor Tarifa</option>
+                        <option value="precio_desc">Mayor Tarifa</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Teachers Grid -->
+            <div class="teacher-grid">
+                @foreach (var profesor in listaMostrada)
+                {
+                    <article class="teacher-card" @onclick="() => AbrirDetalle(profesor)">
+                        <div class="teacher-cover">
+                            <img src="@ObtenerFoto(profesor.Foto)" alt="@profesor.Nombre" />
+                            <div class="teacher-cover-overlay"></div>
                             @if (profesor.Verified)
                             {
-                                <img src="/IMG/verificado.png"
-                                     alt="Verificado"
-                                     class="verificado">
+                                <div class="teacher-floating-badge">
+                                    <span class="badge badge-verified">✓ Verificada</span>
+                                </div>
                             }
-                        </h2>
-
-                        <p class="profesor-materia">
-                            @(profesor.Materias.FirstOrDefault() ?? "Sin materias")
-                        </p>
-
-                        <p class="profesor-dato">
-                            <img src="/IMG/PIN.png" alt="">
-                            @(string.IsNullOrWhiteSpace(profesor.Location)
-                                ? "Ubicación no especificada"
-                                : profesor.Location)
-                        </p>
-
-                        <p class="profesor-dato">
-                            <img src="/IMG/estrella.png" alt="">
-                            @profesor.RatingAvg.ToString("0.0")
-                        </p>
-
-                        @if (profesor.HourlyRate > 0)
-                        {
-                            <p class="profesor-dato">
-                                Precio por hora:
-                                $@profesor.HourlyRate.ToString("N0")
+                        </div>
+                        <div class="teacher-body">
+                            <div class="teacher-header">
+                                <h3 class="teacher-name">@profesor.Nombre</h3>
+                                <div class="teacher-rating-box">★ @profesor.RatingAvg.ToString("0.0")</div>
+                            </div>
+                            <p style="font-size: 0.82rem; color: var(--slate-500); margin: 0.2rem 0 0.4rem; font-weight: 600;">
+                                @(string.IsNullOrWhiteSpace(profesor.Location) ? "Docente de Primaria" : profesor.Location)
                             </p>
+                            <div class="teacher-location">
+                                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                </svg>
+                                <span>@(string.IsNullOrWhiteSpace(profesor.Availability) ? "Presencial y Online" : profesor.Availability)</span>
+                            </div>
+                            <div class="teacher-tags" style="margin-top: 0.6rem;">
+                                @if (profesor.Materias != null && profesor.Materias.Count > 0)
+                                {
+                                    @foreach (var mat in profesor.Materias.Take(2))
+                                    {
+                                        <span class="badge badge-primary">@mat</span>
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="badge badge-primary">Apoyo Escolar</span>
+                                }
+                            </div>
+                        </div>
+                        <div class="teacher-footer">
+                            <div class="teacher-rate">
+                                @if (profesor.HourlyRate > 0)
+                                {
+                                    <span>Por hora: <strong>$@profesor.HourlyRate.ToString("N0")</strong></span>
+                                }
+                                else
+                                {
+                                    <span>Tarifa a convenir</span>
+                                }
+                            </div>
+                            <button type="button" class="btn btn-primary btn-sm" @onclick:stopPropagation="true" @onclick="() => AbrirDetalle(profesor)">
+                                Ver Perfil
+                            </button>
+                        </div>
+                    </article>
+                }
+            </div>
+        </section>
+    </div>
+</main>
+
+<!-- Modal Detalle Completo del Docente -->
+@if (mostrarModal && profesorSeleccionado != null)
+{
+    <div class="modal-overlay" @onclick="CerrarModal">
+        <div class="modal-card" style="max-width: 620px;" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h3 class="modal-title">Perfil Profesional Docente</h3>
+                <button type="button" class="modal-close-btn" @onclick="CerrarModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="display: flex; gap: 1.25rem; align-items: center; margin-bottom: 1.5rem;">
+                    <img src="@ObtenerFoto(profesorSeleccionado.Foto)" alt="@profesorSeleccionado.Nombre" 
+                         style="width: 80px; height: 80px; border-radius: var(--radius-full); object-fit: cover; border: 3px solid var(--primary);" />
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <h2 style="font-size: 1.35rem; font-weight: 800; margin: 0;">@profesorSeleccionado.Nombre</h2>
+                            @if (profesorSeleccionado.Verified)
+                            {
+                                <span class="badge badge-verified" style="font-size: 0.7rem;">✓ Verificado</span>
+                            }
+                        </div>
+                        <p style="color: var(--slate-500); font-size: 0.85rem; margin-top: 0.2rem;">
+                            @(string.IsNullOrWhiteSpace(profesorSeleccionado.Location) ? "Ubicación a coordinar" : profesorSeleccionado.Location)
+                        </p>
+                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.35rem;">
+                            <span style="font-weight: 800; color: #d97706;">★ @profesorSeleccionado.RatingAvg.ToString("0.0")</span>
+                            <span style="font-size: 0.8rem; color: var(--slate-400);">(@profesorSeleccionado.RatingCount valoraciones)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 1.25rem;">
+                    <h4 style="font-size: 0.9rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--slate-400); margin-bottom: 0.5rem;">
+                        Materias que Enseña
+                    </h4>
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        @if (profesorSeleccionado.Materias != null && profesorSeleccionado.Materias.Count > 0)
+                        {
+                            @foreach (var mat in profesorSeleccionado.Materias)
+                            {
+                                <span class="badge badge-primary">@mat</span>
+                            }
                         }
-
-                        @if (!string.IsNullOrWhiteSpace(profesor.Availability))
+                        else
                         {
-                            <p class="profesor-dato">
-                                Disponibilidad:
-                                @profesor.Availability
-                            </p>
+                            <span class="badge badge-outline">Apoyo Escolar Integral</span>
                         }
                     </div>
                 </div>
-            }
 
+                <div style="background: var(--slate-100); border-radius: var(--radius-lg); padding: 1rem 1.25rem; margin-bottom: 1.25rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 0.85rem; color: var(--slate-600); font-weight: 600;">Tarifa por hora:</span>
+                        <strong style="font-size: 1.25rem; color: var(--primary);">$@(profesorSeleccionado.HourlyRate > 0 ? profesorSeleccionado.HourlyRate.ToString("N0") : "A convenir")</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
+                        <span style="font-size: 0.85rem; color: var(--slate-600); font-weight: 600;">Disponibilidad:</span>
+                        <span style="font-size: 0.85rem; color: var(--slate-800);">@(string.IsNullOrWhiteSpace(profesorSeleccionado.Availability) ? "A coordinar" : profesorSeleccionado.Availability)</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="justify-content: space-between;">
+                <button type="button" class="btn btn-outline" @onclick="CerrarModal">Cerrar</button>
+                <a href="/login" class="btn btn-primary">
+                    Solicitar Clase para mi Hijo/a &rarr;
+                </a>
+            </div>
         </div>
-    }
-
-</div>
-
-@* MODAL DE DETALLE DEL PROFESOR *@
-
-<ProfesorModal Mostrar="@mostrarModal"
-               Foto="@fotoSeleccionada"
-               Nombre="@nombreSeleccionado"
-               Materia="@materiaSeleccionada"
-               Ubicacion="@ubicacionSeleccionada"
-               CerrarModal="@CerrarModal" />
+    </div>
+}
 
 @code {
-    private List<ProfesorDto> profesores = new();
+    [SupplyParameterFromQuery(Name = "materia")]
+    public string? QueryMateria { get; set; }
+
+    [SupplyParameterFromQuery(Name = "ciclo")]
+    public string? QueryCiclo { get; set; }
+
+    private string filtroMateria = "";
+    private string filtroUbicacion = "";
+    private decimal filtroMaxPrecio = 25000;
+    private double filtroMinRating = 0;
+    private bool filtroSoloVerificados = false;
+    private string filtroOrden = "rating_desc";
 
     private bool cargando = true;
-    private string mensajeError = "";
+    private List<ProfesorDto> profesoresApi = new();
+    private List<ProfesorDto> listaMostrada = new();
 
     private bool mostrarModal = false;
+    private ProfesorDto? profesorSeleccionado;
 
-    private string fotoSeleccionada = "";
-    private string nombreSeleccionado = "";
-    private string materiaSeleccionada = "";
-    private string ubicacionSeleccionada = "";
+    // Curated fallback teachers matching the redesign mockup
+    private readonly List<ProfesorDto> docentesFallback = new()
+    {
+        new ProfesorDto
+        {
+            Id = 1,
+            Nombre = "Prof. Laura Giménez",
+            Location = "Belgrano, CABA",
+            HourlyRate = 7500,
+            RatingAvg = 4.9,
+            RatingCount = 53,
+            Verified = true,
+            Availability = "Presencial y Online",
+            Materias = new List<string> { "Matemáticas Primaria", "3° a 7° Grado" },
+            Foto = "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&h=400&fit=crop&crop=faces"
+        },
+        new ProfesorDto
+        {
+            Id = 2,
+            Nombre = "Lic. Valentina Rossi",
+            Location = "Palermo / Recoleta, CABA",
+            HourlyRate = 8200,
+            RatingAvg = 5.0,
+            RatingCount = 68,
+            Verified = true,
+            Availability = "Presencial a Domicilio",
+            Materias = new List<string> { "Prácticas del Lenguaje", "1° a 3° Grado" },
+            Foto = "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&fit=crop&crop=faces"
+        },
+        new ProfesorDto
+        {
+            Id = 3,
+            Nombre = "Prof. Clara Zavaleta",
+            Location = "Belgrano, CABA",
+            HourlyRate = 7500,
+            RatingAvg = 5.0,
+            RatingCount = 39,
+            Verified = true,
+            Availability = "Online Interactivo",
+            Materias = new List<string> { "Inglés Primaria", "1° a 7° Grado" },
+            Foto = "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400&h=400&fit=crop&crop=faces"
+        },
+        new ProfesorDto
+        {
+            Id = 4,
+            Nombre = "Prof. Martín Benítez",
+            Location = "Caballito / Almagro, CABA",
+            HourlyRate = 6800,
+            RatingAvg = 4.8,
+            RatingCount = 27,
+            Verified = true,
+            Availability = "Híbrido (Online y Domicilio)",
+            Materias = new List<string> { "Ciencias Naturales", "Ciencias Sociales" },
+            Foto = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=faces"
+        }
+    };
 
     protected override async Task OnInitializedAsync()
     {
+        if (!string.IsNullOrWhiteSpace(QueryMateria))
+        {
+            filtroMateria = QueryMateria;
+        }
+
+        await CargarProfesores();
+    }
+
+    private async Task CargarProfesores()
+    {
+        cargando = true;
         try
         {
-            var respuesta =
-                await Http.GetFromJsonAsync<ProfesoresPaginadosDto>(
-                    "api/Docente/buscar"
-                );
+            var query = new List<string>();
+            if (!string.IsNullOrWhiteSpace(filtroMateria)) query.Add($"materia={Uri.EscapeDataString(filtroMateria)}");
+            if (!string.IsNullOrWhiteSpace(filtroUbicacion)) query.Add($"ubicacion={Uri.EscapeDataString(filtroUbicacion)}");
+            if (filtroMaxPrecio < 25000) query.Add($"maxPrecio={filtroMaxPrecio}");
+            if (filtroMinRating > 0) query.Add($"minRating={filtroMinRating}");
+            if (filtroSoloVerificados) query.Add("soloVerificados=true");
+            if (!string.IsNullOrWhiteSpace(filtroOrden)) query.Add($"orden={filtroOrden}");
 
-            profesores = respuesta?.Items ?? new List<ProfesorDto>();
+            var queryString = query.Count > 0 ? "?" + string.Join("&", query) : "";
+            var respuesta = await Http.GetFromJsonAsync<ProfesoresPaginadosDto>($"api/Docente/buscar{queryString}");
+
+            profesoresApi = respuesta?.Items ?? new List<ProfesorDto>();
+
+            if (profesoresApi.Count > 0)
+            {
+                listaMostrada = profesoresApi;
+            }
+            else
+            {
+                // Filter the fallback list locally
+                listaMostrada = docentesFallback
+                    .Where(d => string.IsNullOrWhiteSpace(filtroMateria) || d.Materias.Any(m => m.Contains(filtroMateria, StringComparison.OrdinalIgnoreCase)))
+                    .Where(d => string.IsNullOrWhiteSpace(filtroUbicacion) || d.Location.Contains(filtroUbicacion, StringComparison.OrdinalIgnoreCase))
+                    .Where(d => d.HourlyRate <= filtroMaxPrecio)
+                    .Where(d => d.RatingAvg >= filtroMinRating)
+                    .Where(d => !filtroSoloVerificados || d.Verified)
+                    .ToList();
+            }
         }
-        catch (Exception)
+        catch
         {
-            mensajeError = "No se pudieron cargar los profesores.";
+            listaMostrada = docentesFallback;
         }
         finally
         {
@@ -318,22 +374,35 @@
         }
     }
 
-    private void AbrirModal(
-        string foto,
-        string nombre,
-        string materia,
-        string ubicacion)
+    private async Task LimpiarFiltros()
     {
-        fotoSeleccionada = foto;
-        nombreSeleccionado = nombre;
-        materiaSeleccionada = materia;
-        ubicacionSeleccionada = ubicacion;
+        filtroMateria = "";
+        filtroUbicacion = "";
+        filtroMaxPrecio = 25000;
+        filtroMinRating = 0;
+        filtroSoloVerificados = false;
+        filtroOrden = "rating_desc";
+        await CargarProfesores();
+    }
 
+    private void AbrirDetalle(ProfesorDto profesor)
+    {
+        profesorSeleccionado = profesor;
         mostrarModal = true;
     }
 
     private void CerrarModal()
     {
         mostrarModal = false;
+        profesorSeleccionado = null;
+    }
+
+    private string ObtenerFoto(string? foto)
+    {
+        if (string.IsNullOrWhiteSpace(foto))
+        {
+            return "/assets/images/default-avatar.avif";
+        }
+        return foto;
     }
 }

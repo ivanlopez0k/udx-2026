@@ -1,0 +1,274 @@
+@page "/registro"
+@layout EmptyLayout
+@using System.Net.Http.Json
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<PageTitle>Crear Cuenta | UDX</PageTitle>
+
+<div class="auth-split-layout">
+    <!-- Left Showcase Column -->
+    <div class="auth-showcase">
+        <div class="auth-showcase-header">
+            <a href="/" class="brand-group" style="text-decoration: none;">
+                <img src="/assets/images/UDX.jpg" alt="UDX Primaria" class="brand-logo-img" />
+                <div class="brand-info">
+                    <span class="brand-title" style="color: #fff;">UDX</span>
+                    <span class="brand-subtitle" style="color: #93c5fd;">PRIMARIA</span>
+                </div>
+            </a>
+        </div>
+
+        <div class="auth-showcase-body">
+            <div class="auth-showcase-pill">
+                <span>🎒</span> Apoyo Escolar Integral
+            </div>
+            <h2 class="auth-showcase-title">
+                Empezá a acompañar a tus hijos hoy mismo.
+            </h2>
+            <p class="auth-showcase-desc">
+                Creá tu cuenta familiar para encontrar docentes calificados de 1° a 7° grado, coordinar clases diferenciadas por hijo y acceder a cuadernillos de actividades escolares.
+            </p>
+
+            <!-- Social Proof Card -->
+            <div class="auth-showcase-card">
+                <img src="https://images.unsplash.com/photo-1577495508048-b635879837f1?w=120&h=120&fit=crop&crop=faces" alt="Instituto Belgrano Primaria" class="showcase-avatar" />
+                <div class="showcase-text">
+                    <strong>Instituto Belgrano Primaria</strong>
+                    <p>Academia de Apoyo & Maestras Particulares</p>
+                    <span class="showcase-rating">★ 5.0 • Más de 120 familias acompañadas</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="auth-showcase-footer">
+            <span>&copy; @DateTime.Now.Year UDX. Registro Seguro para Familias y Docentes.</span>
+        </div>
+    </div>
+
+    <!-- Right Form Column -->
+    <div class="auth-form-column">
+        <div class="auth-form-wrapper">
+            <div class="auth-top-nav">
+                <a href="/" class="back-to-home">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                    </svg>
+                    <span>Volver al inicio</span>
+                </a>
+                <span style="font-size: 0.85rem; color: var(--slate-400);">UDX Registro</span>
+            </div>
+
+            <h1 class="auth-heading">Crear Cuenta</h1>
+            <p class="auth-subheading">Elegí tu perfil y completá tus datos básicos.</p>
+
+            @if (!string.IsNullOrEmpty(mensaje))
+            {
+                <div class="alert @(registroExitoso ? "alert-success" : "alert-danger")" style="border-radius: var(--radius-md); margin-bottom: 1.25rem;">
+                    @mensaje
+                </div>
+            }
+
+            @if (registroExitoso)
+            {
+                <div style="text-align: center; padding: 2rem 0;">
+                    <a href="/login" class="btn btn-primary btn-lg">
+                        Ir a Iniciar Sesión &rarr;
+                    </a>
+                </div>
+            }
+            else
+            {
+                <form @onsubmit="Registrarse" @onsubmit:preventDefault>
+                    <!-- Role Selector Cards -->
+                    <div class="form-group">
+                        <label class="form-label">¿Cómo querés usar UDX?</label>
+                        <div class="role-selector-grid">
+                            <div class="role-option-card @(rolSeleccionado == 0 ? "active" : "")" @onclick="() => rolSeleccionado = 0">
+                                <span class="role-icon">🎒</span>
+                                <span class="role-title">Familia (Padres / Hijos)</span>
+                            </div>
+                            <div class="role-option-card @(rolSeleccionado == 1 ? "active" : "")" @onclick="() => rolSeleccionado = 1">
+                                <span class="role-icon">🧑‍🏫</span>
+                                <span class="role-title">Maestra/o Particular</span>
+                            </div>
+                            <div class="role-option-card @(rolSeleccionado == 2 ? "active" : "")" @onclick="() => rolSeleccionado = 2">
+                                <span class="role-icon">🏢</span>
+                                <span class="role-title">Academia / Instituto</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="regName">Nombre Completo o Razón Social</label>
+                        <input 
+                            type="text" 
+                            id="regName" 
+                            class="form-control" 
+                            placeholder="Ej: Valentina Morales" 
+                            @bind="nombre"
+                            required 
+                        />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="regEmail">Correo Electrónico</label>
+                        <input 
+                            type="email" 
+                            id="regEmail" 
+                            class="form-control" 
+                            placeholder="tu@email.com" 
+                            @bind="email"
+                            autocomplete="email" 
+                            required 
+                        />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="regPhone">WhatsApp / Teléfono</label>
+                        <input 
+                            type="tel" 
+                            id="regPhone" 
+                            class="form-control" 
+                            placeholder="+54 9 11 1234-5678" 
+                            @bind="telefono"
+                        />
+                    </div>
+
+                    @if (rolSeleccionado == 1)
+                    {
+                        <div class="form-group">
+                            <label class="form-label" for="regAcademyCode">Código de Academia (Opcional)</label>
+                            <input 
+                                type="text" 
+                                id="regAcademyCode" 
+                                class="form-control" 
+                                placeholder="Ej: ACAD-9821" 
+                                @bind="codigoAcademia"
+                            />
+                            <span style="font-size: 0.75rem; color: var(--slate-500); margin-top: 0.2rem;">Si pertenecés a una academia registrada, ingresá su código acá.</span>
+                        </div>
+                    }
+
+                    <div class="form-group">
+                        <label class="form-label" for="regPassword">Contraseña</label>
+                        <div class="password-input-wrap">
+                            <input 
+                                type="@(mostrarPassword ? "text" : "password")" 
+                                id="regPassword" 
+                                class="form-control" 
+                                minlength="6" 
+                                placeholder="Mínimo 6 caracteres" 
+                                @bind="password"
+                                autocomplete="new-password" 
+                                required 
+                            />
+                            <button type="button" class="btn-toggle-eye" @onclick="() => mostrarPassword = !mostrarPassword" title="Mostrar/Ocultar contraseña">
+                                <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div style="margin: 1.25rem 0;">
+                        <label style="display: flex; align-items: flex-start; gap: 0.6rem; font-size: 0.8rem; color: var(--slate-600); cursor: pointer; line-height: 1.4;">
+                            <input type="checkbox" @bind="aceptaTerminos" style="accent-color: var(--primary); width: 16px; height: 16px; margin-top: 2px;" required />
+                            <span>Acepto los Términos y Condiciones y las Políticas de Privacidad de UDX.</span>
+                        </label>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-full btn-lg" disabled="@cargando">
+                        @if (cargando)
+                        {
+                            <span>Creando cuenta...</span>
+                        }
+                        else
+                        {
+                            <span>Crear mi Cuenta</span>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <path d="M5 12h14M12 5l7 7-7 7"/>
+                            </svg>
+                        }
+                    </button>
+
+                    <p class="auth-switch-prompt">
+                        ¿Ya tenés una cuenta? <a href="/login">Iniciar Sesión</a>
+                    </p>
+                </form>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private int rolSeleccionado = 0; // 0 = PARENT, 1 = TEACHER, 2 = ACADEMY
+    private string nombre = "";
+    private string email = "";
+    private string telefono = "";
+    private string codigoAcademia = "";
+    private string password = "";
+    private bool aceptaTerminos = false;
+    private bool mostrarPassword = false;
+    private bool cargando = false;
+    private string mensaje = "";
+    private bool registroExitoso = false;
+
+    private async Task Registrarse()
+    {
+        mensaje = "";
+
+        if (string.IsNullOrWhiteSpace(nombre) || string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+        {
+            mensaje = "Por favor completá todos los campos obligatorios.";
+            return;
+        }
+
+        if (!aceptaTerminos)
+        {
+            mensaje = "Debés aceptar los Términos y Condiciones para continuar.";
+            return;
+        }
+
+        cargando = true;
+
+        try
+        {
+            var registro = new
+            {
+                Email = email.Trim(),
+                Password = password,
+                Name = nombre.Trim(),
+                Phone = telefono.Trim(),
+                Role = rolSeleccionado,
+                AcademyCode = (rolSeleccionado == 1 && !string.IsNullOrWhiteSpace(codigoAcademia)) ? codigoAcademia.Trim() : null
+            };
+
+            var respuesta = await Http.PostAsJsonAsync("api/Auth/register", registro);
+
+            if (respuesta.IsSuccessStatusCode)
+            {
+                registroExitoso = true;
+                mensaje = "¡Cuenta creada exitosamente! Ahora podés iniciar sesión.";
+            }
+            else if (respuesta.StatusCode == System.Net.HttpStatusCode.Conflict)
+            {
+                mensaje = "Ese correo electrónico ya está registrado.";
+            }
+            else
+            {
+                var error = await respuesta.Content.ReadAsStringAsync();
+                mensaje = !string.IsNullOrWhiteSpace(error) ? error : "Ocurrió un error al crear la cuenta.";
+            }
+        }
+        catch (Exception ex)
+        {
+            mensaje = "Error de conexión con el servidor: " + ex.Message;
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+}
