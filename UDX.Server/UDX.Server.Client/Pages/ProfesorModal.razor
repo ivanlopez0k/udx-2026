@@ -1,4 +1,9 @@
-﻿@if (Mostrar)
+﻿@using UDX.Shared.DTOs
+@inject NavigationManager Navigation
+@inject HttpClient Http
+
+
+@if (Mostrar)
 {
     <div class="modal-overlay" @onclick="Cerrar">
 
@@ -8,23 +13,81 @@
                 ×
             </button>
 
-            <img src="@Foto"
-                 alt="@Nombre"
-                 class="modal-foto" />
+            @if (docenteDetalle == null)
+            {
+                <img src="@Foto"
+                     alt="@Nombre"
+                     class="modal-foto" />
 
-            <h2>@Nombre</h2>
+                <h2>@Nombre</h2>
 
-            <p class="modal-materia">
-                @Materia
-            </p>
+                <p class="modal-materia">
+                    @Materia
+                </p>
 
-            <p class="modal-ubicacion">
-                 @Ubicacion
-            </p>
+                <p class="modal-ubicacion">
+                    @Ubicacion
+                </p>
 
-            <button class="modal-docente">
-                Ver Docente
-            </button>
+                @if (DocenteId > 0)
+                {
+                    <button class="modal-docente" @onclick="VerDocente">
+                        Ver Docente
+                    </button>
+                }
+            }
+            else
+            {
+                <button class="modal-docente" @onclick="Volver">
+                    ← Volver
+                </button>
+
+                <img src="@docenteDetalle.Foto"
+                     alt="@docenteDetalle.Nombre"
+                     class="modal-foto" />
+
+                <h2>@docenteDetalle.Nombre</h2>
+
+                <p>@docenteDetalle.Email</p>
+                <p>@docenteDetalle.Phone</p>
+                <p>@docenteDetalle.Location</p>
+                <p>@docenteDetalle.Credentials</p>
+
+                <p>
+                    ⭐ @docenteDetalle.RatingAvg
+                    (@docenteDetalle.RatingCount opiniones)
+                </p>
+
+                <h3>Academias</h3>
+
+                @foreach (var academia in docenteDetalle.Academias)
+                {
+                    <p>@academia.Name</p>
+                }
+
+                <h3>Materias</h3>
+
+                @foreach (var materia in docenteDetalle.Materias)
+                {
+                    <div>
+                        <strong>@materia.Name</strong>
+                        <p>Nivel: @materia.Level</p>
+                        <p>Grado: @materia.Grade</p>
+                        <p>Categoría: @materia.Category</p>
+                        <p>Precio por hora: $@materia.HourlyRate</p>
+                    </div>
+                }
+            }
+
+            @if (cargandoDetalle)
+            {
+                <p>Cargando información...</p>
+            }
+
+            @if (!string.IsNullOrEmpty(mensajeError))
+            {
+                <p>@mensajeError</p>
+            }
 
         </div>
 
@@ -32,7 +95,9 @@
 }
 
 @code {
-
+    private DocenteDetalleDTO? docenteDetalle;
+    private bool cargandoDetalle = false;
+    private string mensajeError = "";
     [Parameter]
     public bool Mostrar { get; set; }
 
@@ -50,7 +115,20 @@
 
     [Parameter]
     public EventCallback CerrarModal { get; set; }
+    [Parameter]
+    public int DocenteId { get; set; }
 
+    private void VerDocente()
+    {
+        if (DocenteId <= 0)
+            return;
+
+        Navigation.NavigateTo($"/profesores/{DocenteId}");
+    }
+    private void Volver()
+    {
+        docenteDetalle = null;
+    }
     private async Task Cerrar()
     {
         await CerrarModal.InvokeAsync();

@@ -22,11 +22,24 @@ public class SolicitudClaseController : ControllerBase
     // POST: api/SolicitudClase (solo PADRE puede crear)
     [Authorize(Roles = "PARENT")]
     [HttpPost]
-    public async Task<ActionResult<SolicitudClaseDTO>> Crear([FromBody] CrearSolicitudDTO dto)
+    public async Task<ActionResult<SolicitudClaseDTO>> Crear(
+        [FromBody] CrearSolicitudDTO dto)
     {
-        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+        if (dto.Schedule.UtcDateTime <= DateTime.UtcNow)
+            return BadRequest("La fecha de la clase debe ser futura.");
 
-        // Validate parent exists and matches authenticated user
+        if (dto.Duration <= 0 || dto.Duration > 4)
+            return BadRequest("La duración debe ser de entre 1 y 4 horas.");
+
+        if (string.IsNullOrWhiteSpace(dto.Message))
+            return BadRequest("El mensaje es obligatorio.");
+
+        if (string.IsNullOrWhiteSpace(dto.Level))
+            return BadRequest("Debés seleccionar un nivel.");
+
+        var userId = int.Parse(
+            User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
         var parent = await _context.PerfilesPadres
             .FirstOrDefaultAsync(p => p.Id == dto.ParentId);
 
@@ -36,57 +49,87 @@ public class SolicitudClaseController : ControllerBase
         if (parent.UserId != userId)
             return Forbid("No podés crear solicitudes para otro padre.");
 
-        // Validate teacher exists
-        var docente = await _context.PerfilesDocentes.FindAsync(dto.DocenteId);
+        var docente = await _context.PerfilesDocentes
+            .FindAsync(dto.DocenteId);
+
         if (docente == null)
             return BadRequest("No se encontró el perfil del docente.");
 
-        // Validate academy exists
-        var academia = await _context.Academias.FindAsync(dto.AcademyId);
-        if (academia == null)
-            return BadRequest("No se encontró la academia.");
+        // El docente debe tener al menos una academia activa.
+        var tieneAcademiaActiva = await _context.DocentesAcademias
+            .AnyAsync(da =>
+                da.TeacherId == dto.DocenteId &&
+                da.IsActive &&
+                da.Academy != null &&
+                da.Academy.IsActive);
 
-        // Validate materia exists
-        var materia = await _context.Materias.FindAsync(dto.MateriaId);
+        if (!tieneAcademiaActiva)
+            return BadRequest("El docente no tiene ninguna academia activa.");
+
+        var materia = await _context.Materias
+            .FindAsync(dto.MateriaId);
+
         if (materia == null)
             return BadRequest("No se encontró la materia.");
 
-        // Parse modalidad
-        if (!Enum.TryParse<ModalidadClase>(dto.Modalidad, true, out var modalidad))
-            return BadRequest("Modalidad inválida. Valores permitidos: ONLINE, PRESENCIAL");
+        var ofertaMateria = await _context.DocentesMaterias
+            .FirstOrDefaultAsync(dm =>
+                dm.TeacherId == dto.DocenteId &&
+                dm.MateriaId == dto.MateriaId &&
+                dm.Level == dto.Level);
+
+        if (ofertaMateria == null)
+            return BadRequest("El docente no ofrece esta materia en el nivel seleccionado.");
+
+        if (!Enum.TryParse<ModalidadClase>(
+            dto.Modalidad, true, out var modalidad))
+        {
+            return BadRequest(
+                "Modalidad inválida. Valores permitidos: ONLINE, PRESENCIAL");
+        }
 
         var solicitud = new SolicitudClase
         {
             Status = SolicitudClase.Stat.PENDING,
             RequestedAt = DateTime.UtcNow,
-            Schedule = dto.Schedule,
+            Schedule = dto.Schedule.UtcDateTime,
             Duration = dto.Duration,
             Notes = dto.Notes,
             Message = dto.Message,
             Modalidad = modalidad,
             ParentId = dto.ParentId,
             DocenteId = dto.DocenteId,
-            AcademyId = dto.AcademyId,
-            MateriaId = dto.MateriaId
+            MateriaId = dto.MateriaId,
+            Level = dto.Level,
+
+            // La academia se seleccionará cuando el docente acepte.
+            AcademyId = null
         };
 
         _context.SolicitudesClases.Add(solicitud);
         await _context.SaveChangesAsync();
 
         var result = await ObtenerSolicitudDTO(solicitud.Id);
-        return CreatedAtAction(nameof(GetById), new { id = solicitud.Id }, result);
+
+        return CreatedAtAction(
+            nameof(GetById),
+            new { id = solicitud.Id },
+            result);
     }
 
-    // GET: api/SolicitudClase/docente/{docenteId}?status=PENDING (solo DOCENTE puede ver las suyas)
+    // GET: api/SolicitudClase/docente/{docenteId}?status=PENDING
+    // GET: api/SolicitudClase/docente/{docenteId}?status=PENDING
     [Authorize(Roles = "TEACHER")]
     [HttpGet("docente/{docenteId:int}")]
     public async Task<ActionResult<List<SolicitudClaseDTO>>> GetByDocente(
         int docenteId,
         [FromQuery] string? status = null)
     {
-        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+        var userId = int.Parse(
+            User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
 
         var perfil = await _context.PerfilesDocentes
+            .AsNoTracking()
             .FirstOrDefaultAsync(p => p.Id == docenteId);
 
         if (perfil == null)
@@ -96,27 +139,77 @@ public class SolicitudClaseController : ControllerBase
             return Forbid("No podés ver solicitudes de otro docente.");
 
         var query = _context.SolicitudesClases
-            .Include(s => s.Parent).ThenInclude(p => p.User)
-            .Include(s => s.Docente).ThenInclude(d => d.User)
-            .Include(s => s.Academy)
-            .Include(s => s.Materia)
-            .Where(s => s.DocenteId == docenteId)
-            .AsQueryable();
+            .AsNoTracking()
+            .Where(s => s.DocenteId == docenteId);
 
-        // Filter by status if provided
         if (!string.IsNullOrEmpty(status))
         {
-            if (Enum.TryParse<SolicitudClase.Stat>(status, true, out var statusFilter))
+            if (Enum.TryParse<SolicitudClase.Stat>(
+                status, true, out var statusFilter))
             {
                 query = query.Where(s => s.Status == statusFilter);
             }
             else
             {
-                return BadRequest("Estado inválido. Valores permitidos: PENDING, ACCEPTED, DECLINED, EXPIRED");
+                return BadRequest(
+                    "Estado inválido. Valores permitidos: PENDING, ACCEPTED, DECLINED, EXPIRED");
             }
         }
 
-        var solicitudes = await query
+        var result = await query
+            .OrderByDescending(s => s.RequestedAt)
+            .Select(s => new SolicitudClaseDTO
+            {
+                Id = s.Id,
+                Status = s.Status.ToString(),
+                RequestedAt = s.RequestedAt,
+                Schedule = s.Schedule,
+                Duration = s.Duration,
+                Notes = s.Notes,
+                Message = s.Message,
+                Modalidad = s.Modalidad.ToString(),
+
+                ParentId = s.ParentId,
+                ParentName = s.Parent.User.Name,
+
+                DocenteId = s.DocenteId,
+                DocenteName = s.Docente.User.Name,
+
+                AcademyId = s.AcademyId,
+                AcademyName = s.Academy != null
+                    ? s.Academy.Name
+                    : "",
+
+                MateriaId = s.MateriaId,
+                MateriaName = s.Materia.Name,
+
+                Level = s.Level
+            })
+            .ToListAsync();
+
+        return Ok(result);
+    }
+
+    // GET: api/SolicitudClase/padre
+    [Authorize(Roles = "PARENT")]
+    [HttpGet("padre")]
+    public async Task<ActionResult<List<SolicitudClaseDTO>>> GetByPadre()
+    {
+        var userId = int.Parse(
+            User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
+        var perfil = await _context.PerfilesPadres
+            .FirstOrDefaultAsync(p => p.UserId == userId);
+
+        if (perfil == null)
+            return NotFound("No se encontró el perfil del padre.");
+
+        var solicitudes = await _context.SolicitudesClases
+            .Include(s => s.Parent).ThenInclude(p => p.User)
+            .Include(s => s.Docente).ThenInclude(d => d.User)
+            .Include(s => s.Academy)
+            .Include(s => s.Materia)
+            .Where(s => s.ParentId == perfil.Id)
             .OrderByDescending(s => s.RequestedAt)
             .ToListAsync();
 
@@ -137,36 +230,53 @@ public class SolicitudClaseController : ControllerBase
             AcademyId = s.AcademyId,
             AcademyName = s.Academy?.Name ?? "",
             MateriaId = s.MateriaId,
-            MateriaName = s.Materia?.Name ?? ""
+            MateriaName = s.Materia?.Name ?? "",
+            Level = s.Level
         }).ToList();
 
         return Ok(result);
     }
 
-    // GET: api/SolicitudClase/{id} (cualquier usuario autenticado puede ver)
+    // GET: api/SolicitudClase/{id}
     [Authorize]
     [HttpGet("{id:int}")]
     public async Task<ActionResult<SolicitudClaseDTO>> GetById(int id)
     {
-        var dto = await ObtenerSolicitudDTO(id);
-        if (dto == null)
+        var userId = int.Parse(
+            User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
+        var solicitud = await _context.SolicitudesClases
+            .Include(s => s.Parent)
+            .Include(s => s.Docente)
+            .FirstOrDefaultAsync(s => s.Id == id);
+
+        if (solicitud == null)
             return NotFound();
+
+        bool esPadre = solicitud.Parent.UserId == userId;
+        bool esDocente = solicitud.Docente.UserId == userId;
+
+        if (!esPadre && !esDocente)
+            return Forbid();
+
+        var dto = await ObtenerSolicitudDTO(id);
 
         return Ok(dto);
     }
 
-    // PUT: api/SolicitudClase/{id}/estado (solo DOCENTE puede aceptar/rechazar)
+    // PUT: api/SolicitudClase/{id}/estado
     [Authorize(Roles = "TEACHER")]
     [HttpPut("{id:int}/estado")]
     public async Task<ActionResult<SolicitudClaseDTO>> ActualizarEstado(
         int id,
         [FromBody] ActualizarEstadoSolicitudDTO dto)
     {
-        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+        var userId = int.Parse(
+            User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
 
         var solicitud = await _context.SolicitudesClases
-            .Include(s => s.Parent)
-            .Include(s => s.Docente)
+            .Include(s => s.Parent).ThenInclude(p => p.User)
+            .Include(s => s.Docente).ThenInclude(d => d.User)
             .Include(s => s.Academy)
             .Include(s => s.Materia)
             .FirstOrDefaultAsync(s => s.Id == id);
@@ -174,60 +284,88 @@ public class SolicitudClaseController : ControllerBase
         if (solicitud == null)
             return NotFound("No se encontró la solicitud.");
 
-        // Verify the authenticated teacher owns this solicitud
         if (solicitud.Docente.UserId != userId)
             return Forbid("No podés modificar solicitudes de otro docente.");
 
         if (solicitud.Status != SolicitudClase.Stat.PENDING)
             return BadRequest("Solo se pueden modificar solicitudes en estado PENDING.");
 
-        if (!Enum.TryParse<SolicitudClase.Stat>(dto.Status, true, out var nuevoEstado))
-            return BadRequest("Estado inválido. Valores permitidos: ACCEPTED, DECLINED");
+        if (!Enum.TryParse<SolicitudClase.Stat>(
+            dto.Status, true, out var nuevoEstado) ||
+            (nuevoEstado != SolicitudClase.Stat.ACCEPTED &&
+             nuevoEstado != SolicitudClase.Stat.DECLINED))
+        {
+            return BadRequest(
+                "Estado inválido. Valores permitidos: ACCEPTED, DECLINED");
+        }
 
-        solicitud.Status = nuevoEstado;
-
-        // If accepted, create ClaseAgendada automatically
         if (nuevoEstado == SolicitudClase.Stat.ACCEPTED)
         {
+            if (!dto.AcademyId.HasValue || dto.AcademyId.Value <= 0)
+                return BadRequest(
+                    "Debés seleccionar una academia para aceptar la solicitud.");
+
+            var academia = await _context.Academias
+                .FirstOrDefaultAsync(a =>
+                    a.Id == dto.AcademyId.Value &&
+                    a.IsActive);
+
+            if (academia == null)
+                return BadRequest("La academia no existe o está inactiva.");
+
+            var perteneceAcademia = await _context.DocentesAcademias
+                .AnyAsync(da =>
+                    da.TeacherId == solicitud.DocenteId &&
+                    da.AcademyId == dto.AcademyId.Value &&
+                    da.IsActive);
+
+            if (!perteneceAcademia)
+                return BadRequest(
+                    "No pertenecés a esa academia o tu vínculo está inactivo.");
+
+            solicitud.AcademyId = academia.Id;
+            solicitud.Academy = academia;
+
+            var ofertaMateria = await _context.DocentesMaterias
+                .FirstOrDefaultAsync(dm =>
+                    dm.TeacherId == solicitud.DocenteId &&
+                    dm.MateriaId == solicitud.MateriaId &&
+                    dm.Level == solicitud.Level);
+
+            if (ofertaMateria == null)
+                return BadRequest(
+                    "No se encontró la oferta de materia y nivel del docente.");
+
             var clase = new ClaseAgendada
             {
                 ScheduledAt = solicitud.Schedule,
                 Duration = solicitud.Duration,
                 Status = ClaseAgendada.Stat.SCHEDULED,
-                Price = 0,
-                Location = "",
+                Price = (float)(ofertaMateria.HourlyRate * solicitud.Duration),
+                Location = solicitud.Modalidad == ModalidadClase.ONLINE
+                    ? "Online"
+                    : solicitud.Docente.Location,
                 RequestId = solicitud.Id,
                 ParentId = solicitud.ParentId,
                 TeacherId = solicitud.DocenteId,
                 SubjectId = solicitud.MateriaId,
-                AcademyId = solicitud.AcademyId,
+                AcademyId = academia.Id,
                 ContentId = null
             };
 
             _context.ClasesAgendadas.Add(clase);
         }
+        else
+        {
+            solicitud.AcademyId = null;
+            solicitud.Academy = null;
+        }
+
+        solicitud.Status = nuevoEstado;
 
         await _context.SaveChangesAsync();
 
-        var result = new SolicitudClaseDTO
-        {
-            Id = solicitud.Id,
-            Status = solicitud.Status.ToString(),
-            RequestedAt = solicitud.RequestedAt,
-            Schedule = solicitud.Schedule,
-            Duration = solicitud.Duration,
-            Notes = solicitud.Notes,
-            Message = solicitud.Message,
-            Modalidad = solicitud.Modalidad.ToString(),
-            ParentId = solicitud.ParentId,
-            ParentName = solicitud.Parent?.User?.Name ?? "",
-            DocenteId = solicitud.DocenteId,
-            DocenteName = solicitud.Docente?.User?.Name ?? "",
-            AcademyId = solicitud.AcademyId,
-            AcademyName = solicitud.Academy?.Name ?? "",
-            MateriaId = solicitud.MateriaId,
-            MateriaName = solicitud.Materia?.Name ?? ""
-        };
+        var result = await ObtenerSolicitudDTO(solicitud.Id);
 
         return Ok(result);
     }
@@ -241,7 +379,8 @@ public class SolicitudClaseController : ControllerBase
             .Include(s => s.Materia)
             .FirstOrDefaultAsync(s => s.Id == id);
 
-        if (s == null) return null;
+        if (s == null)
+            return null;
 
         return new SolicitudClaseDTO
         {
@@ -260,7 +399,8 @@ public class SolicitudClaseController : ControllerBase
             AcademyId = s.AcademyId,
             AcademyName = s.Academy?.Name ?? "",
             MateriaId = s.MateriaId,
-            MateriaName = s.Materia?.Name ?? ""
+            MateriaName = s.Materia?.Name ?? "",
+            Level = s.Level
         };
     }
 }

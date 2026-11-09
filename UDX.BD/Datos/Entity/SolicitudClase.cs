@@ -31,13 +31,14 @@ namespace UDX.BD.Datos.Entity
         public int ParentId { get; set; }
         public PerfilPadre Parent { get; set; }
 
-        public int AcademyId { get; set; }
-        public Academia Academy { get; set; }
+        public int? AcademyId { get; set; }
+        public Academia? Academy { get; set; }
 
         public int DocenteId { get; set; }
         public PerfilDocente Docente { get; set; }
 
         public int MateriaId { get; set; }
+        public string Level { get; set; } = "";
         public Materia Materia { get; set; }
     }
 }

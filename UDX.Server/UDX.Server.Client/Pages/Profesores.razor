@@ -3,6 +3,7 @@
 @using UDX.Shared.DTOs
 @using System.Net.Http.Json
 @inject HttpClient Http
+@inject NavigationManager Navigation
 
 <PageTitle>Profesores</PageTitle>
 
@@ -15,8 +16,7 @@
     <div class="profesores-lista">
 
         @* Profesor 1: Luka Doncic *@
-        <div class="profesor-card"
-             @onclick='() => AbrirModal("/IMG/luka.jpg", "Luka Doncic", "Matemáticas", "Buenos Aires")'>
+        <div class="profesor-card">
 
             <div class="profesor-foto">
                 <img src="/IMG/luka.jpg" alt="Luka Doncic">
@@ -45,8 +45,7 @@
         </div>
 
         @* Profesor 2: Pepe Reina *@
-        <div class="profesor-card"
-             @onclick='() => AbrirModal("/IMG/pepe.jpg", "Pepe Reina", "Historia", "Córdoba")'>
+        <div class="profesor-card">
 
             <div class="profesor-foto">
                 <img src="/IMG/pepe.jpg" alt="Pepe Reina">
@@ -70,8 +69,7 @@
         </div>
 
         @* Profesor 3: Lionel Messi *@
-        <div class="profesor-card"
-             @onclick='() => AbrirModal("/IMG/messi.jpg", "Lionel Messi", "Educación Física", "Rosario, Santa Fe")'>
+        <div class="profesor-card">
 
             <div class="profesor-foto">
                 <img src="/IMG/messi.jpg" alt="Lionel Messi">
@@ -100,8 +98,7 @@
         </div>
 
         @* Profesor 4: Gerónimo Benavidez *@
-        <div class="profesor-card"
-             @onclick='() => AbrirModal("/IMG/momo.jpg", "Gerónimo Benavidez", "Historia", "Buenos Aires")'>
+        <div class="profesor-card">
 
             <div class="profesor-foto">
                 <img src="/IMG/momo.jpg" alt="Gerónimo Benavidez">
@@ -125,8 +122,7 @@
         </div>
 
         @* Profesor 5: Mauro Lombardo *@
-        <div class="profesor-card"
-             @onclick='() => AbrirModal("/IMG/duki.jpg", "Mauro Lombardo", "Música", "Córdoba")'>
+        <div class="profesor-card">
 
             <div class="profesor-foto">
                 <img src="/IMG/duki.jpg" alt="Mauro Lombardo">
@@ -155,8 +151,7 @@
         </div>
 
         @* Profesor 6: Ronald Araujo *@
-        <div class="profesor-card"
-             @onclick='() => AbrirModal("/IMG/araujo.jpg", "Ronald Araujo", "Educación Física", "Tucumán")'>
+        <div class="profesor-card">
 
             <div class="profesor-foto">
                 <img src="/IMG/araujo.jpg" alt="Ronald Araujo">
@@ -207,14 +202,7 @@
 
             @foreach (var profesor in profesores)
             {
-                <div class="profesor-card"
-                     @onclick='() => AbrirModal(
-                         string.IsNullOrWhiteSpace(profesor.Foto)
-                             ? "images/default-avatar.avif"
-                             : profesor.Foto,
-                         profesor.Nombre,
-                         profesor.Materias.FirstOrDefault() ?? "Sin materias",
-                         profesor.Location)'>
+                <div class="profesor-card">
 
 <div class="profesor-foto">
                         <img src="@(string.IsNullOrWhiteSpace(profesor.Foto)
@@ -266,36 +254,27 @@
                                 @profesor.Availability
                             </p>
                         }
+                        <button class="btn btn-primary mt-2"
+                                style="width: 120px;"
+                                @onclick="() => IrAlPerfil(profesor.Id)"
+                                @onclick:stopPropagation="true">
+                            Ver perfil
+                        </button>
                     </div>
                 </div>
             }
-
+            
         </div>
     }
 
 </div>
 
-@* MODAL DE DETALLE DEL PROFESOR *@
-
-<ProfesorModal Mostrar="@mostrarModal"
-               Foto="@fotoSeleccionada"
-               Nombre="@nombreSeleccionado"
-               Materia="@materiaSeleccionada"
-               Ubicacion="@ubicacionSeleccionada"
-               CerrarModal="@CerrarModal" />
 
 @code {
     private List<ProfesorDto> profesores = new();
 
     private bool cargando = true;
     private string mensajeError = "";
-
-    private bool mostrarModal = false;
-
-    private string fotoSeleccionada = "";
-    private string nombreSeleccionado = "";
-    private string materiaSeleccionada = "";
-    private string ubicacionSeleccionada = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -318,22 +297,9 @@
         }
     }
 
-    private void AbrirModal(
-        string foto,
-        string nombre,
-        string materia,
-        string ubicacion)
+    
+    private void IrAlPerfil(int docenteId)
     {
-        fotoSeleccionada = foto;
-        nombreSeleccionado = nombre;
-        materiaSeleccionada = materia;
-        ubicacionSeleccionada = ubicacion;
-
-        mostrarModal = true;
-    }
-
-    private void CerrarModal()
-    {
-        mostrarModal = false;
+        Navigation.NavigateTo($"/profesores/{docenteId}");
     }
 }

@@ -27,8 +27,8 @@ else
                 <div class="text-center">
 
                     <img src="@(string.IsNullOrWhiteSpace(fotoPerfil)
-                                            ? "images/default-avatar.avif"
-                                            : fotoPerfil)"
+                         ? "images/default-avatar.avif"
+                         : fotoPerfil)"
                          class="avatar img-circle img-thumbnail"
                          style="width: 180px; height: 180px; object-fit: cover;"
                          alt="Foto de perfil" />
@@ -66,7 +66,6 @@ else
 
             </div>
 
-
             <!-- DATOS DEL PERFIL -->
             <div class="col-md-8" style="margin-top: 50px;">
 
@@ -79,7 +78,6 @@ else
                 </ul>
 
                 <div class="tab-content">
-
                     <div class="tab-pane active">
 
                         <hr />
@@ -109,7 +107,6 @@ else
 
                         </div>
 
-
                         <!-- EMAIL Y CIUDAD -->
                         <div class="row">
 
@@ -136,7 +133,6 @@ else
 
                         </div>
 
-
                         <!-- HIJO Y GRADO -->
                         <div class="row">
 
@@ -162,36 +158,32 @@ else
 
                         </div>
 
-
                         <!-- BOTONES PRINCIPALES -->
                         <div class="row">
-
                             <div class="col-md-12">
 
                                 <br />
 
                                 <button class="btn btn-primary"
-        @onclick="GuardarCambios">
-    Guardar
-</button>
+                                        @onclick="GuardarCambios">
+                                    Guardar
+                                </button>
 
-<button class="btn btn-secondary ms-2"
-        type="button"
-        @onclick="CerrarSesion">
-    Cerrar sesión
-</button>
+                                <button class="btn btn-secondary ms-2"
+                                        type="button"
+                                        @onclick="CerrarSesion">
+                                    Cerrar sesión
+                                </button>
 
-@if (!string.IsNullOrEmpty(mensaje))
-{
-    <div class="alert @(guardadoCorrectamente ? "alert-success" : "alert-danger") mt-3">
-        @mensaje
-    </div>
-}
+                                @if (!string.IsNullOrEmpty(mensaje))
+                                {
+                                    <div class="alert @(guardadoCorrectamente ? "alert-success" : "alert-danger") mt-3">
+                                        @mensaje
+                                    </div>
+                                }
 
                             </div>
-
                         </div>
-
 
                         <!-- ELIMINAR CUENTA -->
                         <hr />
@@ -211,16 +203,102 @@ else
                         </div>
 
                     </div>
-
                 </div>
 
             </div>
 
         </div>
 
+        <!-- MIS SOLICITUDES -->
+        <div class="mt-4">
+            <hr />
+
+            <h4>Mis solicitudes de clases</h4>
+
+            <button class="btn btn-outline-primary mb-3"
+                    type="button"
+                    @onclick="CargarSolicitudes">
+                Actualizar solicitudes
+            </button>
+
+            @if (cargandoSolicitudes)
+            {
+                <p>Cargando solicitudes...</p>
+            }
+            else if (!string.IsNullOrEmpty(errorSolicitudes))
+            {
+                <div class="alert alert-danger">
+                    @errorSolicitudes
+                </div>
+            }
+            else if (solicitudes.Count == 0)
+            {
+                <div class="alert alert-info">
+                    Todavía no tenés solicitudes de clases.
+                </div>
+            }
+            else
+            {
+                @foreach (var solicitud in solicitudes)
+                {
+                    <div class="card mb-3">
+                        <div class="card-body">
+
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5>@solicitud.MateriaName</h5>
+
+                                <span class="badge @ObtenerClaseEstado(solicitud.Status)">
+                                    @ObtenerNombreEstado(solicitud.Status)
+                                </span>
+                            </div>
+
+                            <p>
+                                <strong>Docente:</strong>
+                                @solicitud.DocenteName
+                            </p>
+
+                            <p>
+                                <strong>Fecha:</strong>
+                                @solicitud.Schedule.ToString("dd/MM/yyyy HH:mm")
+                            </p>
+
+                            <p>
+                                <strong>Duración:</strong>
+                                @solicitud.Duration
+                                @(solicitud.Duration == 1 ? "hora" : "horas")
+                            </p>
+
+                            <p>
+                                <strong>Grado:</strong>
+                                @solicitud.Level
+                            </p>
+
+                            <p>
+                                <strong>Modalidad:</strong>
+                                @solicitud.Modalidad
+                            </p>
+
+                            @if (!string.IsNullOrWhiteSpace(solicitud.AcademyName))
+                            {
+                                <p>
+                                    <strong>Academia:</strong>
+                                    @solicitud.AcademyName
+                                </p>
+                            }
+
+                            <p class="mb-0">
+                                <strong>Mensaje:</strong>
+                                @solicitud.Message
+                            </p>
+
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+
     </div>
 }
-
 
 <!-- MODAL DE CONFIRMACIÓN -->
 @if (mostrarConfirmacionEliminar)
@@ -230,7 +308,6 @@ else
          style="background-color: rgba(0,0,0,0.5);">
 
         <div class="modal-dialog modal-dialog-centered">
-
             <div class="modal-content">
 
                 <div class="modal-header">
@@ -275,15 +352,13 @@ else
                 </div>
 
             </div>
-
         </div>
 
     </div>
 }
 
-
-@code
-{
+@code {
+    // DATOS DEL PERFIL
     private string nombre = "";
     private string email = "";
     private string telefono = "";
@@ -292,6 +367,7 @@ else
     private string grado = "";
     private string fotoPerfil = "";
 
+    // ESTADOS DEL PERFIL
     private bool cargando = true;
     private string mensajeFoto = "";
     private string mensaje = "";
@@ -300,7 +376,12 @@ else
 
     private IBrowserFile? fotoSeleccionada;
 
+    // SOLICITUDES DE CLASES
+    private List<SolicitudPadreRespuesta> solicitudes = new();
+    private bool cargandoSolicitudes = false;
+    private string errorSolicitudes = "";
 
+    // CARGAR PERFIL AL INICIAR
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender)
@@ -317,20 +398,14 @@ else
         }
 
         Http.DefaultRequestHeaders.Authorization =
-            new System.Net.Http.Headers.AuthenticationHeaderValue(
-                "Bearer",
-                token);
+            new AuthenticationHeaderValue("Bearer", token);
 
-        var respuesta = await Http.GetAsync(
-            "api/Padre/perfil");
+        var respuesta = await Http.GetAsync("api/Padre/perfil");
 
-        Console.WriteLine(
-            $"Estado perfil: {respuesta.StatusCode}");
+        Console.WriteLine($"Estado perfil: {respuesta.StatusCode}");
 
-        if (respuesta.StatusCode ==
-            System.Net.HttpStatusCode.Unauthorized ||
-            respuesta.StatusCode ==
-            System.Net.HttpStatusCode.Forbidden)
+        if (respuesta.StatusCode == System.Net.HttpStatusCode.Unauthorized ||
+            respuesta.StatusCode == System.Net.HttpStatusCode.Forbidden)
         {
             Navigation.NavigateTo("/");
             return;
@@ -339,8 +414,7 @@ else
         var contenidoRespuesta =
             await respuesta.Content.ReadAsStringAsync();
 
-        Console.WriteLine(
-            $"Respuesta perfil: {contenidoRespuesta}");
+        Console.WriteLine($"Respuesta perfil: {contenidoRespuesta}");
 
         if (respuesta.IsSuccessStatusCode)
         {
@@ -359,12 +433,78 @@ else
             }
         }
 
+        await CargarSolicitudes();
+
         cargando = false;
 
         StateHasChanged();
     }
 
+    // CARGAR SOLICITUDES DEL PADRE
+    private async Task CargarSolicitudes()
+    {
+        cargandoSolicitudes = true;
+        errorSolicitudes = "";
 
+        try
+        {
+            var token = await JS.InvokeAsync<string>(
+                "localStorage.getItem",
+                "token");
+
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                Navigation.NavigateTo("/");
+                return;
+            }
+
+            Http.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", token);
+
+            var resultado =
+                await Http.GetFromJsonAsync<List<SolicitudPadreRespuesta>>(
+                    "api/SolicitudClase/padre");
+
+            solicitudes = resultado ?? new List<SolicitudPadreRespuesta>();
+        }
+        catch (Exception ex)
+        {
+            errorSolicitudes = "No se pudieron cargar las solicitudes.";
+
+            Console.WriteLine(
+                $"Error al cargar solicitudes: {ex.Message}");
+        }
+        finally
+        {
+            cargandoSolicitudes = false;
+        }
+    }
+
+    // TRADUCIR ESTADO DE SOLICITUD
+    private string ObtenerNombreEstado(string estado)
+    {
+        return estado.ToUpper() switch
+        {
+            "PENDING" => "Pendiente",
+            "ACCEPTED" => "Aceptada",
+            "DECLINED" => "Rechazada",
+            _ => estado
+        };
+    }
+
+    // COLOR SEGÚN ESTADO
+    private string ObtenerClaseEstado(string estado)
+    {
+        return estado.ToUpper() switch
+        {
+            "PENDING" => "bg-warning text-dark",
+            "ACCEPTED" => "bg-success",
+            "DECLINED" => "bg-danger",
+            _ => "bg-secondary"
+        };
+    }
+
+    // GUARDAR CAMBIOS DEL PERFIL
     private async Task GuardarCambios()
     {
         if (string.IsNullOrWhiteSpace(fotoPerfil))
@@ -377,25 +517,21 @@ else
 
         if (fotoSeleccionada != null)
         {
-            using var contenido =
-                new MultipartFormDataContent();
+            using var contenido = new MultipartFormDataContent();
 
-            var stream =
-                fotoSeleccionada.OpenReadStream(
-                    5 * 1024 * 1024);
+            var stream = fotoSeleccionada.OpenReadStream(
+                5 * 1024 * 1024);
 
-            var archivo =
-                new StreamContent(stream);
+            var archivo = new StreamContent(stream);
 
             contenido.Add(
                 archivo,
                 "foto",
                 fotoSeleccionada.Name);
 
-            var respuestaFoto =
-                await Http.PostAsync(
-                    "api/Padre/foto",
-                    contenido);
+            var respuestaFoto = await Http.PostAsync(
+                "api/Padre/foto",
+                contenido);
 
             if (!respuestaFoto.IsSuccessStatusCode)
             {
@@ -408,7 +544,6 @@ else
             fotoSeleccionada = null;
         }
 
-
         var datos = new PerfilPadreDTO
         {
             Nombre = nombre,
@@ -419,41 +554,37 @@ else
             Grado = grado
         };
 
-        var respuesta =
-            await Http.PutAsJsonAsync(
-                "api/Padre/perfil",
-                datos);
+        var respuesta = await Http.PutAsJsonAsync(
+            "api/Padre/perfil",
+            datos);
 
-       if (!respuesta.IsSuccessStatusCode)
-{
-    mensaje = "❌ No se pudieron guardar los cambios.";
-    guardadoCorrectamente = false;
+        if (!respuesta.IsSuccessStatusCode)
+        {
+            mensaje = "❌ No se pudieron guardar los cambios.";
+            guardadoCorrectamente = false;
 
-    Console.WriteLine(
-        $"Error al actualizar perfil: {respuesta.StatusCode}");
+            Console.WriteLine(
+                $"Error al actualizar perfil: {respuesta.StatusCode}");
 
-    return;
-}
+            return;
+        }
 
-mensaje = "✅ Perfil actualizado correctamente.";
-guardadoCorrectamente = true;
+        mensaje = "✅ Perfil actualizado correctamente.";
+        guardadoCorrectamente = true;
     }
 
-
-    private async Task SeleccionarFoto(
-        InputFileChangeEventArgs e)
+    // SELECCIONAR FOTO
+    private async Task SeleccionarFoto(InputFileChangeEventArgs e)
     {
         fotoSeleccionada = e.File;
 
-        var buffer =
-            new byte[fotoSeleccionada.Size];
+        var buffer = new byte[fotoSeleccionada.Size];
 
         await fotoSeleccionada
             .OpenReadStream(5 * 1024 * 1024)
             .ReadExactlyAsync(buffer);
 
-        var base64 =
-            Convert.ToBase64String(buffer);
+        var base64 = Convert.ToBase64String(buffer);
 
         fotoPerfil =
             $"data:{fotoSeleccionada.ContentType};base64,{base64}";
@@ -461,7 +592,7 @@ guardadoCorrectamente = true;
         StateHasChanged();
     }
 
-
+    // CERRAR SESIÓN
     private async Task CerrarSesion()
     {
         await JS.InvokeVoidAsync(
@@ -471,57 +602,69 @@ guardadoCorrectamente = true;
         Navigation.NavigateTo("/");
     }
 
-
+    // MOSTRAR MODAL DE ELIMINACIÓN
     private void MostrarConfirmacionEliminar()
     {
         mostrarConfirmacionEliminar = true;
     }
 
-
+    // CERRAR MODAL DE ELIMINACIÓN
     private void CancelarEliminar()
     {
         mostrarConfirmacionEliminar = false;
     }
 
-
-   private async Task EliminarCuenta()
-{
-    var token = await JS.InvokeAsync<string>(
-        "localStorage.getItem",
-        "token");
-
-    if (string.IsNullOrEmpty(token))
+    // ELIMINAR CUENTA
+    private async Task EliminarCuenta()
     {
-        Navigation.NavigateTo("/login");
-        return;
+        var token = await JS.InvokeAsync<string>(
+            "localStorage.getItem",
+            "token");
+
+        if (string.IsNullOrEmpty(token))
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
+        using var request = new HttpRequestMessage(
+            HttpMethod.Delete,
+            "api/Padre/cuenta");
+
+        request.Headers.Authorization =
+            new AuthenticationHeaderValue("Bearer", token);
+
+        var respuesta = await Http.SendAsync(request);
+
+        if (!respuesta.IsSuccessStatusCode)
+        {
+            Console.WriteLine(
+                $"Error al eliminar cuenta: {respuesta.StatusCode}");
+
+            mostrarConfirmacionEliminar = false;
+            return;
+        }
+
+        await JS.InvokeVoidAsync(
+            "localStorage.removeItem",
+            "token");
+
+        Navigation.NavigateTo("/");
     }
 
-    using var request = new HttpRequestMessage(
-        HttpMethod.Delete,
-        "api/Padre/cuenta");
-
-    request.Headers.Authorization =
-        new AuthenticationHeaderValue(
-            "Bearer",
-            token);
-
-    var respuesta =
-        await Http.SendAsync(request);
-
-    if (!respuesta.IsSuccessStatusCode)
+    // DTO PARA RECIBIR LAS SOLICITUDES DEL PADRE
+    private class SolicitudPadreRespuesta
     {
-        Console.WriteLine(
-            $"Error al eliminar cuenta: {respuesta.StatusCode}");
+        public int Id { get; set; }
+        public string Status { get; set; } = "";
+        public DateTime Schedule { get; set; }
+        public int Duration { get; set; }
 
-        mostrarConfirmacionEliminar = false;
-
-        return;
+        public string DocenteName { get; set; } = "";
+        public string MateriaName { get; set; } = "";
+        public string AcademyName { get; set; } = "";
+        public string Level { get; set; } = "";
+        public string Modalidad { get; set; } = "";
+        public string Message { get; set; } = "";
     }
-
-    await JS.InvokeVoidAsync(
-        "localStorage.removeItem",
-        "token");
-
-    Navigation.NavigateTo("/");
-}
 }
