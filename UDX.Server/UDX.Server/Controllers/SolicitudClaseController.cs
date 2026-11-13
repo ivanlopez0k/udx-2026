@@ -47,7 +47,7 @@ public class SolicitudClaseController : ControllerBase
             return BadRequest("No se encontró el perfil del padre.");
 
         if (parent.UserId != userId)
-            return Forbid("No podés crear solicitudes para otro padre.");
+            return StatusCode(StatusCodes.Status403Forbidden, "No podés crear solicitudes para otro padre.");
 
         var docente = await _context.PerfilesDocentes
             .FindAsync(dto.DocenteId);
@@ -136,7 +136,7 @@ public class SolicitudClaseController : ControllerBase
             return NotFound("No se encontró el perfil del docente.");
 
         if (perfil.UserId != userId)
-            return Forbid("No podés ver solicitudes de otro docente.");
+            return StatusCode(StatusCodes.Status403Forbidden, "No podés ver solicitudes de otro docente.");
 
         var query = _context.SolicitudesClases
             .AsNoTracking()
@@ -285,7 +285,7 @@ public class SolicitudClaseController : ControllerBase
             return NotFound("No se encontró la solicitud.");
 
         if (solicitud.Docente.UserId != userId)
-            return Forbid("No podés modificar solicitudes de otro docente.");
+            return StatusCode(StatusCodes.Status403Forbidden, "No podés modificar solicitudes de otro docente.");
 
         if (solicitud.Status != SolicitudClase.Stat.PENDING)
             return BadRequest("Solo se pueden modificar solicitudes en estado PENDING.");
@@ -341,7 +341,7 @@ public class SolicitudClaseController : ControllerBase
                 ScheduledAt = solicitud.Schedule,
                 Duration = solicitud.Duration,
                 Status = ClaseAgendada.Stat.SCHEDULED,
-                Price = (float)(ofertaMateria.HourlyRate * solicitud.Duration),
+                Price = (float)((academia.PricePerHour ?? ofertaMateria.HourlyRate) * solicitud.Duration),
                 Location = solicitud.Modalidad == ModalidadClase.ONLINE
                     ? "Online"
                     : solicitud.Docente.Location,
