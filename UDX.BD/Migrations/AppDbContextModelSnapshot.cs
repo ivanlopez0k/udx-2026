@@ -17,7 +17,7 @@ namespace UDX.BD.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.9")
+                .HasAnnotation("ProductVersion", "10.0.14")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -500,7 +500,7 @@ namespace UDX.BD.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("AcademyId")
+                    b.Property<int?>("AcademyId")
                         .HasColumnType("int");
 
                     b.Property<int>("DocenteId")
@@ -508,6 +508,10 @@ namespace UDX.BD.Migrations
 
                     b.Property<int>("Duration")
                         .HasColumnType("int");
+
+                    b.Property<string>("Level")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("MateriaId")
                         .HasColumnType("int");
@@ -828,8 +832,7 @@ namespace UDX.BD.Migrations
                     b.HasOne("UDX.BD.Datos.Entity.Academia", "Academy")
                         .WithMany()
                         .HasForeignKey("AcademyId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("UDX.BD.Datos.Entity.PerfilDocente", "Docente")
                         .WithMany()

@@ -19,20 +19,28 @@ else
 {
     <main class="container">
         <div class="panel-grid">
-            <!-- Profile Sidebar Column -->
+
             <aside class="profile-box">
                 <div class="avatar-wrapper">
                     <img src="@(string.IsNullOrWhiteSpace(fotoPerfil) ? "/assets/images/default-avatar.avif" : fotoPerfil)"
-                         alt="Foto de perfil" 
+                         alt="Foto de perfil"
                          class="avatar-img" />
+
                     <label class="avatar-edit-label" title="Cambiar foto">
                         ✎
-                        <InputFile OnChange="SeleccionarFoto" style="display: none;" accept="image/*" />
+                        <InputFile OnChange="SeleccionarFoto"
+                                   style="display: none;"
+                                   accept="image/*" />
                     </label>
                 </div>
 
-                <h2 style="font-size: 1.35rem; font-weight: 800; margin-bottom: 0.25rem;">@(string.IsNullOrWhiteSpace(nombre) ? "Familia" : nombre)</h2>
-                <p style="font-size: 0.825rem; color: var(--slate-500); margin-bottom: 1.25rem;">@email</p>
+                <h2 style="font-size: 1.35rem; font-weight: 800; margin-bottom: 0.25rem;">
+                    @(string.IsNullOrWhiteSpace(nombre) ? "Familia" : nombre)
+                </h2>
+
+                <p style="font-size: 0.825rem; color: var(--slate-500); margin-bottom: 1.25rem;">
+                    @email
+                </p>
 
                 @if (!string.IsNullOrEmpty(mensajeFoto))
                 {
@@ -45,11 +53,17 @@ else
                     <strong style="font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--slate-500); display: block; margin-bottom: 0.5rem;">
                         Hijo/a a Cargo
                     </strong>
+
                     <div style="display: flex; align-items: center; gap: 0.5rem;">
                         <span style="font-size: 1.25rem;">🎒</span>
                         <div>
-                            <strong style="font-size: 0.95rem; color: var(--slate-900); display: block;">@(string.IsNullOrWhiteSpace(hijo) ? "Sin registrar" : hijo)</strong>
-                            <span style="font-size: 0.8rem; color: var(--slate-500);">@(string.IsNullOrWhiteSpace(grado) ? "Grado escolar" : grado)</span>
+                            <strong style="font-size: 0.95rem; color: var(--slate-900); display: block;">
+                                @(string.IsNullOrWhiteSpace(hijo) ? "Sin registrar" : hijo)
+                            </strong>
+
+                            <span style="font-size: 0.8rem; color: var(--slate-500);">
+                                @(string.IsNullOrWhiteSpace(grado) ? "Grado escolar" : grado)
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -59,17 +73,22 @@ else
                 </a>
             </aside>
 
-            <!-- Main Content Column -->
             <section>
                 <div class="content-box">
                     <div style="border-bottom: 1px solid var(--border-light); padding-bottom: 0.75rem; margin-bottom: 1.5rem;">
-                        <span class="badge badge-primary" style="margin-bottom: 0.35rem;">Datos del Tutor</span>
-                        <h2 style="font-size: 1.35rem; font-weight: 800; margin: 0;">Información de la Familia</h2>
+                        <span class="badge badge-primary" style="margin-bottom: 0.35rem;">
+                            Datos del Tutor
+                        </span>
+
+                        <h2 style="font-size: 1.35rem; font-weight: 800; margin: 0;">
+                            Información de la Familia
+                        </h2>
                     </div>
 
                     @if (!string.IsNullOrEmpty(mensaje))
                     {
-                        <div class="alert @(guardadoCorrectamente ? "alert-success" : "alert-danger")" style="margin-bottom: 1.25rem;">
+                        <div class="alert @(guardadoCorrectamente ? "alert-success" : "alert-danger")"
+                             style="margin-bottom: 1.25rem;">
                             @mensaje
                         </div>
                     }
@@ -82,31 +101,36 @@ else
 
                         <div class="form-group">
                             <label class="form-label">Teléfono / WhatsApp</label>
-                            <input type="text" class="form-control" @bind="telefono" placeholder="+54 9 11 ..." />
+                            <input type="text" class="form-control" @bind="telefono"
+                                   placeholder="+54 9 11 ..." />
                         </div>
                     </div>
 
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
                         <div class="form-group">
                             <label class="form-label">Correo Electrónico</label>
-                            <input type="email" class="form-control" @bind="email" readonly style="background: var(--slate-100); cursor: not-allowed;" />
+                            <input type="email" class="form-control" @bind="email"
+                                   readonly style="background: var(--slate-100); cursor: not-allowed;" />
                         </div>
 
                         <div class="form-group">
                             <label class="form-label">Ciudad / Barrio</label>
-                            <input type="text" class="form-control" @bind="ciudad" placeholder="Ej: Palermo, CABA" />
+                            <input type="text" class="form-control" @bind="ciudad"
+                                   placeholder="Ej: Palermo, CABA" />
                         </div>
                     </div>
 
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.75rem;">
                         <div class="form-group">
                             <label class="form-label">Nombre de tu Hijo/a</label>
-                            <input type="text" class="form-control" @bind="hijo" placeholder="Ej: Joaquín" />
+                            <input type="text" class="form-control" @bind="hijo"
+                                   placeholder="Ej: Joaquín" />
                         </div>
 
                         <div class="form-group">
                             <label class="form-label">Grado Escolar</label>
-                            <input type="text" class="form-control" @bind="grado" placeholder="Ej: 4° Grado Primaria" />
+                            <input type="text" class="form-control" @bind="grado"
+                                   placeholder="Ej: 4° Grado Primaria" />
                         </div>
                     </div>
 
@@ -114,19 +138,121 @@ else
                         <button class="btn btn-primary" @onclick="GuardarCambios">
                             Guardar Cambios
                         </button>
+
                         <button class="btn btn-outline" type="button" @onclick="CerrarSesion">
                             Cerrar Sesión
                         </button>
                     </div>
                 </div>
 
-                <!-- Danger Zone -->
+                <!-- MIS SOLICITUDES -->
+                <div class="content-box">
+                    <div style="border-bottom: 1px solid var(--border-light); padding-bottom: 0.75rem; margin-bottom: 1.5rem;">
+                        <span class="badge badge-primary" style="margin-bottom: 0.35rem;">
+                            Seguimiento
+                        </span>
+
+                        <h2 style="font-size: 1.35rem; font-weight: 800; margin: 0;">
+                            Mis solicitudes de clases
+                        </h2>
+                    </div>
+
+                    <button class="btn btn-outline mb-3"
+                            type="button"
+                            @onclick="CargarSolicitudes">
+                        Actualizar solicitudes
+                    </button>
+
+                    @if (cargandoSolicitudes)
+                    {
+                        <p>Cargando solicitudes...</p>
+                    }
+                    else if (!string.IsNullOrEmpty(errorSolicitudes))
+                    {
+                        <div class="alert alert-danger">
+                            @errorSolicitudes
+                        </div>
+                    }
+                    else if (solicitudes.Count == 0)
+                    {
+                        <div class="alert alert-info">
+                            Todavía no tenés solicitudes de clases.
+                        </div>
+                    }
+                    else
+                    {
+                        @foreach (var solicitud in solicitudes)
+                        {
+                            <div class="card mb-3">
+                                <div class="card-body">
+
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h5>@solicitud.MateriaName</h5>
+
+                                        <span class="badge @ObtenerClaseEstado(solicitud.Status)">
+                                            @ObtenerNombreEstado(solicitud.Status)
+                                        </span>
+                                    </div>
+
+                                    <p>
+                                        <strong>Docente:</strong>
+                                        @solicitud.DocenteName
+                                    </p>
+
+                                    <p>
+                                        <strong>Fecha:</strong>
+                                        @solicitud.Schedule.ToString("dd/MM/yyyy HH:mm")
+                                    </p>
+
+                                    <p>
+                                        <strong>Duración:</strong>
+                                        @solicitud.Duration
+                                        @(solicitud.Duration == 1 ? "hora" : "horas")
+                                    </p>
+
+                                    <p>
+                                        <strong>Grado:</strong>
+                                        @solicitud.Level
+                                    </p>
+
+                                    <p>
+                                        <strong>Modalidad:</strong>
+                                        @solicitud.Modalidad
+                                    </p>
+
+                                    @if (!string.IsNullOrWhiteSpace(solicitud.AcademyName))
+                                    {
+                                        <p>
+                                            <strong>Academia:</strong>
+                                            @solicitud.AcademyName
+                                        </p>
+                                    }
+
+                                    <p class="mb-0">
+                                        <strong>Mensaje:</strong>
+                                        @solicitud.Message
+                                    </p>
+
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+
+                <!-- ZONA DE PELIGRO -->
                 <div class="content-box" style="border-color: #fecaca; background: #fffdfd;">
-                    <h3 style="font-size: 1.15rem; font-weight: 800; color: #991b1b; margin-bottom: 0.25rem;">Zona de Peligro</h3>
+                    <h3 style="font-size: 1.15rem; font-weight: 800; color: #991b1b; margin-bottom: 0.25rem;">
+                        Zona de Peligro
+                    </h3>
+
                     <p style="font-size: 0.85rem; color: var(--slate-500); margin-bottom: 1rem;">
                         Si eliminás tu cuenta familiar, se borrará todo el historial y clases asociadas permanentemente.
                     </p>
-                    <button class="btn btn-outline" style="border-color: #ef4444; color: #dc2626;" type="button" @onclick="MostrarConfirmacionEliminar">
+
+                    <button class="btn btn-outline"
+                            style="border-color: #ef4444; color: #dc2626;"
+                            type="button"
+                            @onclick="MostrarConfirmacionEliminar">
                         Eliminar mi Cuenta
                     </button>
                 </div>
@@ -135,23 +261,40 @@ else
     </main>
 }
 
-<!-- Modal Confirmación Eliminar Cuenta -->
+<!-- MODAL DE CONFIRMACIÓN -->
 @if (mostrarConfirmacionEliminar)
 {
     <div class="modal-overlay" @onclick="CancelarEliminar">
-        <div class="modal-card" style="max-width: 480px;" @onclick:stopPropagation="true">
+        <div class="modal-card" style="max-width: 480px;"
+             @onclick:stopPropagation="true">
+
             <div class="modal-header">
-                <h3 class="modal-title" style="color: #991b1b;">Confirmar Eliminación</h3>
-                <button type="button" class="modal-close-btn" @onclick="CancelarEliminar">&times;</button>
+                <h3 class="modal-title" style="color: #991b1b;">
+                    Confirmar Eliminación
+                </h3>
+
+                <button type="button" class="modal-close-btn"
+                        @onclick="CancelarEliminar">
+                    &times;
+                </button>
             </div>
+
             <div class="modal-body">
                 <p style="color: var(--slate-700);">
-                    ¿Estás segura/o de que querés eliminar tu cuenta? Esta acción no se puede deshacer.
+                    ¿Estás segura/o de que querés eliminar tu cuenta?
+                    Esta acción no se puede deshacer.
                 </p>
             </div>
+
             <div class="modal-footer" style="justify-content: flex-end; gap: 0.75rem;">
-                <button type="button" class="btn btn-outline" @onclick="CancelarEliminar">Cancelar</button>
-                <button type="button" class="btn btn-primary" style="background: #dc2626;" @onclick="EliminarCuenta">
+                <button type="button" class="btn btn-outline"
+                        @onclick="CancelarEliminar">
+                    Cancelar
+                </button>
+
+                <button type="button" class="btn btn-primary"
+                        style="background: #dc2626;"
+                        @onclick="EliminarCuenta">
                     Sí, Eliminar Definitivamente
                 </button>
             </div>
@@ -160,7 +303,7 @@ else
 }
 
 @code {
-    private bool cargando = true;
+    // DATOS DEL PERFIL
     private string nombre = "";
     private string email = "";
     private string telefono = "";
@@ -168,11 +311,19 @@ else
     private string hijo = "";
     private string grado = "";
     private string fotoPerfil = "";
+
+    // ESTADOS
+    private bool cargando = true;
     private string mensaje = "";
     private string mensajeFoto = "";
     private bool guardadoCorrectamente = false;
     private bool mostrarConfirmacionEliminar = false;
     private IBrowserFile? fotoSeleccionada;
+
+    // SOLICITUDES
+    private List<SolicitudPadreRespuesta> solicitudes = new();
+    private bool cargandoSolicitudes = false;
+    private string errorSolicitudes = "";
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -182,25 +333,30 @@ else
         }
     }
 
+    // CARGAR PERFIL
     private async Task CargarPerfil()
     {
         var token = await JS.InvokeAsync<string?>("localStorage.getItem", "token")
                     ?? await JS.InvokeAsync<string?>("localStorage.getItem", "udx_token");
 
-        if (string.IsNullOrEmpty(token))
+        if (string.IsNullOrWhiteSpace(token))
         {
             Navigation.NavigateTo("/login");
             return;
         }
 
-        using var request = new HttpRequestMessage(HttpMethod.Get, "api/Padre/perfil");
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        using var request = new HttpRequestMessage(
+            HttpMethod.Get, "api/Padre/perfil");
+
+        request.Headers.Authorization =
+            new AuthenticationHeaderValue("Bearer", token);
 
         var respuesta = await Http.SendAsync(request);
 
         if (respuesta.IsSuccessStatusCode)
         {
             var perfil = await respuesta.Content.ReadFromJsonAsync<PerfilPadreDTO>();
+
             if (perfil != null)
             {
                 nombre = perfil.Nombre ?? "";
@@ -211,8 +367,11 @@ else
                 grado = perfil.Grado ?? "";
                 fotoPerfil = perfil.FotoPerfil ?? "";
             }
+
+            await CargarSolicitudes();
         }
-        else if (respuesta.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+        else if (respuesta.StatusCode == System.Net.HttpStatusCode.Unauthorized ||
+                 respuesta.StatusCode == System.Net.HttpStatusCode.Forbidden)
         {
             Navigation.NavigateTo("/login");
             return;
@@ -222,29 +381,120 @@ else
         StateHasChanged();
     }
 
+    // CARGAR SOLICITUDES
+    private async Task CargarSolicitudes()
+    {
+        cargandoSolicitudes = true;
+        errorSolicitudes = "";
+
+        try
+        {
+            var token = await JS.InvokeAsync<string?>(
+                "localStorage.getItem", "token")
+                ?? await JS.InvokeAsync<string?>(
+                    "localStorage.getItem", "udx_token");
+
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                Navigation.NavigateTo("/login");
+                return;
+            }
+
+            using var request = new HttpRequestMessage(
+                HttpMethod.Get, "api/SolicitudClase/padre");
+
+            request.Headers.Authorization =
+                new AuthenticationHeaderValue("Bearer", token);
+
+            var respuesta = await Http.SendAsync(request);
+
+            if (!respuesta.IsSuccessStatusCode)
+            {
+                errorSolicitudes = "No se pudieron cargar las solicitudes.";
+                return;
+            }
+
+            solicitudes = await respuesta.Content
+                .ReadFromJsonAsync<List<SolicitudPadreRespuesta>>()
+                ?? new List<SolicitudPadreRespuesta>();
+        }
+        catch (Exception ex)
+        {
+            errorSolicitudes = "No se pudieron cargar las solicitudes.";
+            Console.WriteLine($"Error al cargar solicitudes: {ex.Message}");
+        }
+        finally
+        {
+            cargandoSolicitudes = false;
+            StateHasChanged();
+        }
+    }
+
+    private string ObtenerNombreEstado(string estado)
+    {
+        return estado.ToUpper() switch
+        {
+            "PENDING" => "Pendiente",
+            "ACCEPTED" => "Aceptada",
+            "DECLINED" => "Rechazada",
+            _ => estado
+        };
+    }
+
+    private string ObtenerClaseEstado(string estado)
+    {
+        return estado.ToUpper() switch
+        {
+            "PENDING" => "bg-warning text-dark",
+            "ACCEPTED" => "bg-success",
+            "DECLINED" => "bg-danger",
+            _ => "bg-secondary"
+        };
+    }
+
+    // GUARDAR PERFIL
     private async Task GuardarCambios()
     {
         mensajeFoto = "";
         mensaje = "";
 
-        var token = await JS.InvokeAsync<string?>("localStorage.getItem", "token")
-                    ?? await JS.InvokeAsync<string?>("localStorage.getItem", "udx_token");
+        var token = await JS.InvokeAsync<string?>(
+            "localStorage.getItem", "token")
+            ?? await JS.InvokeAsync<string?>(
+                "localStorage.getItem", "udx_token");
+
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
 
         if (fotoSeleccionada != null)
         {
             using var contenido = new MultipartFormDataContent();
+
             var stream = fotoSeleccionada.OpenReadStream(5 * 1024 * 1024);
             var archivo = new StreamContent(stream);
+
             contenido.Add(archivo, "foto", fotoSeleccionada.Name);
 
-            using var reqFoto = new HttpRequestMessage(HttpMethod.Post, "api/Padre/foto") { Content = contenido };
-            if (!string.IsNullOrEmpty(token)) reqFoto.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            using var reqFoto = new HttpRequestMessage(
+                HttpMethod.Post, "api/Padre/foto")
+            {
+                Content = contenido
+            };
+
+            reqFoto.Headers.Authorization =
+                new AuthenticationHeaderValue("Bearer", token);
 
             var respuestaFoto = await Http.SendAsync(reqFoto);
+
             if (!respuestaFoto.IsSuccessStatusCode)
             {
                 mensajeFoto = "No se pudo actualizar la foto de perfil.";
+                return;
             }
+
             fotoSeleccionada = null;
         }
 
@@ -258,11 +508,14 @@ else
             Grado = grado
         };
 
-        using var reqPerfil = new HttpRequestMessage(HttpMethod.Put, "api/Padre/perfil")
+        using var reqPerfil = new HttpRequestMessage(
+            HttpMethod.Put, "api/Padre/perfil")
         {
             Content = JsonContent.Create(datos)
         };
-        if (!string.IsNullOrEmpty(token)) reqPerfil.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        reqPerfil.Headers.Authorization =
+            new AuthenticationHeaderValue("Bearer", token);
 
         var respuesta = await Http.SendAsync(reqPerfil);
 
@@ -277,16 +530,26 @@ else
         guardadoCorrectamente = true;
     }
 
+    // SELECCIONAR FOTO
     private async Task SeleccionarFoto(InputFileChangeEventArgs e)
     {
         fotoSeleccionada = e.File;
+
         var buffer = new byte[fotoSeleccionada.Size];
-        await fotoSeleccionada.OpenReadStream(5 * 1024 * 1024).ReadExactlyAsync(buffer);
+
+        await fotoSeleccionada
+            .OpenReadStream(5 * 1024 * 1024)
+            .ReadExactlyAsync(buffer);
+
         var base64 = Convert.ToBase64String(buffer);
-        fotoPerfil = $"data:{fotoSeleccionada.ContentType};base64,{base64}";
+
+        fotoPerfil =
+            $"data:{fotoSeleccionada.ContentType};base64,{base64}";
+
         StateHasChanged();
     }
 
+    // CERRAR SESIÓN
     private async Task CerrarSesion()
     {
         await JS.InvokeVoidAsync("localStorage.removeItem", "token");
@@ -296,27 +559,38 @@ else
         await JS.InvokeVoidAsync("localStorage.removeItem", "udx_name");
         await JS.InvokeVoidAsync("localStorage.removeItem", "udx_role");
         await JS.InvokeVoidAsync("localStorage.removeItem", "udx_email");
+
         Navigation.NavigateTo("/", forceLoad: true);
     }
 
-    private void MostrarConfirmacionEliminar() => mostrarConfirmacionEliminar = true;
-    private void CancelarEliminar() => mostrarConfirmacionEliminar = false;
+    private void MostrarConfirmacionEliminar()
+        => mostrarConfirmacionEliminar = true;
 
+    private void CancelarEliminar()
+        => mostrarConfirmacionEliminar = false;
+
+    // ELIMINAR CUENTA
     private async Task EliminarCuenta()
     {
-        var token = await JS.InvokeAsync<string?>("localStorage.getItem", "token")
-                    ?? await JS.InvokeAsync<string?>("localStorage.getItem", "udx_token");
+        var token = await JS.InvokeAsync<string?>(
+            "localStorage.getItem", "token")
+            ?? await JS.InvokeAsync<string?>(
+                "localStorage.getItem", "udx_token");
 
-        if (string.IsNullOrEmpty(token))
+        if (string.IsNullOrWhiteSpace(token))
         {
             Navigation.NavigateTo("/login");
             return;
         }
 
-        using var request = new HttpRequestMessage(HttpMethod.Delete, "api/Padre/cuenta");
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        using var request = new HttpRequestMessage(
+            HttpMethod.Delete, "api/Padre/cuenta");
+
+        request.Headers.Authorization =
+            new AuthenticationHeaderValue("Bearer", token);
 
         var respuesta = await Http.SendAsync(request);
+
         if (!respuesta.IsSuccessStatusCode)
         {
             mostrarConfirmacionEliminar = false;
@@ -324,5 +598,21 @@ else
         }
 
         await CerrarSesion();
+    }
+
+    // DTO DE SOLICITUDES
+    private class SolicitudPadreRespuesta
+    {
+        public int Id { get; set; }
+        public string Status { get; set; } = "";
+        public DateTime Schedule { get; set; }
+        public int Duration { get; set; }
+
+        public string DocenteName { get; set; } = "";
+        public string MateriaName { get; set; } = "";
+        public string AcademyName { get; set; } = "";
+        public string Level { get; set; } = "";
+        public string Modalidad { get; set; } = "";
+        public string Message { get; set; } = "";
     }
 }
