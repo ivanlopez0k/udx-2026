@@ -239,6 +239,92 @@ else
                     }
                 </div>
 
+                <!-- MATERIAL DE ESTUDIO -->
+                <div class="content-box">
+                    <div style="border-bottom: 1px solid var(--border-light); padding-bottom: 0.75rem; margin-bottom: 1.5rem;">
+                        <span class="badge badge-primary" style="margin-bottom: 0.35rem;">
+                            Aprendizaje
+                        </span>
+
+                        <h2 style="font-size: 1.35rem; font-weight: 800; margin: 0;">
+                            Material de estudio
+                        </h2>
+                    </div>
+
+                    <button class="btn btn-outline mb-3"
+                            type="button"
+                            @onclick="CargarMateriales">
+                        Actualizar material
+                    </button>
+
+                    @if (cargandoMateriales)
+                    {
+                        <p>Cargando material...</p>
+                    }
+                    else if (!string.IsNullOrEmpty(errorMateriales))
+                    {
+                        <div class="alert alert-danger">
+                            @errorMateriales
+                        </div>
+                    }
+                    else if (materiales.Count == 0)
+                    {
+                        <div class="alert alert-info">
+                            Todavía no hay material cargado para tu hijo.
+                        </div>
+                    }
+                    else
+                    {
+                        @foreach (var material in materiales)
+                        {
+                            <div class="card mb-3">
+                                <div class="card-body">
+
+                                    <h5>@material.Title</h5>
+
+                                    <p>
+                                        <strong>Materia:</strong>
+                                        @material.MateriaName
+                                    </p>
+
+                                    <p>
+                                        <strong>Docente:</strong>
+                                        @material.TeacherName
+                                    </p>
+
+                                    @if (!string.IsNullOrWhiteSpace(material.AcademyName))
+                                    {
+                                        <p>
+                                            <strong>Academia:</strong>
+                                            @material.AcademyName
+                                        </p>
+                                    }
+
+                                    <p>
+                                        <strong>Fecha:</strong>
+                                        @material.CreatedAt.ToString("dd/MM/yyyy")
+                                    </p>
+
+                                    @if (erroresDescarga.TryGetValue(material.Id, out var errorDescarga))
+                                    {
+                                        <div class="alert alert-danger" style="font-size: 0.85rem;">
+                                            @errorDescarga
+                                        </div>
+                                    }
+
+                                    <button class="btn btn-primary btn-sm"
+                                            type="button"
+                                            disabled="@descargando.Contains(material.Id)"
+                                            @onclick="() => DescargarMaterial(material)">
+                                        @(descargando.Contains(material.Id) ? "Descargando..." : "Descargar")
+                                    </button>
+
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+
                 <!-- ZONA DE PELIGRO -->
                 <div class="content-box" style="border-color: #fecaca; background: #fffdfd;">
                     <h3 style="font-size: 1.15rem; font-weight: 800; color: #991b1b; margin-bottom: 0.25rem;">
@@ -325,6 +411,13 @@ else
     private bool cargandoSolicitudes = false;
     private string errorSolicitudes = "";
 
+    // MATERIAL DE ESTUDIO
+    private List<MaterialPadreRespuesta> materiales = new();
+    private bool cargandoMateriales = false;
+    private string errorMateriales = "";
+    private HashSet<int> descargando = new();
+    private Dictionary<int, string> erroresDescarga = new();
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
@@ -369,6 +462,7 @@ else
             }
 
             await CargarSolicitudes();
+            await CargarMateriales();
         }
         else if (respuesta.StatusCode == System.Net.HttpStatusCode.Unauthorized ||
                  respuesta.StatusCode == System.Net.HttpStatusCode.Forbidden)
@@ -426,6 +520,120 @@ else
         finally
         {
             cargandoSolicitudes = false;
+            StateHasChanged();
+        }
+    }
+
+    // CARGAR MATERIAL DE ESTUDIO
+    private async Task CargarMateriales()
+    {
+        cargandoMateriales = true;
+        errorMateriales = "";
+
+        try
+        {
+            var token = await JS.InvokeAsync<string?>(
+                "localStorage.getItem", "token")
+                ?? await JS.InvokeAsync<string?>(
+                    "localStorage.getItem", "udx_token");
+
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                Navigation.NavigateTo("/login");
+                return;
+            }
+
+            using var request = new HttpRequestMessage(
+                HttpMethod.Get, "api/Contenido");
+
+            request.Headers.Authorization =
+                new AuthenticationHeaderValue("Bearer", token);
+
+            var respuesta = await Http.SendAsync(request);
+
+            if (!respuesta.IsSuccessStatusCode)
+            {
+                errorMateriales = "No se pudo cargar el material de estudio.";
+                return;
+            }
+
+            materiales = await respuesta.Content
+                .ReadFromJsonAsync<List<MaterialPadreRespuesta>>()
+                ?? new List<MaterialPadreRespuesta>();
+        }
+        catch (Exception ex)
+        {
+            errorMateriales = "No se pudo cargar el material de estudio.";
+            Console.WriteLine($"Error al cargar material: {ex.Message}");
+        }
+        finally
+        {
+            cargandoMateriales = false;
+            StateHasChanged();
+        }
+    }
+
+    // DESCARGAR MATERIAL (con el token: un <a href> directo daría 401)
+    private async Task DescargarMaterial(MaterialPadreRespuesta material)
+    {
+        if (descargando.Contains(material.Id))
+            return;
+
+        descargando.Add(material.Id);
+        erroresDescarga.Remove(material.Id);
+        StateHasChanged();
+
+        try
+        {
+            var token = await JS.InvokeAsync<string?>(
+                "localStorage.getItem", "token")
+                ?? await JS.InvokeAsync<string?>(
+                    "localStorage.getItem", "udx_token");
+
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                Navigation.NavigateTo("/login");
+                return;
+            }
+
+            using var request = new HttpRequestMessage(
+                HttpMethod.Get, material.DownloadUrl);
+
+            request.Headers.Authorization =
+                new AuthenticationHeaderValue("Bearer", token);
+
+            using var respuesta = await Http.SendAsync(request);
+
+            if (!respuesta.IsSuccessStatusCode)
+            {
+                erroresDescarga[material.Id] = respuesta.StatusCode switch
+                {
+                    System.Net.HttpStatusCode.Forbidden => "No tenés acceso a este material.",
+                    System.Net.HttpStatusCode.NotFound => "El archivo ya no está disponible.",
+                    _ => "No se pudo descargar el material."
+                };
+                return;
+            }
+
+            var disposition = respuesta.Content.Headers.ContentDisposition;
+            var nombreArchivo = disposition?.FileNameStar ?? disposition?.FileName?.Trim('"');
+
+            if (string.IsNullOrWhiteSpace(nombreArchivo))
+                nombreArchivo = material.Title;
+
+            await using var stream = await respuesta.Content.ReadAsStreamAsync();
+            using var streamRef = new DotNetStreamReference(stream);
+
+            await JS.InvokeVoidAsync("descargarArchivo", nombreArchivo, streamRef);
+        }
+        catch (Exception ex)
+        {
+            erroresDescarga[material.Id] = "No se pudo descargar el material.";
+            Console.WriteLine($"Error al descargar material: {ex.Message}");
+        }
+        finally
+        {
+            descargando.Remove(material.Id);
             StateHasChanged();
         }
     }
@@ -614,5 +822,18 @@ else
         public string Level { get; set; } = "";
         public string Modalidad { get; set; } = "";
         public string Message { get; set; } = "";
+    }
+
+    // DTO DE MATERIAL DE ESTUDIO (ContenidoResponseDTO del back)
+    private class MaterialPadreRespuesta
+    {
+        public int Id { get; set; }
+        public string Title { get; set; } = "";
+        public DateTime CreatedAt { get; set; }
+        public string MateriaName { get; set; } = "";
+        public string HijoName { get; set; } = "";
+        public string? AcademyName { get; set; }
+        public string TeacherName { get; set; } = "";
+        public string DownloadUrl { get; set; } = "";
     }
 }
