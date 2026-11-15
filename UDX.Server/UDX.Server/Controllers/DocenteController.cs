@@ -6,6 +6,7 @@ using UDX.Server.DTOs;
 using UDX.BD.Datos;
 
 namespace UDX.Server.Controllers;
+
 [ApiController]
 [Route("api/[controller]")]
 public class DocenteController : ControllerBase
@@ -166,15 +167,15 @@ public class DocenteController : ControllerBase
             Foto = perfil.ProfileImage,
 
             Materias = perfil.DocentesMaterias?
-            
-                .Select(dm => new MateriaDetalleDTO
-                {
-                    Name = dm.Materia?.Name,
-                    Grade = dm.Materia?.Grade,
-                    Category = dm.Materia?.Category,
-                    Level = dm.Level,
-                    HourlyRate = dm.HourlyRate
-                }).ToList() ?? new List<MateriaDetalleDTO>()
+    .Select(dm => new MateriaDetalleDTO
+    {
+        Id = dm.MateriaId,
+        Name = dm.Materia?.Name,
+        Grade = dm.Materia?.Grade,
+        Category = dm.Materia?.Category,
+        Level = dm.Level,
+        HourlyRate = dm.HourlyRate
+    }).ToList() ?? new List<MateriaDetalleDTO>()
         };
 
         return Ok(resultado);
@@ -187,13 +188,13 @@ public class DocenteController : ControllerBase
         var userId = int.Parse(
             User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
 
-        
+
 
         var perfil = await _context.PerfilesDocentes
             .Include(p => p.User)
             .FirstOrDefaultAsync(p => p.UserId == userId);
 
-       
+
 
         if (perfil == null)
             return NotFound("No se encontró el perfil docente.");
@@ -213,7 +214,7 @@ public class DocenteController : ControllerBase
             Verificado = perfil.Verified,
             Foto = perfil.ProfileImage
         });
-     }
+    }
 
     [Authorize(Roles = "TEACHER")]
     [HttpGet("perfil/materias")]
@@ -243,6 +244,57 @@ public class DocenteController : ControllerBase
         return Ok(materias);
     }
 
+
+    [Authorize(Roles = "TEACHER")]
+    [HttpGet("perfil/academias")]
+    public async Task<IActionResult> ObtenerAcademiasPerfil()
+    {
+        var userId = int.Parse(
+            User.FindFirst(
+                System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
+
+        var perfil = await _context.PerfilesDocentes
+            .FirstOrDefaultAsync(p => p.UserId == userId);
+
+        if (perfil == null)
+            return NotFound("No se encontró el perfil docente.");
+
+        // Academias oficiales donde el docente tiene una membresía activa.
+        var academiasExternas = await _context.DocentesAcademias
+            .Where(da =>
+                da.TeacherId == perfil.Id &&
+                da.IsActive &&
+                da.Academy != null &&
+                da.Academy.IsActive)
+            .Select(da => new AcademiaResumenDTO
+            {
+                Id = da.Academy.Id,
+                Name = da.Academy.Name
+            })
+            .ToListAsync();
+
+        // Academia personal del docente, si existe y está activa.
+        var academiaPersonal = await _context.Academias
+            .Where(a =>
+                a.ResponsableId == userId &&
+                a.IsPersonal &&
+                a.IsActive)
+            .Select(a => new AcademiaResumenDTO
+            {
+                Id = a.Id,
+                Name = a.Name
+            })
+            .ToListAsync();
+
+        var academias = academiasExternas
+            .Concat(academiaPersonal)
+            .GroupBy(a => a.Id)
+            .Select(g => g.First())
+            .OrderBy(a => a.Name)
+            .ToList();
+
+        return Ok(academias);
+    }
     [Authorize(Roles = "TEACHER")]
     [HttpPost("perfil/materias")]
     public async Task<IActionResult> AgregarMateriaPerfil(
@@ -363,7 +415,7 @@ public class DocenteController : ControllerBase
         if (!Directory.Exists(carpeta))
             Directory.CreateDirectory(carpeta);
 
-       
+
         if (!string.IsNullOrEmpty(perfil.ProfileImage))
         {
             var rutaFotoAnterior = Path.Combine(
@@ -384,7 +436,7 @@ public class DocenteController : ControllerBase
 
         var ruta = Path.Combine(carpeta, nombreArchivo);
 
-        
+
         using (var stream = new FileStream(ruta, FileMode.Create))
         {
             await foto.CopyToAsync(stream);
@@ -523,7 +575,7 @@ public class DocenteController : ControllerBase
         await _context.SaveChangesAsync();
 
         return Ok("Cuenta eliminada correctamente.");
-    
+
 
 
     }

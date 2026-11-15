@@ -1,0 +1,427 @@
+﻿@page "/solicitudes-docente"
+@using System.Net.Http.Headers
+@using System.Net.Http.Json
+@using UDX.Shared.DTOs
+@using Microsoft.JSInterop
+@layout MainLayout
+
+@inject HttpClient Http
+@inject IJSRuntime JS
+@inject NavigationManager Navigation
+
+<PageTitle>Solicitudes de clases | UDX</PageTitle>
+
+<div class="container py-5" style="max-width: 1100px;">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3>Solicitudes de clases</h3>
+            <p class="text-muted mb-0">
+                Administrá las solicitudes que recibiste.
+            </p>
+        </div>
+
+        <button class="btn btn-outline-primary"
+                @onclick="CargarSolicitudes"
+                disabled="@cargando">
+            Actualizar
+        </button>
+    </div>
+
+    @if (cargando)
+    {
+        <div class="text-center py-5">
+            <p>Cargando solicitudes...</p>
+        </div>
+    }
+    else
+    {
+        @if (!string.IsNullOrWhiteSpace(mensaje))
+        {
+            <div class="alert @(mensajeError ? "alert-danger" : "alert-success")">
+                @mensaje
+            </div>
+        }
+
+        <h5 class="mb-3">Pendientes (@SolicitudesPendientes.Count)</h5>
+
+        @if (SolicitudesPendientes.Count == 0)
+        {
+            <div class="alert alert-light border">
+                No tenés solicitudes pendientes.
+            </div>
+        }
+        else
+        {
+            @foreach (var solicitud in SolicitudesPendientes)
+            {
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+
+                        <div class="d-flex justify-content-between flex-wrap">
+                            <h5>@solicitud.ParentName</h5>
+                            <span class="badge bg-warning text-dark">
+                                Pendiente
+                            </span>
+                        </div>
+
+                        <hr />
+
+                        <div class="row">
+                            <div class="col-md-6 mb-2">
+                                <strong>Materia:</strong>
+                                @solicitud.MateriaName
+                            </div>
+
+                            <div class="col-md-6 mb-2">
+                                <strong>Grado:</strong>
+                                @solicitud.Level
+                            </div>
+
+                            <div class="col-md-6 mb-2">
+                                <strong>Fecha:</strong>
+                                @solicitud.Schedule.ToString("dd/MM/yyyy HH:mm")
+                            </div>
+
+                            <div class="col-md-6 mb-2">
+                                <strong>Duración:</strong>
+                                @solicitud.Duration @(solicitud.Duration == 1 ? "hora" : "horas")
+                            </div>
+
+                            <div class="col-md-6 mb-2">
+                                <strong>Modalidad:</strong>
+                                @solicitud.Modalidad
+                            </div>
+
+                            <div class="col-md-12 mb-2">
+                                <strong>Mensaje:</strong>
+                                <p class="mb-1">@solicitud.Message</p>
+                            </div>
+
+                            @if (!string.IsNullOrWhiteSpace(solicitud.Notes))
+                            {
+                                <div class="col-md-12 mb-2">
+                                    <strong>Notas:</strong>
+                                    <p class="mb-1">@solicitud.Notes</p>
+                                </div>
+                            }
+                        </div>
+
+                        <hr />
+
+                        <div class="mb-3">
+                            <label class="form-label">
+                                Academia para realizar la clase
+                            </label>
+
+                            <select class="form-select"
+                                    @bind="academiasSeleccionadas[solicitud.Id]">
+                                <option value="0">
+                                    Seleccioná una academia
+                                </option>
+
+                                @foreach (var academia in academias)
+                                {
+                                    <option value="@academia.Id">
+                                        @academia.Name
+                                    </option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="d-flex gap-2 flex-wrap">
+                            <button class="btn btn-success"
+                                    @onclick="() => ActualizarEstado(solicitud.Id, true)"
+                                    disabled="@procesando">
+                                Aceptar solicitud
+                            </button>
+
+                            <button class="btn btn-danger"
+                                    @onclick="() => ActualizarEstado(solicitud.Id, false)"
+                                    disabled="@procesando">
+                                Rechazar solicitud
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+            }
+        }
+
+        <hr class="my-4" />
+
+        <h5 class="mb-3">Solicitudes anteriores</h5>
+
+        @if (SolicitudesResueltas.Count == 0)
+        {
+            <p class="text-muted">
+                Todavía no hay solicitudes aceptadas o rechazadas.
+            </p>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Padre</th>
+                            <th>Materia</th>
+                            <th>Fecha de clase</th>
+                            <th>Academia</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var solicitud in SolicitudesResueltas)
+                        {
+                            <tr>
+                                <td>@solicitud.ParentName</td>
+                                <td>@solicitud.MateriaName</td>
+                                <td>
+                                    @solicitud.Schedule.ToString("dd/MM/yyyy HH:mm")
+                                </td>
+                                <td>
+                                    @(string.IsNullOrWhiteSpace(solicitud.AcademyName)
+                                        ? "—"
+                                        : solicitud.AcademyName)
+                                </td>
+                                <td>
+                                    @if (solicitud.Status == "ACCEPTED")
+                                    {
+                                        <span class="badge bg-success">Aceptada</span>
+                                    }
+                                    else if (solicitud.Status == "DECLINED")
+                                    {
+                                        <span class="badge bg-danger">Rechazada</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">
+                                            @solicitud.Status
+                                        </span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private List<SolicitudClaseDTO> solicitudes = new();
+    private List<AcademiaResumenDTO> academias = new();
+
+    private Dictionary<int, int> academiasSeleccionadas = new();
+
+    private bool cargando = true;
+    private bool procesando = false;
+    private bool mensajeError = false;
+    private string mensaje = "";
+
+    private List<SolicitudClaseDTO> SolicitudesPendientes =>
+        solicitudes
+            .Where(s => s.Status == "PENDING")
+            .ToList();
+
+    private List<SolicitudClaseDTO> SolicitudesResueltas =>
+        solicitudes
+            .Where(s => s.Status != "PENDING")
+            .ToList();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await CargarSolicitudes();
+            StateHasChanged();
+        }
+    }
+
+    private async Task<string?> ObtenerToken()
+    {
+        return await JS.InvokeAsync<string?>(
+            "localStorage.getItem", "token");
+    }
+
+    private async Task CargarSolicitudes()
+    {
+        cargando = true;
+        mensaje = "";
+        mensajeError = false;
+
+        try
+        {
+            var token = await ObtenerToken();
+
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                Navigation.NavigateTo("/login");
+                return;
+            }
+
+            using var requestPerfil = new HttpRequestMessage(
+                HttpMethod.Get, "api/Docente/perfil");
+
+            requestPerfil.Headers.Authorization =
+                new AuthenticationHeaderValue("Bearer", token);
+
+            var respuestaPerfil = await Http.SendAsync(requestPerfil);
+
+            if (!respuestaPerfil.IsSuccessStatusCode)
+            {
+                mensaje = "No se pudo obtener el perfil docente.";
+                mensajeError = true;
+                return;
+            }
+
+            var perfil = await respuestaPerfil.Content
+                .ReadFromJsonAsync<PerfilDocenteRespuesta>();
+
+            if (perfil == null || perfil.Id <= 0)
+            {
+                mensaje = "No se encontró el perfil docente.";
+                mensajeError = true;
+                return;
+            }
+
+            using var requestSolicitudes = new HttpRequestMessage(
+                HttpMethod.Get,
+                $"api/SolicitudClase/docente/{perfil.Id}");
+
+            requestSolicitudes.Headers.Authorization =
+                new AuthenticationHeaderValue("Bearer", token);
+
+            var respuestaSolicitudes =
+                await Http.SendAsync(requestSolicitudes);
+
+            if (!respuestaSolicitudes.IsSuccessStatusCode)
+            {
+                mensaje = "No se pudieron cargar las solicitudes.";
+                mensajeError = true;
+                return;
+            }
+
+            solicitudes = await respuestaSolicitudes.Content
+                .ReadFromJsonAsync<List<SolicitudClaseDTO>>()
+                ?? new List<SolicitudClaseDTO>();
+
+            using var requestAcademias = new HttpRequestMessage(
+                HttpMethod.Get, "api/Docente/perfil/academias");
+
+            requestAcademias.Headers.Authorization =
+                new AuthenticationHeaderValue("Bearer", token);
+
+            var respuestaAcademias =
+                await Http.SendAsync(requestAcademias);
+
+            if (!respuestaAcademias.IsSuccessStatusCode)
+            {
+                mensaje = "No se pudieron cargar las academias.";
+                mensajeError = true;
+                return;
+            }
+
+            academias = await respuestaAcademias.Content
+                .ReadFromJsonAsync<List<AcademiaResumenDTO>>()
+                ?? new List<AcademiaResumenDTO>();
+
+            foreach (var solicitud in solicitudes.Where(s => s.Status == "PENDING"))
+            {
+                if (!academiasSeleccionadas.ContainsKey(solicitud.Id))
+                {
+                    academiasSeleccionadas[solicitud.Id] = 0;
+                }
+            }
+        }
+        catch (Exception)
+        {
+            mensaje = "Ocurrió un error al cargar la información.";
+            mensajeError = true;
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private async Task ActualizarEstado(int solicitudId, bool aceptar)
+    {
+        if (procesando)
+            return;
+
+        var academiaId = academiasSeleccionadas.GetValueOrDefault(
+            solicitudId, 0);
+
+        if (aceptar && academiaId <= 0)
+        {
+            mensaje = "Seleccioná una academia antes de aceptar.";
+            mensajeError = true;
+            return;
+        }
+
+        procesando = true;
+        mensaje = "";
+
+        try
+        {
+            var token = await ObtenerToken();
+
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                Navigation.NavigateTo("/login");
+                return;
+            }
+
+            var datos = new ActualizarEstadoSolicitudDTO
+            {
+                Status = aceptar ? "ACCEPTED" : "DECLINED",
+                AcademyId = aceptar ? academiaId : null
+            };
+
+            using var request = new HttpRequestMessage(
+                HttpMethod.Put,
+                $"api/SolicitudClase/{solicitudId}/estado");
+
+            request.Headers.Authorization =
+                new AuthenticationHeaderValue("Bearer", token);
+
+            request.Content = JsonContent.Create(datos);
+
+            var respuesta = await Http.SendAsync(request);
+
+            if (!respuesta.IsSuccessStatusCode)
+            {
+                var detalle = await respuesta.Content.ReadAsStringAsync();
+
+                mensaje = $"No se pudo actualizar la solicitud: {detalle}";
+                mensajeError = true;
+                return;
+            }
+
+            mensaje = aceptar
+                ? "Solicitud aceptada correctamente. La clase fue agendada."
+                : "Solicitud rechazada correctamente.";
+
+            mensajeError = false;
+
+            await CargarSolicitudes();
+        }
+        catch (Exception)
+        {
+            mensaje = "Ocurrió un error al actualizar la solicitud.";
+            mensajeError = true;
+        }
+        finally
+        {
+            procesando = false;
+        }
+    }
+
+    public class PerfilDocenteRespuesta
+    {
+        public int Id { get; set; }
+    }
+}
