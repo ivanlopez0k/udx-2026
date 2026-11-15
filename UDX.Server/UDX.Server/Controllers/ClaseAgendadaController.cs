@@ -35,10 +35,11 @@ public class ClaseAgendadaController : ControllerBase
             return NotFound("No se encontró el perfil del docente.");
 
         if (perfil.UserId != userId)
-            return Forbid("No podés ver clases de otro docente.");
+            return StatusCode(StatusCodes.Status403Forbidden, "No podés ver clases de otro docente.");
 
         var query = _context.ClasesAgendadas
             .Include(c => c.Parent).ThenInclude(p => p.User)
+            .Include(c => c.Parent).ThenInclude(p => p.Hijo)
             .Include(c => c.Teacher).ThenInclude(t => t.User)
             .Include(c => c.Subject)
             .Include(c => c.Academy)
@@ -81,10 +82,11 @@ public class ClaseAgendadaController : ControllerBase
             return NotFound("No se encontró el perfil del padre.");
 
         if (perfil.UserId != userId)
-            return Forbid("No podés ver clases de otro padre.");
+            return StatusCode(StatusCodes.Status403Forbidden, "No podés ver clases de otro padre.");
 
         var query = _context.ClasesAgendadas
             .Include(c => c.Parent).ThenInclude(p => p.User)
+            .Include(c => c.Parent).ThenInclude(p => p.Hijo)
             .Include(c => c.Teacher).ThenInclude(t => t.User)
             .Include(c => c.Subject)
             .Include(c => c.Academy)
@@ -120,6 +122,7 @@ public class ClaseAgendadaController : ControllerBase
 
         var clase = await _context.ClasesAgendadas
             .Include(c => c.Parent).ThenInclude(p => p.User)
+            .Include(c => c.Parent).ThenInclude(p => p.Hijo)
             .Include(c => c.Teacher).ThenInclude(t => t.User)
             .Include(c => c.Subject)
             .Include(c => c.Academy)
@@ -130,7 +133,7 @@ public class ClaseAgendadaController : ControllerBase
 
         // Verify ownership: teacher or parent must match authenticated user
         if (clase.Teacher.UserId != userId && clase.Parent.UserId != userId)
-            return Forbid("No podés ver esta clase.");
+            return StatusCode(StatusCodes.Status403Forbidden, "No podés ver esta clase.");
 
         return Ok(MapearDTO(clase));
     }
@@ -146,6 +149,7 @@ public class ClaseAgendadaController : ControllerBase
 
         var clase = await _context.ClasesAgendadas
             .Include(c => c.Parent).ThenInclude(p => p.User)
+            .Include(c => c.Parent).ThenInclude(p => p.Hijo)
             .Include(c => c.Teacher).ThenInclude(t => t.User)
             .Include(c => c.Subject)
             .Include(c => c.Academy)
@@ -155,7 +159,7 @@ public class ClaseAgendadaController : ControllerBase
             return NotFound("No se encontró la clase.");
 
         if (clase.Teacher.UserId != userId)
-            return Forbid("No podés modificar clases de otro docente.");
+            return StatusCode(StatusCodes.Status403Forbidden, "No podés modificar clases de otro docente.");
 
         if (!Enum.TryParse<ClaseAgendada.Stat>(dto.Status, true, out var nuevoEstado))
             return BadRequest("Estado inválido. Valores permitidos: SCHEDULED, COMPLETED, CANCELED, NO_SHOW, REFUNDED");
@@ -195,6 +199,8 @@ public class ClaseAgendadaController : ControllerBase
         RequestId = c.RequestId,
         ParentId = c.ParentId,
         ParentName = c.Parent?.User?.Name ?? "",
+        HijoId = c.Parent?.HijoId ?? 0,
+        HijoName = c.Parent?.Hijo?.Name ?? "",
         TeacherId = c.TeacherId,
         TeacherName = c.Teacher?.User?.Name ?? "",
         SubjectId = c.SubjectId,

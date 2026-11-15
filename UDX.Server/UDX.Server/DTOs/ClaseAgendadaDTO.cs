@@ -14,6 +14,9 @@ namespace UDX.Server.DTOs
         public int ParentId { get; set; }
         public string ParentName { get; set; }
 
+        public int HijoId { get; set; }
+        public string HijoName { get; set; } = "";
+
         public int TeacherId { get; set; }
         public string TeacherName { get; set; }
 
