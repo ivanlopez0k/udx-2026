@@ -40,6 +40,7 @@ namespace UDX.Server.Controllers
             return Ok(new
             {
                 Nombre = perfil.User.Name,
+                Id = perfil.Id,
                 Email = perfil.User.Email,
                 Telefono = perfil.User.Phone,
                 Ciudad = perfil.Location,
