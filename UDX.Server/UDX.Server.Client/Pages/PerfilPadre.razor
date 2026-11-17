@@ -233,6 +233,15 @@ else
                                         @solicitud.Message
                                     </p>
 
+                                    @if (solicitud.Status == "ACCEPTED" && solicitud.DocenteId > 0)
+                                    {
+                                        <div class="mt-3 pt-2 border-top">
+                                            <a href="/profesores/@solicitud.DocenteId" class="btn btn-sm btn-outline-primary fw-bold">
+                                                ⭐ Dejar Reseña al Docente
+                                            </a>
+                                        </div>
+                                    }
+
                                 </div>
                             </div>
                         }
@@ -812,6 +821,7 @@ else
     private class SolicitudPadreRespuesta
     {
         public int Id { get; set; }
+        public int DocenteId { get; set; }
         public string Status { get; set; } = "";
         public DateTime Schedule { get; set; }
         public int Duration { get; set; }
