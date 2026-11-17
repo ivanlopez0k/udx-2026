@@ -1,1 +1,78 @@
-/* Scoped styles for Profesores; global layout in styles.css and components.css */
+/* Estilos propio para las tarjetas de los profesores  */
+
+.profesores-lista {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 24px;
+    margin-top: 1.5rem;
+}
+
+    .profesores-lista .profesor-card {
+        height: 100%;
+        background-color: white;
+        border: 1px solid #e9ecef;
+        border-radius: 16px;
+        overflow: hidden;
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+
+        .profesores-lista .profesor-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.10);
+        }
+
+    .profesores-lista .profesor-foto {
+        width: 100%;
+        height: 220px;
+        overflow: hidden;
+    }
+
+        .profesores-lista .profesor-foto img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+    .profesores-lista .profesor-info {
+        padding: 25px;
+    }
+
+        .profesores-lista .profesor-info h2 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+    .profesores-lista .profesor-materia {
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+
+    .profesores-lista .profesor-info p {
+        color: #6c757d;
+    }
+
+    .profesores-lista .profesor-dato {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+        .profesores-lista .profesor-dato img {
+            width: 18px;
+            height: 18px;
+            object-fit: contain;
+        }
+
+    .profesores-lista .verificado {
+        width: 18px;
+        height: 18px;
+        object-fit: contain;
+    }
+
+@media (max-width: 768px) {
+    .profesores-lista {
+        grid-template-columns: 1fr;
+    }
+}
