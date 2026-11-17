@@ -4,22 +4,25 @@
 @inject HttpClient Http
 @inject NavigationManager Navigation
 
-<PageTitle>Profesores</PageTitle>
+<PageTitle>Profesores disponibles</PageTitle>
 
-<div class="profesores-container">
+<div class="search-page-layout profesores-page">
 
-    <h1>Profesores Disponibles</h1>
+    @* PANEL DE FILTROS *@
+    <aside class="filter-sidebar-box">
 
-    @* FILTROS *@
-    <div class="filter-sidebar-box" style="margin-bottom: 2rem; padding: 1.5rem;">
-        <h3 style="font-size: 1.1rem; font-weight: 800; margin-bottom: 1rem;">
-            Filtrar profesores
-        </h3>
+        <div class="profesores-filter-header">
+            <span class="profesores-section-tag">Búsqueda</span>
+            <h2>Filtrar profesores</h2>
+            <p>Encontrá docentes según tus necesidades.</p>
+        </div>
 
-        <form @onsubmit="CargarProfesores" @onsubmit:preventDefault>
+        <form @onsubmit="CargarProfesores"
+              @onsubmit:preventDefault>
 
             <div class="form-group">
                 <label class="form-label">Materia</label>
+
                 <select class="form-control" @bind="filtroMateria">
                     <option value="">Todas las materias</option>
                     <option value="Matemáticas">Matemáticas</option>
@@ -35,6 +38,7 @@
 
             <div class="form-group">
                 <label class="form-label">Ubicación</label>
+
                 <input type="text"
                        class="form-control"
                        placeholder="Ej: Córdoba, Buenos Aires..."
@@ -43,15 +47,16 @@
 
             <div class="form-group">
                 <label class="form-label">Precio máximo por hora</label>
+
                 <input type="range"
                        min="3000"
                        max="25000"
                        step="500"
                        @bind="filtroMaxPrecio"
                        @bind:event="oninput"
-                       style="width: 100%; accent-color: var(--primary);" />
+                       class="profesores-price-range" />
 
-                <div style="display: flex; justify-content: space-between;">
+                <div class="profesores-range-values">
                     <span>$3.000</span>
                     <strong>$@filtroMaxPrecio.ToString("N0")</strong>
                 </div>
@@ -59,6 +64,7 @@
 
             <div class="form-group">
                 <label class="form-label">Calificación mínima</label>
+
                 <select class="form-control" @bind="filtroMinRating">
                     <option value="0">Cualquier calificación</option>
                     <option value="4.5">4.5 o más</option>
@@ -67,8 +73,7 @@
                 </select>
             </div>
 
-            <div class="form-group"
-                 style="display: flex; align-items: center; gap: 0.6rem;">
+            <div class="form-group profesores-checkbox-group">
                 <input type="checkbox"
                        id="soloVerificados"
                        @bind="filtroSoloVerificados" />
@@ -80,6 +85,7 @@
 
             <div class="form-group">
                 <label class="form-label">Ordenar por</label>
+
                 <select class="form-control" @bind="filtroOrden">
                     <option value="rating_desc">Mejor puntuación</option>
                     <option value="precio_asc">Menor precio</option>
@@ -87,11 +93,18 @@
                 </select>
             </div>
 
-            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+            <div class="profesores-filter-actions">
                 <button type="submit"
                         class="btn btn-primary"
                         disabled="@cargando">
-                    Filtrar profesores
+                    @if (cargando)
+                    {
+                        <span>Buscando...</span>
+                    }
+                    else
+                    {
+                        <span>Aplicar filtros</span>
+                    }
                 </button>
 
                 <button type="button"
@@ -103,96 +116,187 @@
             </div>
 
         </form>
-    </div>
+    </aside>
 
-    @* PROFESORES REGISTRADOS DESDE LA API *@
 
-    <h2 style="margin-top: 2.5rem;">Docentes registrados</h2>
+    @* RESULTADOS *@
+    <main class="profesores-results">
 
-    @if (cargando)
-    {
-        <p>Cargando profesores...</p>
-    }
-    else if (!string.IsNullOrEmpty(mensajeError))
-    {
-        <p>@mensajeError</p>
-    }
-    else if (profesores.Count == 0)
-    {
-        <p>No se encontraron profesores con esos filtros.</p>
-    }
-    else
-    {
-        <div class="profesores-lista">
+        <header class="profesores-page-header">
+            <div>
+                <span class="profesores-section-tag">
+                    Encontrá tu próximo docente
+                </span>
 
-            @foreach (var profesor in profesores)
-            {
-                <div class="profesor-card">
+                <h1>Profesores disponibles</h1>
 
-                    <div class="profesor-foto">
-                        <img src="@(string.IsNullOrWhiteSpace(profesor.Foto)
-                            ? "images/default-avatar.avif"
-                            : profesor.Foto)"
-                             alt="Foto de @profesor.Nombre">
-                    </div>
+                <p>
+                    Explorá los perfiles de nuestros docentes y encontrá
+                    el indicado para aprender a tu ritmo.
+                </p>
+            </div>
+        </header>
 
-                    <div class="profesor-info">
-                        <h2>
-                            @profesor.Nombre
+        <div class="profesores-results-heading">
+            <div>
+                <h2>Docentes registrados</h2>
+
+                @if (!cargando && string.IsNullOrEmpty(mensajeError))
+                {
+                    <span class="profesores-results-count">
+                        @profesores.Count @(profesores.Count == 1
+                            ? "profesor encontrado"
+                            : "profesores encontrados")
+                    </span>
+                }
+            </div>
+        </div>
+
+        @if (cargando)
+        {
+            <div class="profesores-state">
+                <div class="profesores-loading-spinner"></div>
+                <p>Estamos buscando profesores...</p>
+            </div>
+        }
+        else if (!string.IsNullOrEmpty(mensajeError))
+        {
+            <div class="profesores-state profesores-error">
+                <h3>No pudimos cargar los profesores</h3>
+                <p>@mensajeError</p>
+
+                <button class="btn btn-primary"
+                        @onclick="CargarProfesores">
+                    Intentar nuevamente
+                </button>
+            </div>
+        }
+        else if (profesores.Count == 0)
+        {
+            <div class="profesores-state profesores-empty">
+                <div class="profesores-empty-icon">
+                    <span>⌕</span>
+                </div>
+
+                <h3>No encontramos profesores</h3>
+
+                <p>
+                    Probá modificando los filtros para encontrar
+                    docentes disponibles.
+                </p>
+
+                <button class="btn btn-outline"
+                        @onclick="LimpiarFiltros">
+                    Limpiar filtros
+                </button>
+            </div>
+        }
+        else
+        {
+            <div class="teacher-grid">
+
+                @foreach (var profesor in profesores)
+                {
+                    <article class="teacher-card" @key="profesor.Id">
+
+                        <div class="teacher-cover">
+                            <img src="@(string.IsNullOrWhiteSpace(profesor.Foto)
+                                 ? "images/default-avatar.avif"
+                                 : profesor.Foto)"
+                                 alt="Foto de @profesor.Nombre"
+                                 loading="lazy" />
 
                             @if (profesor.Verified)
                             {
-                                <img src="/IMG/verificado.png"
-                                     alt="Verificado"
-                                     class="verificado">
+                                <span class="profesores-verified-badge">
+                                    ✓ Verificado
+                                </span>
                             }
-                        </h2>
+                        </div>
 
-                        <p class="profesor-materia">
-                            @(profesor.Materias?.FirstOrDefault() ?? "Sin materias")
-                        </p>
+                        <div class="teacher-body">
 
-                        <p class="profesor-dato">
-                            <img src="/IMG/PIN.png" alt="">
-                            @(string.IsNullOrWhiteSpace(profesor.Location)
-                                ? "Ubicación no especificada"
-                                : profesor.Location)
-                        </p>
+                            <div class="teacher-header">
+                                <h3 class="teacher-name">
+                                    @profesor.Nombre
+                                </h3>
 
-                        <p class="profesor-dato">
-                            <img src="/IMG/estrella.png" alt="">
-                            @profesor.RatingAvg.ToString("0.0")
-                        </p>
+                                <div class="teacher-rating-box">
+                                    <img src="/IMG/estrella.png"
+                                         alt=""
+                                         class="profesores-star-icon" />
 
-                        @if (profesor.HourlyRate > 0)
-                        {
-                            <p class="profesor-dato">
-                                Precio por hora:
-                                $@profesor.HourlyRate.ToString("N0")
-                            </p>
-                        }
+                                    <strong>
+                                        @profesor.RatingAvg.ToString("0.0")
+                                    </strong>
+                                </div>
+                            </div>
 
-                        @if (!string.IsNullOrWhiteSpace(profesor.Availability))
-                        {
-                            <p class="profesor-dato">
-                                Disponibilidad:
-                                @profesor.Availability
-                            </p>
-                        }
+                            <div class="teacher-location">
+                                <img src="/IMG/PIN.png" alt="" />
 
-                        <button class="btn btn-primary mt-2"
-                                style="width: 120px;"
-                                @onclick="() => IrAlPerfil(profesor.Id)">
-                            Ver perfil
-                        </button>
-                    </div>
-                </div>
-            }
+                                <span>
+                                    @(string.IsNullOrWhiteSpace(profesor.Location)
+                                        ? "Ubicación no especificada"
+                                        : profesor.Location)
+                                </span>
+                            </div>
 
-        </div>
-    }
+                            <div class="teacher-tags">
+                                @if (profesor.Materias?.Any() == true)
+                                {
+                                    @foreach (var materia in profesor.Materias.Take(3))
+                                    {
+                                        <span>@materia</span>
+                                    }
+                                }
+                                else
+                                {
+                                    <span>Sin materias registradas</span>
+                                }
+                            </div>
 
+                            @if (!string.IsNullOrWhiteSpace(profesor.Availability))
+                            {
+                                <p class="profesores-availability">
+                                    <strong>Disponibilidad:</strong>
+                                    @profesor.Availability
+                                </p>
+                            }
+
+                            <div class="teacher-footer">
+
+                                <div class="teacher-rate">
+                                    <span>Precio por hora</span>
+
+                                    @if (profesor.HourlyRate > 0)
+                                    {
+                                        <strong>
+                                            $@profesor.HourlyRate.ToString("N0")
+                                        </strong>
+                                    }
+                                    else
+                                    {
+                                        <strong>A consultar</strong>
+                                    }
+                                </div>
+
+                                <button class="btn btn-primary"
+                                        @onclick="() => IrAlPerfil(profesor.Id)">
+                                    Ver perfil
+                                </button>
+
+                            </div>
+                        </div>
+                    </article>
+                }
+
+            </div>
+        }
+
+    </main>
 </div>
+
 
 @code {
     [SupplyParameterFromQuery(Name = "materia")]
