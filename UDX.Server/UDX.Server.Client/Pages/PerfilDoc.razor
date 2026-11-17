@@ -214,6 +214,88 @@ else
                     }
                 </div>
 
+                <!-- Subir Material -->
+      <div class="content-box" style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
+       <div>
+         <h3 style="font-size: 1.15rem; font-weight: 800; margin-bottom: 0.25rem;">
+             Material Para lo Alumnos
+         </h3>
+         <p style="font-size: 0.85rem; color: var(--slate-500); margin: 0;">
+             Subí los archivos para los alumnos.
+         </p>
+     </div>
+
+    <button type="button"
+            class="btn btn-primary"
+            @onclick="() => mostrarModalMaterial = !mostrarModalMaterial">
+        📎 Subir archivo
+    </button>
+</div>
+
+                   <!-- Clases Asignadas -->
+                <div class="content-box">
+                    <div style="border-bottom: 1px solid var(--border-light); padding-bottom: 0.75rem; margin-bottom: 1.25rem;">
+                        <h3 style="font-size: 1.25rem; font-weight: 800; margin: 0;">
+                            Mis Clases Asignadas
+                        </h3>
+                        <p style="font-size: 0.85rem; color: var(--slate-500); margin-top: 0.2rem;">
+                            Consultá las clases que tenés programadas.
+                        </p>
+                    </div>
+
+                    @if (cargandoClases)
+                    {
+                        <p style="color: var(--slate-500); font-size: 0.875rem;">
+                            Cargando clases...
+                        </p>
+                    }
+                    else if (!string.IsNullOrEmpty(mensajeClases))
+                    {
+                        <p style="color: #dc2626; font-size: 0.875rem;">
+                            @mensajeClases
+                        </p>
+                    }
+                    else if (clasesDocente.Count == 0)
+                    {
+                        <p style="color: var(--slate-500); font-size: 0.875rem;">
+                            Todavía no tenés clases asignadas.
+                        </p>
+                    }
+                    else
+                    {
+                        <table class="panel-table">
+                            <thead>
+                                <tr>
+                                    <th>Fecha y hora</th>
+                                    <th>Alumno</th>
+                                    <th>Materia</th>
+                                    <th>Duración</th>
+                                    <th>Estado</th>
+                                    <th>Academia</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var clase in clasesDocente)
+                                {
+                                    <tr>
+                                        <td>@clase.ScheduledAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                        <td>@clase.ParentName</td>
+                                        <td>@clase.SubjectName</td>
+                                        <td>@clase.Duration min</td>
+                                        <td>
+                                            <span class="badge badge-outline">
+                                                @clase.Status
+                                            </span>
+                                        </td>
+                                        <td>@clase.AcademyName</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+
+
                 <!-- Danger Zone -->
                 <div class="content-box" style="border-color: #fecaca; background: #fffdfd;">
                     <h3 style="font-size: 1.15rem; font-weight: 800; color: #991b1b; margin-bottom: 0.25rem;">Zona de Peligro</h3>
@@ -229,10 +311,115 @@ else
     </main>
 }
 
+<!-- Modal Subir Material -->
+@if (mostrarModalMaterial)
+{
+    <div class="modal-overlay active" @onclick="CerrarModalMaterial">
+        <div class="modal-card" style="max-width: 550px;"
+             @onclick:stopPropagation="true">
+
+            <div class="modal-header">
+                <h3 class="modal-title">Subir material</h3>
+
+                <button type="button"
+                        class="modal-close-btn"
+                        @onclick="CerrarModalMaterial">
+                    &times;
+                </button>
+            </div>
+
+            <div class="modal-body">
+
+                <p style="color: var(--slate-500); font-size: 0.875rem; margin-bottom: 1.25rem;">
+                    Rellena los datos para subir el material.
+                </p>
+
+                <div class="form-group">
+                    <label class="form-label">Título del material</label>
+                    <input class="form-control"
+                           @bind="tituloMaterial"
+                           placeholder="Ej: Ejercicios de Matemática" />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Archivo</label>
+                    <InputFile OnChange="SeleccionarArchivoMaterial"
+                               class="form-control" />
+                    @if (!string.IsNullOrWhiteSpace(nombreArchivoMaterial))
+                    {
+                        <small style="color: var(--slate-500);">
+                            Archivo seleccionado: @nombreArchivoMaterial
+                        </small>
+                    }
+                </div>
+
+              <div class="form-group">
+    <label>Materia</label>
+    <InputSelect class="form-control" @bind-Value="materiaMaterialId">
+        <option value="0">Seleccioná una materia</option>
+        @foreach (var materia in materiasDocente)
+        {
+            <option value="@materia.MateriaId">@materia.Nombre</option>
+        }
+    </InputSelect>
+</div>
+
+              <div class="form-group">
+    <label class="form-label">Alumno</label>
+    <InputSelect class="form-control" @bind-Value="hijoMaterialId">
+        <option value="0">Seleccioná un alumno</option>
+
+        @foreach (var alumno in clasesDocente
+            .Where(c => c.AcademyId == academiaMaterialId && c.HijoId > 0)
+            .GroupBy(c => c.HijoId)
+            .Select(g => g.First()))
+        {
+            <option value="@alumno.HijoId">@alumno.HijoName</option>
+        }
+    </InputSelect>
+</div>
+
+                 <div class="form-group">
+                      <label class="form-label">Academia</label>
+                      <InputSelect class="form-control" @bind-Value="academiaMaterialId">
+                          <option value="0">Seleccioná una academia</option>
+                           @foreach (var academia in academiasDocente)
+                             {
+                             <option value="@academia.Id">@academia.Name</option>
+                                }
+                 </InputSelect>
+            </div>
+            @if (!string.IsNullOrWhiteSpace(mensajeMaterial))
+{
+             <p>@mensajeMaterial</p>
+}
+            </div>
+
+            <div class="modal-footer"
+                 style="justify-content: flex-end; gap: 0.75rem;">
+
+                <button type="button"
+                        class="btn btn-outline"
+                        @onclick="CerrarModalMaterial">
+                    Cancelar
+                </button>
+
+               <button type="button"
+                  class="btn btn-primary"
+                      @onclick="SubirMaterial"
+                      disabled="@subiendoMaterial">
+                     @(subiendoMaterial ? "Subiendo..." : "Subir material")
+                    </button>
+
+            </div>
+        </div>
+    </div>
+}
+
 <!-- Modal Confirmación Eliminar Cuenta -->
 @if (mostrarConfirmacionEliminar)
 {
-    <div class="modal-overlay" @onclick="CancelarEliminar">
+    <div class="modal-overlay active" @onclick="CancelarEliminar">
         <div class="modal-card" style="max-width: 480px;" @onclick:stopPropagation="true">
             <div class="modal-header">
                 <h3 class="modal-title" style="color: #991b1b;">Confirmar Eliminación</h3>
@@ -254,6 +441,7 @@ else
 }
 
 @code {
+    
     private string nombre = "";
     private string email = "";
     private string telefono = "";
@@ -279,11 +467,239 @@ else
 
     private List<MateriaCatalogo> catalogoMaterias = new();
     private List<MateriaDocenteRespuesta> materiasDocente = new();
+    private List<AcademiaMaterialDTO> academiasDocente = new();
+
+public class AcademiaMaterialDTO
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = "";
+}
+
+public class DocenteAcademiasRespuesta
+{
+    public List<AcademiaMaterialDTO> Academias { get; set; } = new();
+}
 
     private bool cargandoMaterias = true;
     private int materiaIdSeleccionada;
     private string nivelMateria = "";
     private decimal precioMateria;
+
+    private bool cargandoClases = true;
+    private string mensajeClases = "";
+    private List<ClaseAgendadaDTO> clasesDocente = new();
+    
+    public class ClaseAgendadaDTO
+{
+    public int Id { get; set; }
+    public DateTime ScheduledAt { get; set; }
+    public int Duration { get; set; }
+    public string Status { get; set; } = "";
+    public float Price { get; set; }
+    public string Location { get; set; } = "";
+
+    public int RequestId { get; set; }
+
+    public int ParentId { get; set; }
+    public string ParentName { get; set; } = "";
+
+    public int HijoId { get; set; }
+    public string HijoName { get; set; } = "";
+
+    public int TeacherId { get; set; }
+    public string TeacherName { get; set; } = "";
+
+    public int SubjectId { get; set; }
+    public string SubjectName { get; set; } = "";
+
+    public int AcademyId { get; set; }
+    public string AcademyName { get; set; } = "";
+
+}
+
+private bool mostrarModalMaterial = false;
+
+private string tituloMaterial = "";
+private int materiaMaterialId = 0;
+private int academiaMaterialId = 0;
+private int hijoMaterialId = 0;
+private string nombreArchivoMaterial = "";
+private bool subiendoMaterial = false;
+private string mensajeMaterial = "";
+
+private IBrowserFile? archivoMaterialSeleccionado;
+
+private void AbrirModalMaterial()
+{
+    mostrarModalMaterial = true;
+}
+
+private void CerrarModalMaterial()
+{
+    mostrarModalMaterial = false;
+    tituloMaterial = "";
+    materiaMaterialId = 0;
+    academiaMaterialId = 0;
+    hijoMaterialId = 0;
+    nombreArchivoMaterial = "";
+    archivoMaterialSeleccionado = null;
+}
+
+private void SeleccionarArchivoMaterial(InputFileChangeEventArgs e)
+{
+    archivoMaterialSeleccionado = e.File;
+    nombreArchivoMaterial = e.File.Name;
+}
+    
+    private async Task SubirMaterial()
+{
+    mensajeMaterial = "";
+
+    if (string.IsNullOrWhiteSpace(tituloMaterial))
+    {
+        mensajeMaterial = "Ingresá un título.";
+        return;
+    }
+
+    if (archivoMaterialSeleccionado == null)
+    {
+        mensajeMaterial = "Seleccioná un archivo.";
+        return;
+    }
+
+    if (materiaMaterialId <= 0 || hijoMaterialId <= 0 || academiaMaterialId <= 0)
+    {
+        mensajeMaterial = "Completá materia, alumno y academia.";
+        return;
+    }
+
+    subiendoMaterial = true;
+
+    try
+    {
+        var token = await JS.InvokeAsync<string?>(
+            "localStorage.getItem", "token")
+            ?? await JS.InvokeAsync<string?>(
+            "localStorage.getItem", "udx_token");
+
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            mensajeMaterial = "No se encontró el token de sesión.";
+            return;
+        }
+
+        using var contenido = new MultipartFormDataContent();
+
+        contenido.Add(new StringContent(tituloMaterial), "Title");
+        contenido.Add(new StringContent(materiaMaterialId.ToString()), "MateriaId");
+        contenido.Add(new StringContent(hijoMaterialId.ToString()), "HijoId");
+        contenido.Add(new StringContent(academiaMaterialId.ToString()), "AcademyId");
+
+        var archivo = new StreamContent(
+            archivoMaterialSeleccionado.OpenReadStream(20 * 1024 * 1024));
+
+        archivo.Headers.ContentType =
+            new System.Net.Http.Headers.MediaTypeHeaderValue(
+                archivoMaterialSeleccionado.ContentType);
+
+        contenido.Add(
+            archivo,
+            "Archivo",
+            archivoMaterialSeleccionado.Name);
+
+        using var request = new HttpRequestMessage(
+            HttpMethod.Post, "api/Contenido");
+
+        request.Headers.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue(
+                "Bearer", token);
+
+        request.Content = contenido;
+
+        var respuesta = await Http.SendAsync(request);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            CerrarModalMaterial();
+            mensaje = "Material subido correctamente.";
+        }
+        else
+        {
+            var detalle = await respuesta.Content.ReadAsStringAsync();
+
+            mensajeMaterial = string.IsNullOrWhiteSpace(detalle)
+                ? $"No se pudo subir el material. Código: {(int)respuesta.StatusCode}"
+                : detalle;
+        }
+    }
+    catch (Exception ex)
+    {
+        mensajeMaterial = "Error al subir el material: " + ex.Message;
+    }
+    finally
+    {
+        subiendoMaterial = false;
+    }
+}
+
+    private async Task CargarClases()
+    {
+        cargandoClases = true;
+        mensajeClases = "";
+
+        try
+        {
+            var token = await JS.InvokeAsync<string>(
+                "localStorage.getItem", "token");
+
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                token = await JS.InvokeAsync<string>(
+                    "localStorage.getItem", "udx_token");
+            }
+
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                mensajeClases = "No se encontró el token de sesión.";
+                return;
+            }
+
+            if (perfil == null || perfil.Id <= 0)
+            {
+                mensajeClases = "No se pudo identificar el perfil del docente.";
+                return;
+            }
+
+            using var request = new HttpRequestMessage(
+                HttpMethod.Get,
+                $"api/ClaseAgendada/docente/{perfil.Id}");
+
+            request.Headers.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue(
+                    "Bearer", token);
+
+            var response = await Http.SendAsync(request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                clasesDocente =
+                    await response.Content.ReadFromJsonAsync<List<ClaseAgendadaDTO>>()
+                    ?? new List<ClaseAgendadaDTO>();
+            }
+            else
+            {
+                mensajeClases = $"No se pudieron cargar las clases. Código: {(int)response.StatusCode}";
+            }
+        }
+        catch (Exception ex)
+        {
+            mensajeClases = $"Error al cargar las clases: {ex.Message}";
+        }
+        finally
+        {
+            cargandoClases = false;
+        }
+    }
 
     public class RespuestaFoto
     {
@@ -505,8 +921,10 @@ else
         if (!firstRender) return;
 
         await CargarPerfil();
+        await CargarClases();
         await CargarFoto();
         await CargarMaterias();
+        await CargarAcademias();
         StateHasChanged();
     }
 
@@ -580,6 +998,42 @@ else
             cargandoMaterias = false;
         }
     }
+    
+    private async Task CargarAcademias()
+{
+    academiasDocente = new();
+
+    try
+    {
+        var token = await JS.InvokeAsync<string?>(
+            "localStorage.getItem", "token")
+            ?? await JS.InvokeAsync<string?>(
+            "localStorage.getItem", "udx_token");
+
+        if (string.IsNullOrEmpty(token) || perfil == null)
+            return;
+
+        using var request = new HttpRequestMessage(
+            HttpMethod.Get,
+            "api/Docente/perfil/academias");
+
+        request.Headers.Authorization =
+            new AuthenticationHeaderValue("Bearer", token);
+
+        var respuesta = await Http.SendAsync(request);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            academiasDocente =
+                await respuesta.Content.ReadFromJsonAsync<List<AcademiaMaterialDTO>>()
+                ?? new List<AcademiaMaterialDTO>();
+        }
+    }
+    catch
+    {
+        // Fallback
+    }
+}
 
     private async Task AgregarMateria()
     {

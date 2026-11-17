@@ -118,6 +118,7 @@
         </form>
     </aside>
 
+
     @* RESULTADOS *@
     <main class="profesores-results">
 
@@ -139,12 +140,13 @@
         <div class="profesores-results-heading">
             <div>
                 <h2>Docentes registrados</h2>
+
                 @if (!cargando && string.IsNullOrEmpty(mensajeError))
                 {
                     <span class="profesores-results-count">
-@profesores.Count @(profesores.Count == 1
+                        @profesores.Count @(profesores.Count == 1
                             ? "profesor encontrado"
-                                                : "profesores encontrados")
+                            : "profesores encontrados")
                     </span>
                 }
             </div>
@@ -294,6 +296,7 @@
 
     </main>
 </div>
+
 
 @code {
     [SupplyParameterFromQuery(Name = "materia")]
