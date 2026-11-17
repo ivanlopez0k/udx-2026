@@ -23,13 +23,25 @@ namespace UDX.Server.Controllers
             _context = context;
         }
 
+        private async Task<PerfilDocente?> BuscarPerfilDocenteAsync(int teacherId)
+        {
+            // Primero busca por Id de PerfilDocente
+            var perfil = await _context.PerfilesDocentes
+                .FirstOrDefaultAsync(p => p.Id == teacherId);
+
+            // Si no coincide, busca por UserId
+            perfil ??= await _context.PerfilesDocentes
+                .FirstOrDefaultAsync(p => p.UserId == teacherId);
+
+            return perfil;
+        }
+
         // GET: api/Resena/docente/{teacherId}
         // Devuelve el listado de reseñas públicas de un docente ordenadas cronológicamente
         [HttpGet("docente/{teacherId:int}")]
         public async Task<ActionResult<List<ResenaDetalleDTO>>> GetResenasDocente(int teacherId)
         {
-            var perfil = await _context.PerfilesDocentes
-                .FirstOrDefaultAsync(p => p.Id == teacherId || p.UserId == teacherId);
+            var perfil = await BuscarPerfilDocenteAsync(teacherId);
 
             if (perfil == null)
                 return NotFound("No se encontró el docente especificado.");
@@ -64,8 +76,7 @@ namespace UDX.Server.Controllers
             if (string.IsNullOrWhiteSpace(userIdStr) || !int.TryParse(userIdStr, out var userId))
                 return Unauthorized();
 
-            var perfilDocente = await _context.PerfilesDocentes
-                .FirstOrDefaultAsync(p => p.Id == teacherId || p.UserId == teacherId);
+            var perfilDocente = await BuscarPerfilDocenteAsync(teacherId);
 
             if (perfilDocente == null)
                 return NotFound("No se encontró el docente especificado.");
@@ -98,11 +109,12 @@ namespace UDX.Server.Controllers
 
             // 2. Validación estricta: debe tener una clase agendada o solicitud aceptada con este docente
             var tieneClaseAgendada = await _context.ClasesAgendadas
-                .AnyAsync(c => c.ParentId == perfilPadre.Id && c.TeacherId == perfilDocente.Id);
+                .AnyAsync(c => c.ParentId == perfilPadre.Id && 
+                              (c.TeacherId == perfilDocente.Id || c.TeacherId == perfilDocente.UserId));
 
             var tieneSolicitudAceptada = await _context.SolicitudesClases
                 .AnyAsync(s => s.ParentId == perfilPadre.Id && 
-                               s.DocenteId == perfilDocente.Id && 
+                              (s.DocenteId == perfilDocente.Id || s.DocenteId == perfilDocente.UserId) && 
                                s.Status == SolicitudClase.Stat.ACCEPTED);
 
             if (!tieneClaseAgendada && !tieneSolicitudAceptada)
@@ -136,8 +148,7 @@ namespace UDX.Server.Controllers
             if (string.IsNullOrWhiteSpace(userIdStr) || !int.TryParse(userIdStr, out var userId))
                 return Unauthorized();
 
-            var perfilDocente = await _context.PerfilesDocentes
-                .FirstOrDefaultAsync(p => p.Id == dto.TeacherId || p.UserId == dto.TeacherId);
+            var perfilDocente = await BuscarPerfilDocenteAsync(dto.TeacherId);
 
             if (perfilDocente == null)
                 return NotFound("No se encontró el docente especificado.");
@@ -157,11 +168,12 @@ namespace UDX.Server.Controllers
 
             // 2. Validación estricta de negocio: debe existir clase previa o solicitud aceptada
             var tieneClaseAgendada = await _context.ClasesAgendadas
-                .AnyAsync(c => c.ParentId == perfilPadre.Id && c.TeacherId == perfilDocente.Id);
+                .AnyAsync(c => c.ParentId == perfilPadre.Id && 
+                              (c.TeacherId == perfilDocente.Id || c.TeacherId == perfilDocente.UserId));
 
             var tieneSolicitudAceptada = await _context.SolicitudesClases
                 .AnyAsync(s => s.ParentId == perfilPadre.Id && 
-                               s.DocenteId == perfilDocente.Id && 
+                              (s.DocenteId == perfilDocente.Id || s.DocenteId == perfilDocente.UserId) && 
                                s.Status == SolicitudClase.Stat.ACCEPTED);
 
             if (!tieneClaseAgendada && !tieneSolicitudAceptada)

@@ -633,10 +633,13 @@ else if (docente != null)
     private string errorResena = "";
     private string exitoResena = "";
 
+    private int ultimoIdVerificado = -1;
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
+        if (firstRender || ultimoIdVerificado != Id)
         {
+            ultimoIdVerificado = Id;
             await VerificarPuedeOpinarAsync();
         }
     }
@@ -752,7 +755,7 @@ else if (docente != null)
 
             var dto = new ResenaDTO
             {
-                TeacherId = Id,
+                TeacherId = docente?.Id ?? Id,
                 Calificacion = nuevaCalificacion,
                 Comentario = nuevoComentarioResena.Trim()
             };
