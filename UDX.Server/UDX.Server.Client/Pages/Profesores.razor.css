@@ -1,1 +1,363 @@
-/* Scoped styles for Profesores; global layout in styles.css and components.css */
+
+/* --- Profesores Page --- */
+
+.profesores-page {
+    align-items: start;
+    min-width: 0;
+}
+
+.profesores-results {
+    min-width: 0;
+}
+
+/* --- Page Header --- */
+
+.profesores-page-header {
+    margin-bottom: 2.5rem;
+}
+
+    .profesores-page-header h1 {
+        font-size: clamp(2rem, 3vw, 2.75rem);
+        font-weight: 800;
+        letter-spacing: -0.035em;
+        color: var(--slate-950);
+        margin: 0.5rem 0;
+    }
+
+    .profesores-page-header p {
+        color: var(--slate-600);
+        font-size: 1rem;
+        line-height: 1.6;
+        max-width: 650px;
+        margin: 0;
+    }
+
+.profesores-section-tag {
+    display: inline-block;
+    padding: 0.3rem 0.85rem;
+    background: var(--primary-light);
+    color: var(--primary);
+    border-radius: var(--radius-full);
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+/* --- Filters --- */
+
+.profesores-filter-header {
+    margin-bottom: 1.75rem;
+}
+
+    .profesores-filter-header h2 {
+        font-size: 1.2rem;
+        font-weight: 800;
+        color: var(--slate-950);
+        margin: 0.75rem 0 0.35rem;
+    }
+
+    .profesores-filter-header p {
+        font-size: 0.875rem;
+        color: var(--slate-500);
+        line-height: 1.5;
+        margin: 0;
+    }
+
+.profesores-price-range {
+    width: 100%;
+    accent-color: var(--primary);
+    cursor: pointer;
+}
+
+.profesores-range-values {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+    color: var(--slate-500);
+    margin-top: 0.4rem;
+}
+
+    .profesores-range-values strong {
+        color: var(--slate-950);
+        font-size: 0.95rem;
+    }
+
+.profesores-checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+}
+
+    .profesores-checkbox-group input {
+        accent-color: var(--primary);
+        width: 16px;
+        height: 16px;
+        cursor: pointer;
+    }
+
+    .profesores-checkbox-group label {
+        font-size: 0.875rem;
+        color: var(--slate-700);
+        cursor: pointer;
+    }
+
+.profesores-filter-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+}
+
+    .profesores-filter-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+/* --- Results Header --- */
+
+.profesores-results-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+    .profesores-results-heading h2 {
+        color: var(--slate-950);
+        font-size: 1.35rem;
+        font-weight: 800;
+        margin: 0;
+    }
+
+.profesores-results-count {
+    display: block;
+    color: var(--slate-500);
+    font-size: 0.875rem;
+    margin-top: 0.35rem;
+}
+
+/* --- Teacher Cards --- */
+
+.profesores-page .teacher-grid {
+    align-items: stretch;
+}
+
+.profesores-page .teacher-card {
+    min-width: 0;
+}
+
+.profesores-page .teacher-cover {
+    position: relative;
+}
+
+    .profesores-page .teacher-cover img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+.profesores-verified-badge {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.4rem 0.75rem;
+    border-radius: var(--radius-full);
+    background: var(--white);
+    color: var(--accent-emerald);
+    font-size: 0.75rem;
+    font-weight: 800;
+    box-shadow: var(--shadow-sm);
+}
+
+.profesores-page .teacher-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+
+.profesores-page .teacher-name {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.profesores-page .teacher-rating-box {
+    flex-shrink: 0;
+}
+
+.profesores-star-icon {
+    width: 16px;
+    height: 16px;
+    object-fit: contain;
+}
+
+.profesores-page .teacher-location img {
+    width: 16px;
+    height: 16px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+.profesores-page .teacher-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.profesores-availability {
+    color: var(--slate-600);
+    font-size: 0.85rem;
+    line-height: 1.5;
+    margin: 0;
+}
+
+    .profesores-availability strong {
+        color: var(--slate-800);
+    }
+
+/* --- Teacher Footer / Price --- */
+
+.profesores-page .teacher-footer {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 0.75rem;
+}
+
+.profesores-page .teacher-rate {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+    .profesores-page .teacher-rate span {
+        white-space: nowrap;
+        font-size: 0.8rem;
+    }
+
+    .profesores-page .teacher-rate strong {
+        display: block;
+        white-space: nowrap;
+        font-size: 0.95rem;
+    }
+
+.profesores-page .teacher-footer .btn {
+    white-space: nowrap;
+    flex: 0 0 auto;
+    justify-content: center;
+}
+
+/* --- Loading / Empty / Error States --- */
+
+.profesores-state {
+    min-height: 280px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 2.5rem 1.5rem;
+    background: var(--white);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-2xl);
+    box-shadow: var(--shadow-sm);
+}
+
+    .profesores-state h3 {
+        color: var(--slate-950);
+        font-size: 1.2rem;
+        font-weight: 800;
+        margin: 0 0 0.5rem;
+    }
+
+    .profesores-state p {
+        color: var(--slate-500);
+        font-size: 0.925rem;
+        line-height: 1.6;
+        max-width: 420px;
+        margin: 0 0 1.25rem;
+    }
+
+.profesores-loading-spinner {
+    width: 38px;
+    height: 38px;
+    border: 4px solid var(--slate-200);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: profesores-spin 0.8s linear infinite;
+    margin-bottom: 1rem;
+}
+
+@keyframes profesores-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.profesores-empty-icon {
+    width: 58px;
+    height: 58px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-full);
+    background: var(--primary-light);
+    color: var(--primary);
+    font-size: 2rem;
+    margin-bottom: 1rem;
+}
+
+.profesores-error {
+    border-color: rgba(220, 38, 38, 0.2);
+}
+
+/* --- Responsive --- */
+
+@media (max-width: 1024px) {
+    .profesores-page {
+        gap: 2rem;
+    }
+
+    .profesores-page-header {
+        margin-bottom: 2rem;
+    }
+}
+
+@media (max-width: 600px) {
+    .profesores-page {
+        padding-top: 5.5rem;
+        padding-bottom: 3rem;
+    }
+
+    .profesores-page-header h1 {
+        font-size: 2rem;
+    }
+
+    .profesores-results-heading h2 {
+        font-size: 1.2rem;
+    }
+
+    .profesores-page .teacher-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .profesores-page .teacher-cover {
+        height: 200px;
+    }
+
+    .profesores-page .teacher-footer {
+        gap: 0.5rem;
+    }
+
+        .profesores-page .teacher-footer .btn {
+            font-size: 0.85rem;
+            padding-left: 0.75rem;
+            padding-right: 0.75rem;
+        }
+}
