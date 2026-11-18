@@ -39,18 +39,18 @@
 
                 <!-- Step 1: Personal Data -->
                 <h3 style="font-size: 1.15rem; font-weight: 800; border-bottom: 1px solid var(--border-light); padding-bottom: 0.65rem; margin-bottom: 1.25rem;">
-                    1. Datos Personales & Pedagógicos
+                    1. Datos personales & pedagógicos
                 </h3>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
                     <div class="form-group">
-                        <label class="form-label">Nombre y Apellido</label>
+                        <label class="form-label">Nombre y apellido</label>
                         <InputText class="form-control" @bind-Value="formulario.Nombre" placeholder="Ej: Prof. María Belén Fernández" />
                         <ValidationMessage For="@(() => formulario.Nombre)" class="text-danger" style="font-size: 0.8rem;" />
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label">Correo Electrónico</label>
+                        <label class="form-label">Correo electrónico</label>
                         <InputText class="form-control" type="email" @bind-Value="formulario.Email" placeholder="docente@ejemplo.com" />
                         <ValidationMessage For="@(() => formulario.Email)" class="text-danger" style="font-size: 0.8rem;" />
                     </div>
@@ -58,13 +58,13 @@
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem;">
                     <div class="form-group">
-                        <label class="form-label">Contraseña de Acceso</label>
+                        <label class="form-label">Contraseña de acceso</label>
                         <InputText class="form-control" type="password" @bind-Value="formulario.Password" placeholder="Mínimo 8 caracteres" />
                         <ValidationMessage For="@(() => formulario.Password)" class="text-danger" style="font-size: 0.8rem;" />
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label">Zona de Atención / Modalidad</label>
+                        <label class="form-label">Zona de atención / Modalidad</label>
                         <InputText class="form-control" @bind-Value="formulario.Zona" placeholder="Ej: Nueva Córdoba, Córdoba / Clases Online" />
                         <ValidationMessage For="@(() => formulario.Zona)" class="text-danger" style="font-size: 0.8rem;" />
                     </div>
@@ -74,7 +74,7 @@
                 <div style="margin-top: 2rem;">
                     <div style="border-bottom: 1px solid var(--border-light); padding-bottom: 0.65rem; margin-bottom: 1.25rem;">
                         <h3 style="font-size: 1.15rem; font-weight: 800; margin: 0;">
-                            2. Materias Primarias a Dictar y Tarifas
+                            2. Materias a dictar y tarifas
                         </h3>
                         <p style="font-size: 0.85rem; color: var(--slate-500); margin-top: 0.25rem;">
                             Marcá las materias que podés enseñar y asigná tu tarifa horaria sugerida.

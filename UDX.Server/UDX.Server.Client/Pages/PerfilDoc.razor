@@ -127,7 +127,7 @@ else
                 <!-- Subjects & Rates Box -->
                 <div class="content-box">
                     <div style="border-bottom: 1px solid var(--border-light); padding-bottom: 0.75rem; margin-bottom: 1.25rem;">
-                        <h3 style="font-size: 1.25rem; font-weight: 800; margin: 0;">Mis Materias Primarias y Tarifas</h3>
+                        <h3 style="font-size: 1.25rem; font-weight: 800; margin: 0;">Materias y Tarifas</h3>
                         <p style="font-size: 0.85rem; color: var(--slate-500); margin-top: 0.2rem;">Gestioná las materias que dictás y tus precios por hora.</p>
                     </div>
 
@@ -176,7 +176,7 @@ else
 
                         <!-- Add Subject Form -->
                         <div style="background: var(--slate-50); border: 1px solid var(--border-light); border-radius: var(--radius-xl); padding: 1.25rem; margin-top: 1.75rem;">
-                            <h4 style="font-size: 0.95rem; font-weight: 800; margin-bottom: 0.75rem; color: var(--slate-900);">+ Agregar Nueva Materia</h4>
+                            <h4 style="font-size: 0.95rem; font-weight: 800; margin-bottom: 0.75rem; color: var(--slate-900);">+ Agregar nueva materia</h4>
                             
                             <div style="display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 0.75rem; align-items: flex-end;">
                                 <div class="form-group" style="margin-bottom: 0;">
@@ -222,7 +222,7 @@ else
       <div class="content-box" style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
        <div>
          <h3 style="font-size: 1.15rem; font-weight: 800; margin-bottom: 0.25rem;">
-             Material Para lo Alumnos
+             Material para los alumnos
          </h3>
          <p style="font-size: 0.85rem; color: var(--slate-500); margin: 0;">
              Subí los archivos para los alumnos.
@@ -240,7 +240,7 @@ else
                 <div class="content-box">
                     <div style="border-bottom: 1px solid var(--border-light); padding-bottom: 0.75rem; margin-bottom: 1.25rem;">
                         <h3 style="font-size: 1.25rem; font-weight: 800; margin: 0;">
-                            Mis Clases Asignadas
+                            Clases asignadas
                         </h3>
                         <p style="font-size: 0.85rem; color: var(--slate-500); margin-top: 0.2rem;">
                             Consultá las clases que tenés programadas.
@@ -302,7 +302,7 @@ else
 
                 <!-- Danger Zone -->
                 <div class="content-box" style="border-color: #fecaca; background: #fffdfd;">
-                    <h3 style="font-size: 1.15rem; font-weight: 800; color: #991b1b; margin-bottom: 0.25rem;">Zona de Peligro</h3>
+                    <h3 style="font-size: 1.15rem; font-weight: 800; color: #991b1b; margin-bottom: 0.25rem;">Zona de peligro</h3>
                     <p style="font-size: 0.85rem; color: var(--slate-500); margin-bottom: 1rem;">
                         Si eliminás tu cuenta docente, tu perfil desaparecerá del directorio público de profesores.
                     </p>
@@ -426,18 +426,18 @@ else
     <div class="modal-overlay active" @onclick="CancelarEliminar">
         <div class="modal-card" style="max-width: 480px;" @onclick:stopPropagation="true">
             <div class="modal-header">
-                <h3 class="modal-title" style="color: #991b1b;">Confirmar Eliminación</h3>
+                <h3 class="modal-title" style="color: #991b1b;">Confirmar eliminación</h3>
                 <button type="button" class="modal-close-btn" @onclick="CancelarEliminar">&times;</button>
             </div>
             <div class="modal-body">
                 <p style="color: var(--slate-700);">
-                    ¿Estás segura/o de que querés eliminar tu cuenta docente? Esta acción no se puede deshacer.
+                    ¿Estás segura/o de que querés eliminar tu cuenta? Esta acción no se puede deshacer.
                 </p>
             </div>
             <div class="modal-footer" style="justify-content: flex-end; gap: 0.75rem;">
                 <button type="button" class="btn btn-outline" @onclick="CancelarEliminar">Cancelar</button>
                 <button type="button" class="btn btn-primary" style="background: #dc2626;" @onclick="EliminarCuenta">
-                    Sí, Eliminar Definitivamente
+                    Sí, eliminar definitivamente
                 </button>
             </div>
         </div>
