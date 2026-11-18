@@ -69,7 +69,7 @@ else
                 </div>
 
                 <a href="/profesores" class="btn btn-primary btn-full btn-sm">
-                    + Buscar Docente de Primaria
+                    + Buscar docente
                 </a>
             </aside>
 
@@ -77,11 +77,11 @@ else
                 <div class="content-box">
                     <div style="border-bottom: 1px solid var(--border-light); padding-bottom: 0.75rem; margin-bottom: 1.5rem;">
                         <span class="badge badge-primary" style="margin-bottom: 0.35rem;">
-                            Datos del Tutor
+                            Datos del tutor
                         </span>
 
                         <h2 style="font-size: 1.35rem; font-weight: 800; margin: 0;">
-                            Información de la Familia
+                            Información de la familia
                         </h2>
                     </div>
 
@@ -95,7 +95,7 @@ else
 
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
                         <div class="form-group">
-                            <label class="form-label">Nombre del Tutor</label>
+                            <label class="form-label">Nombre del tutor</label>
                             <input type="text" class="form-control" @bind="nombre" />
                         </div>
 
@@ -108,7 +108,7 @@ else
 
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
                         <div class="form-group">
-                            <label class="form-label">Correo Electrónico</label>
+                            <label class="form-label">Correo electrónico</label>
                             <input type="email" class="form-control" @bind="email"
                                    readonly style="background: var(--slate-100); cursor: not-allowed;" />
                         </div>
@@ -122,13 +122,13 @@ else
 
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.75rem;">
                         <div class="form-group">
-                            <label class="form-label">Nombre de tu Hijo/a</label>
+                            <label class="form-label">Nombre de tu hijo/a</label>
                             <input type="text" class="form-control" @bind="hijo"
                                    placeholder="Ej: Joaquín" />
                         </div>
 
                         <div class="form-group">
-                            <label class="form-label">Grado Escolar</label>
+                            <label class="form-label">Grado</label>
                             <input type="text" class="form-control" @bind="grado"
                                    placeholder="Ej: 4° Grado Primaria" />
                         </div>
@@ -136,11 +136,11 @@ else
 
                     <div style="display: flex; gap: 0.75rem;">
                         <button class="btn btn-primary" @onclick="GuardarCambios">
-                            Guardar Cambios
+                            Guardar cambios
                         </button>
 
                         <button class="btn btn-outline" type="button" @onclick="CerrarSesion">
-                            Cerrar Sesión
+                            Cerrar sesión
                         </button>
                     </div>
                 </div>
@@ -337,18 +337,18 @@ else
                 <!-- ZONA DE PELIGRO -->
                 <div class="content-box" style="border-color: #fecaca; background: #fffdfd;">
                     <h3 style="font-size: 1.15rem; font-weight: 800; color: #991b1b; margin-bottom: 0.25rem;">
-                        Zona de Peligro
+                        Zona de peligro
                     </h3>
 
                     <p style="font-size: 0.85rem; color: var(--slate-500); margin-bottom: 1rem;">
-                        Si eliminás tu cuenta familiar, se borrará todo el historial y clases asociadas permanentemente.
+                        Si eliminás tu cuenta, se borrará todo el historial y clases asociadas permanentemente.
                     </p>
 
                     <button class="btn btn-outline"
                             style="border-color: #ef4444; color: #dc2626;"
                             type="button"
                             @onclick="MostrarConfirmacionEliminar">
-                        Eliminar mi Cuenta
+                        Eliminar mi cuenta
                     </button>
                 </div>
             </section>
@@ -365,7 +365,7 @@ else
 
             <div class="modal-header">
                 <h3 class="modal-title" style="color: #991b1b;">
-                    Confirmar Eliminación
+                    Confirmar
                 </h3>
 
                 <button type="button" class="modal-close-btn"
@@ -390,7 +390,7 @@ else
                 <button type="button" class="btn btn-primary"
                         style="background: #dc2626;"
                         @onclick="EliminarCuenta">
-                    Sí, Eliminar Definitivamente
+                    Sí, eliminar definitivamente
                 </button>
             </div>
         </div>
