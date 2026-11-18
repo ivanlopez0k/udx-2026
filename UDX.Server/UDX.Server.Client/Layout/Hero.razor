@@ -1,0 +1,96 @@
+@inject NavigationManager Navigation
+
+<!-- Hero Section -->
+<section class="hero">
+    <div class="container">
+        <div class="hero-layout">
+            <div class="hero-copy">
+                <div class="hero-pill">
+                    <span>🎒</span> Apoyo Escolar para alumnos de primaria
+                </div>
+                <h1 class="hero-title">
+                    Aprender a tu ritmo, avanzar con confianza.
+                </h1>
+                <p class="hero-subtitle">
+                    Profesores particulares y academias verificadas para 1° a 7° grado. Matemáticas, lectoescritura, tareas y técnicas de estudio con paciencia y dedicación pedagógica.
+                </p>
+
+                <!-- Floating Search Box -->
+                <form class="hero-search" @onsubmit="BuscarMateria" @onsubmit:preventDefault>
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color: var(--slate-400); margin-left: 0.5rem;">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                    <input 
+                        type="text" 
+                        class="form-control" 
+                        placeholder="¿Qué necesita reforzar? (Ej: Matemáticas, Lectura, Fracciones...)" 
+                        @bind="terminoBusqueda"
+                        required
+                    />
+                    <div class="hero-search-divider"></div>
+                    <button type="submit" class="btn btn-primary">
+                        <span>Buscar</span>
+                    </button>
+                </form>
+
+                <!-- Quick category pills -->
+                <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                    <span style="font-size: 0.8rem; color: var(--slate-400); font-weight: 600;">Materias:</span>
+                    <a href="/profesores?materia=Matemáticas" class="badge badge-outline">Matemáticas</a>
+                    <a href="/profesores?materia=Lenguaje" class="badge badge-outline">Prácticas del Lenguaje</a>
+                    <a href="/profesores?materia=Naturales" class="badge badge-outline">Ciencias Naturales</a>
+                    <a href="/profesores?materia=Inglés" class="badge badge-outline">Inglés</a>
+                </div>
+            </div>
+
+            <div class="hero-visual">
+                <div class="hero-visual-card">
+                    <img src="/assets/images/hero-main.png" alt="Estudiantes de Primaria UDX" />
+                </div>
+                <div class="hero-floating-stat">
+                    <div class="hero-stat-badge">★</div>
+                    <div>
+                        <strong style="font-size: 1.1rem; color: var(--slate-900); display: block;">4.9 / 5.0</strong>
+                        <span style="font-size: 0.8rem; color: var(--slate-500);">Más de 1.800 familias ya confían en nosotros.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Stats Strip -->
+<section class="stats-bar">
+    <div class="container">
+        <div class="stats-grid">
+            <div>
+                <div class="stat-num">+180</div>
+                <div class="stat-label">Profesores</div>
+            </div>
+            <div>
+                <div class="stat-num">1° a 7°</div>
+                <div class="stat-label">Grados Cubiertos</div>
+            </div>
+            <div>
+                <div class="stat-num">100%</div>
+                <div class="stat-label">Docentes verificados</div>
+            </div>
+            <div>
+                <div class="stat-num">99%</div>
+                <div class="stat-label">Familias satisfechas</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@code {
+    private string terminoBusqueda = "";
+
+    private void BuscarMateria()
+    {
+        if (!string.IsNullOrWhiteSpace(terminoBusqueda))
+        {
+            Navigation.NavigateTo($"/profesores?materia={Uri.EscapeDataString(terminoBusqueda.Trim())}");
+        }
+    }
+}

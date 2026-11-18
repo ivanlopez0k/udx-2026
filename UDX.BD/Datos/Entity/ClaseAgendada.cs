@@ -25,7 +25,7 @@ namespace UDX.BD.Datos.Entity
         public SolicitudClase Request { get; set; }
 
         public int ParentId { get; set; }
-        public PerfilPadre Parent { get; set; }
+        public PerfilPadre Parent { get; set; } = null!;
 
         public int TeacherId { get; set; }
         public PerfilDocente Teacher {  get; set; }
@@ -36,8 +36,8 @@ namespace UDX.BD.Datos.Entity
         public int AcademyId { get; set; }
         public Academia Academy { get; set; }
 
-        public int ContentId { get; set; }
-        public Contenido Content { get; set; }
+        public int? ContentId { get; set; }
+        public Contenido? Content { get; set; }
 
     }
 }

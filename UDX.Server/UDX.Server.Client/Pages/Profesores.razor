@@ -1,0 +1,391 @@
+@page "/profesores"
+@using UDX.Shared.DTOs
+@using System.Net.Http.Json
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<PageTitle>Profesores disponibles</PageTitle>
+
+<div class="search-page-layout profesores-page">
+
+    @* PANEL DE FILTROS *@
+    <aside class="filter-sidebar-box">
+
+        <div class="profesores-filter-header">
+            <span class="profesores-section-tag">Búsqueda</span>
+            <h2>Filtrar profesores</h2>
+            <p>Encontrá docentes según tus necesidades.</p>
+        </div>
+
+        <form @onsubmit="CargarProfesores"
+              @onsubmit:preventDefault>
+
+            <div class="form-group">
+                <label class="form-label">Materia</label>
+
+                <select class="form-control" @bind="filtroMateria">
+                    <option value="">Todas las materias</option>
+                    <option value="Matemáticas">Matemáticas</option>
+                    <option value="Lenguaje">Lenguaje</option>
+                    <option value="Naturales">Ciencias Naturales</option>
+                    <option value="Sociales">Ciencias Sociales</option>
+                    <option value="Inglés">Inglés</option>
+                    <option value="Historia">Historia</option>
+                    <option value="Educación Física">Educación Física</option>
+                    <option value="Música">Música</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Ubicación</label>
+
+                <input type="text"
+                       class="form-control"
+                       placeholder="Ej: Córdoba, Buenos Aires..."
+                       @bind="filtroUbicacion" />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Precio máximo por hora</label>
+
+                <input type="range"
+                       min="3000"
+                       max="25000"
+                       step="500"
+                       @bind="filtroMaxPrecio"
+                       @bind:event="oninput"
+                       class="profesores-price-range" />
+
+                <div class="profesores-range-values">
+                    <span>$3.000</span>
+                    <strong>$@filtroMaxPrecio.ToString("N0")</strong>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Calificación mínima</label>
+
+                <select class="form-control" @bind="filtroMinRating">
+                    <option value="0">Cualquier calificación</option>
+                    <option value="4.5">4.5 o más</option>
+                    <option value="4.8">4.8 o más</option>
+                    <option value="4.9">4.9 o más</option>
+                </select>
+            </div>
+
+            <div class="form-group profesores-checkbox-group">
+                <input type="checkbox"
+                       id="soloVerificados"
+                       @bind="filtroSoloVerificados" />
+
+                <label for="soloVerificados">
+                    Solo docentes verificados
+                </label>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Ordenar por</label>
+
+                <select class="form-control" @bind="filtroOrden">
+                    <option value="rating_desc">Mejor puntuación</option>
+                    <option value="precio_asc">Menor precio</option>
+                    <option value="precio_desc">Mayor precio</option>
+                </select>
+            </div>
+
+            <div class="profesores-filter-actions">
+                <button type="submit"
+                        class="btn btn-primary"
+                        disabled="@cargando">
+                    @if (cargando)
+                    {
+                        <span>Buscando...</span>
+                    }
+                    else
+                    {
+                        <span>Aplicar filtros</span>
+                    }
+                </button>
+
+                <button type="button"
+                        class="btn btn-outline"
+                        @onclick="LimpiarFiltros"
+                        disabled="@cargando">
+                    Limpiar filtros
+                </button>
+            </div>
+
+        </form>
+    </aside>
+
+
+    @* RESULTADOS *@
+    <main class="profesores-results">
+
+        <header class="profesores-page-header">
+            <div>
+                <span class="profesores-section-tag">
+                    Encontrá a tu próximo docente
+                </span>
+
+                <h1>Profesores disponibles</h1>
+
+                <p>
+                    Explorá los perfiles de nuestros docentes y encontrá
+                    el indicado para aprender a tu ritmo.
+                </p>
+            </div>
+        </header>
+
+        <div class="profesores-results-heading">
+            <div>
+                <h2>Docentes registrados</h2>
+
+                @if (!cargando && string.IsNullOrEmpty(mensajeError))
+                {
+                    <span class="profesores-results-count">
+                        @profesores.Count @(profesores.Count == 1
+                            ? "profesor encontrado"
+                            : "profesores encontrados")
+                    </span>
+                }
+            </div>
+        </div>
+
+        @if (cargando)
+        {
+            <div class="profesores-state">
+                <div class="profesores-loading-spinner"></div>
+                <p>Estamos buscando profesores...</p>
+            </div>
+        }
+        else if (!string.IsNullOrEmpty(mensajeError))
+        {
+            <div class="profesores-state profesores-error">
+                <h3>No pudimos cargar los profesores</h3>
+                <p>@mensajeError</p>
+
+                <button class="btn btn-primary"
+                        @onclick="CargarProfesores">
+                    Intentar nuevamente
+                </button>
+            </div>
+        }
+        else if (profesores.Count == 0)
+        {
+            <div class="profesores-state profesores-empty">
+                <div class="profesores-empty-icon">
+                    <span>⌕</span>
+                </div>
+
+                <h3>No encontramos profesores</h3>
+
+                <p>
+                    Probá modificando los filtros para encontrar
+                    docentes disponibles.
+                </p>
+
+                <button class="btn btn-outline"
+                        @onclick="LimpiarFiltros">
+                    Limpiar filtros
+                </button>
+            </div>
+        }
+        else
+        {
+            <div class="teacher-grid">
+
+                @foreach (var profesor in profesores)
+                {
+                    <article class="teacher-card" @key="profesor.Id">
+
+                        <div class="teacher-cover">
+                            <img src="@(string.IsNullOrWhiteSpace(profesor.Foto)
+                                 ? "images/default-avatar.avif"
+                                 : profesor.Foto)"
+                                 alt="Foto de @profesor.Nombre"
+                                 loading="lazy" />
+
+                            @if (profesor.Verified)
+                            {
+                                <span class="profesores-verified-badge">
+                                    ✓ Verificado
+                                </span>
+                            }
+                        </div>
+
+                        <div class="teacher-body">
+
+                            <div class="teacher-header">
+                                <h3 class="teacher-name">
+                                    @profesor.Nombre
+                                </h3>
+
+                                <div class="teacher-rating-box">
+                                    <img src="/IMG/estrella.png"
+                                         alt=""
+                                         class="profesores-star-icon" />
+
+                                    <strong>
+                                        @profesor.RatingAvg.ToString("0.0")
+                                    </strong>
+                                </div>
+                            </div>
+
+                            <div class="teacher-location">
+                                <img src="/IMG/PIN.png" alt="" />
+
+                                <span>
+                                    @(string.IsNullOrWhiteSpace(profesor.Location)
+                                        ? "Ubicación no especificada"
+                                        : profesor.Location)
+                                </span>
+                            </div>
+
+                            <div class="teacher-tags">
+                                @if (profesor.Materias?.Any() == true)
+                                {
+                                    @foreach (var materia in profesor.Materias.Take(3))
+                                    {
+                                        <span>@materia</span>
+                                    }
+                                }
+                                else
+                                {
+                                    <span>Sin materias registradas</span>
+                                }
+                            </div>
+
+                            @if (!string.IsNullOrWhiteSpace(profesor.Availability))
+                            {
+                                <p class="profesores-availability">
+                                    <strong>Disponibilidad:</strong>
+                                    @profesor.Availability
+                                </p>
+                            }
+
+                            <div class="teacher-footer">
+
+                                <div class="teacher-rate">
+                                    <span>Precio por hora</span>
+
+                                    @if (profesor.HourlyRate > 0)
+                                    {
+                                        <strong>
+                                            $@profesor.HourlyRate.ToString("N0")
+                                        </strong>
+                                    }
+                                    else
+                                    {
+                                        <strong>A consultar</strong>
+                                    }
+                                </div>
+
+                                <button class="btn btn-primary"
+                                        @onclick="() => IrAlPerfil(profesor.Id)">
+                                    Ver perfil
+                                </button>
+
+                            </div>
+                        </div>
+                    </article>
+                }
+
+            </div>
+        }
+
+    </main>
+</div>
+
+
+@code {
+    [SupplyParameterFromQuery(Name = "materia")]
+    public string? QueryMateria { get; set; }
+
+    private List<ProfesorDto> profesores = new();
+
+    private string filtroMateria = "";
+    private string filtroUbicacion = "";
+    private decimal filtroMaxPrecio = 25000;
+    private double filtroMinRating = 0;
+    private bool filtroSoloVerificados = false;
+    private string filtroOrden = "rating_desc";
+
+    private bool cargando = true;
+    private string mensajeError = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!string.IsNullOrWhiteSpace(QueryMateria))
+        {
+            filtroMateria = QueryMateria;
+        }
+
+        await CargarProfesores();
+    }
+
+    private async Task CargarProfesores()
+    {
+        cargando = true;
+        mensajeError = "";
+
+        try
+        {
+            var query = new List<string>();
+
+            if (!string.IsNullOrWhiteSpace(filtroMateria))
+                query.Add($"materia={Uri.EscapeDataString(filtroMateria)}");
+
+            if (!string.IsNullOrWhiteSpace(filtroUbicacion))
+                query.Add($"ubicacion={Uri.EscapeDataString(filtroUbicacion)}");
+
+            if (filtroMaxPrecio < 25000)
+                query.Add($"maxPrecio={filtroMaxPrecio}");
+
+            if (filtroMinRating > 0)
+                query.Add($"minRating={filtroMinRating}");
+
+            if (filtroSoloVerificados)
+                query.Add("soloVerificados=true");
+
+            if (!string.IsNullOrWhiteSpace(filtroOrden))
+                query.Add($"orden={Uri.EscapeDataString(filtroOrden)}");
+
+            var queryString = query.Count > 0
+                ? "?" + string.Join("&", query)
+                : "";
+
+            var respuesta =
+                await Http.GetFromJsonAsync<ProfesoresPaginadosDto>(
+                    $"api/Docente/buscar{queryString}"
+                );
+
+            profesores = respuesta?.Items ?? new List<ProfesorDto>();
+        }
+        catch (Exception)
+        {
+            mensajeError = "No se pudieron cargar los profesores.";
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private async Task LimpiarFiltros()
+    {
+        filtroMateria = "";
+        filtroUbicacion = "";
+        filtroMaxPrecio = 25000;
+        filtroMinRating = 0;
+        filtroSoloVerificados = false;
+        filtroOrden = "rating_desc";
+
+        await CargarProfesores();
+    }
+
+    private void IrAlPerfil(int docenteId)
+    {
+        Navigation.NavigateTo($"/profesores/{docenteId}");
+    }
+}

@@ -15,4 +15,6 @@ public class RegisterDTO
     public string Phone { get; set; }
 
     public Usuario.Rol Role { get; set; }
+
+    public string? AcademyCode { get; set; }
 }

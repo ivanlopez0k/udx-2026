@@ -1,0 +1,803 @@
+﻿@page "/profesores/{Id:int}"
+@using System.Net.Http.Json
+@using System.Net.Http.Headers
+@using UDX.Shared.DTOs
+@inject HttpClient Http
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+
+<PageTitle>Perfil del docente</PageTitle>
+
+@if (cargando)
+{
+    <p class="text-center mt-4">Cargando perfil del docente...</p>
+}
+else if (!string.IsNullOrWhiteSpace(error))
+{
+    <div class="alert alert-danger mt-4">
+        @error
+    </div>
+}
+else if (docente != null)
+{
+    <div class="card p-4 mt-4">
+
+        <div class="text-center">
+            @if (!string.IsNullOrWhiteSpace(docente.Foto))
+            {
+                <img src="@docente.Foto"
+                     alt="Foto del docente"
+                     class="rounded-circle mb-3"
+                     style="width: 150px; height: 150px; object-fit: cover;" />
+                
+            }
+
+            <h2>@docente.Nombre</h2>
+
+            @if (docente.Verified)
+            {
+                <span class="badge bg-success">Docente verificado</span>
+            }
+
+            <p class="text-muted mt-2">
+                @docente.Location
+            </p>
+
+            <p>
+                <strong>Calificación:</strong>
+                @docente.RatingAvg.ToString("N1") / 5
+                (@docente.RatingCount opiniones)
+            </p>
+        </div>
+
+        <hr />
+
+        <h4>Información de contacto</h4>
+        <p><strong>Email:</strong> @docente.Email</p>
+        <p><strong>Teléfono:</strong> @docente.Phone</p>
+        <p><strong>Credenciales:</strong> @docente.Credentials</p>
+
+        <h4>Disponibilidad</h4>
+        <p>@docente.Availability</p>
+
+        
+
+        <h4>Materias que enseña</h4>
+
+        @if (docente.Materias.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Materia</th>
+                            <th>Nivel</th>
+                            <th>Precio por hora</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var materia in docente.Materias)
+                        {
+                            <tr>
+                                <td>@materia.Name</td>
+                                <td>@materia.Level</td>
+                                <td>$@materia.HourlyRate.ToString("N2")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <p>No tiene materias registradas.</p>
+        }
+
+        <div class="text-center mt-4">
+            <button class="btn btn-primary"
+                    @onclick="ContratarClase">
+                Contratar clase
+            </button>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(error))
+        {
+            <div class="alert alert-danger mt-3">
+                @error
+            </div>
+        }
+    </div>
+
+    <!-- SECCIÓN DE RESEÑAS Y OPINIONES -->
+    <div class="card p-4 mt-4 shadow-sm" style="border-radius: var(--radius-2xl, 1.25rem); border: 1px solid var(--border-light, #e2e8f0);">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+            <div>
+                <h3 class="mb-1" style="font-size: 1.35rem; font-weight: 800; color: var(--slate-900, #0f172a);">
+                    Opiniones y reseñas
+                </h3>
+                <p class="text-muted mb-0" style="font-size: 0.875rem;">
+                    Experiencias reales de padres que tomaron clases con este docente.
+                </p>
+            </div>
+
+            @if (puedeOpinarInfo != null && puedeOpinarInfo.PuedeOpinar && !mostrarFormularioResena)
+            {
+                <button class="btn btn-outline-primary btn-sm" @onclick="AbrirFormularioResena" style="font-weight: 700;">
+                    ⭐ Calificar Docente
+                </button>
+            }
+        </div>
+
+        <!-- Resumen General de Calificación -->
+        <div class="p-3 mb-4 rounded-3 d-flex align-items-center flex-wrap gap-4" 
+             style="background: var(--slate-50, #f8fafc); border: 1px solid var(--border-light, #e2e8f0);">
+            <div class="text-center" style="min-width: 100px;">
+                <div style="font-size: 2.25rem; font-weight: 800; color: var(--slate-900, #0f172a); line-height: 1;">
+                    @docente.RatingAvg.ToString("N1")
+                </div>
+                <div style="color: #f59e0b; font-size: 1.2rem; letter-spacing: 2px; margin: 4px 0;">
+                    @RenderizarEstrellas(docente.RatingAvg)
+                </div>
+                <small class="text-muted fw-bold" style="font-size: 0.8rem;">
+                    @resenas.Count @(resenas.Count == 1 ? "opinión" : "opiniones")
+                </small>
+            </div>
+            <div class="border-start ps-3 flex-grow-1" style="font-size: 0.875rem; color: var(--slate-600, #475569);">
+                @if (puedeOpinarInfo != null && puedeOpinarInfo.YaOpino)
+                {
+                    <span class="text-success fw-bold">✓ Ya compartiste tu reseña para este docente. ¡Gracias por ayudar a la comunidad!</span>
+                }
+                else if (puedeOpinarInfo != null && puedeOpinarInfo.PuedeOpinar)
+                {
+                    <span class="text-primary fw-bold">Como coordinaste clases con este docente, tenés habilitado dejar tu calificación y opinión.</span>
+                }
+                else if (puedeOpinarInfo != null && !puedeOpinarInfo.PuedeOpinar)
+                {
+                    <span>@puedeOpinarInfo.Motivo</span>
+                }
+                else
+                {
+                    <span>Iniciá sesión como familia para calificar a los docentes con los que tomes clases.</span>
+                }
+            </div>
+        </div>
+
+        <!-- Formulario para Enviar Reseña -->
+        @if (mostrarFormularioResena)
+        {
+            <div class="card p-3 mb-4" style="background: #ffffff; border: 2px solid var(--primary, #2563eb); border-radius: 1rem;">
+                <h4 style="font-size: 1.1rem; font-weight: 800; color: var(--slate-900, #0f172a);" class="mb-3">
+                    Compartí tu experiencia con @docente.Nombre
+                </h4>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold mb-1" style="font-size: 0.9rem;">Tu calificación:</label>
+                    <div class="d-flex align-items-center gap-1" style="font-size: 1.8rem; cursor: pointer; user-select: none;">
+                        @for (int i = 1; i <= 5; i++)
+                        {
+                            var valorEstrella = i;
+                            <span @onclick="() => nuevaCalificacion = valorEstrella" 
+                                  style="color: @(valorEstrella <= nuevaCalificacion ? "#f59e0b" : "#cbd5e1");" 
+                                  title="@valorEstrella de 5">
+                                ★
+                            </span>
+                        }
+                        <span class="ms-2 badge bg-primary" style="font-size: 0.85rem; font-weight: 700;">
+                            @nuevaCalificacion de 5 estrellas
+                        </span>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold mb-1" style="font-size: 0.9rem;">Comentario pedagógico:</label>
+                    <textarea class="form-control" 
+                              rows="3" 
+                              maxlength="500" 
+                              @bind="nuevoComentarioResena" 
+                              placeholder="Contale a otras familias cómo fue la paciencia del docente, claridad al explicar, puntualidad y progreso escolar..."></textarea>
+                    <small class="text-muted">Entre 5 y 500 caracteres.</small>
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(errorResena))
+                {
+                    <div class="alert alert-danger py-2 mb-3" style="font-size: 0.85rem;">
+                        @errorResena
+                    </div>
+                }
+                @if (!string.IsNullOrWhiteSpace(exitoResena))
+                {
+                    <div class="alert alert-success py-2 mb-3" style="font-size: 0.85rem;">
+                        @exitoResena
+                    </div>
+                }
+
+                <div class="d-flex gap-2">
+                    <button class="btn btn-primary btn-sm" @onclick="EnviarResenaAsync" disabled="@enviandoResena" style="font-weight: 700;">
+                        @(enviandoResena ? "Publicando..." : "Publicar reseña")
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm" @onclick="CerrarFormularioResena" disabled="@enviandoResena">
+                        Cancelar
+                    </button>
+                </div>
+            </div>
+        }
+
+        <!-- Listado de Opiniones -->
+        @if (cargandoResenas)
+        {
+            <p class="text-muted text-center py-3">Cargando opiniones...</p>
+        }
+        else if (resenas.Count == 0)
+        {
+            <div class="text-center py-4 text-muted">
+                <p class="mb-0 fw-semibold">Este docente aún no tiene opiniones publicadas.</p>
+                <small>Las opiniones aparecen cuando las familias completan sus clases.</small>
+            </div>
+        }
+        else
+        {
+            <div class="d-flex flex-column gap-3">
+                @foreach (var resena in resenas)
+                {
+                    <div class="p-3 rounded-3" style="border: 1px solid var(--border-light, #e2e8f0); background: #ffffff;">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold" 
+                                     style="width: 32px; height: 32px; background: var(--primary, #2563eb); font-size: 0.85rem;">
+                                    @(string.IsNullOrWhiteSpace(resena.AutorNombre) ? "F" : resena.AutorNombre.Substring(0, 1).ToUpper())
+                                </div>
+                                <strong style="font-size: 0.95rem; color: var(--slate-900, #0f172a);">@resena.AutorNombre</strong>
+                            </div>
+                            <small class="text-muted" style="font-size: 0.75rem;">
+                                @resena.Fecha.ToLocalTime().ToString("dd/MM/yyyy")
+                            </small>
+                        </div>
+                        <div class="mb-2" style="color: #f59e0b; font-size: 1rem; letter-spacing: 1px;">
+                            @RenderizarEstrellas(resena.Calificacion)
+                        </div>
+                        <p class="mb-0" style="color: var(--slate-700, #334155); font-size: 0.9rem; line-height: 1.5;">
+                            @resena.Comentario
+                        </p>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+}
+@if (mostrarFormulario)
+{
+    <hr />
+
+    <div class="card p-4 mt-3">
+        <h3>Solicitar una clase</h3>
+
+        <p class="text-muted">
+            Completá los datos para enviar una solicitud al docente.
+        </p>
+
+       
+
+        <div class="mb-3">
+            <label class="form-label">Materia y nivel</label>
+
+            <select class="form-select"
+                    value="@ofertaSeleccionada"
+                    @onchange="CambiarOferta">
+
+                <option value="">Seleccioná una materia</option>
+
+                @foreach (var materia in docente!.Materias)
+                {
+                    <option value="@(materia.Id + "|" + materia.Level)">
+                        @materia.Name - @materia.Level
+                    </option>
+                }
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Fecha y hora de la clase</label>
+            <input type="datetime-local"
+                   class="form-control"
+                   @bind="fechaClase" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Duración</label>
+
+            <select class="form-select" @bind="duracion">
+                <option value="1">1 hora</option>
+                <option value="2">2 horas</option>
+                <option value="3">3 horas</option>
+                <option value="4">4 horas</option>
+            </select>
+        </div>
+
+        <div class="alert alert-info">
+            <strong>Precio estimado:</strong>
+            $@PrecioEstimado.ToString("N2")
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Modalidad</label>
+
+            <select class="form-select" @bind="modalidad">
+                <option value="ONLINE">Online</option>
+                <option value="PRESENCIAL">Presencial</option>
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Mensaje para el docente</label>
+
+            <textarea class="form-control"
+                      @bind="mensajeSolicitud"
+                      rows="3"
+                      placeholder="Contale al docente qué necesitás aprender..."></textarea>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Notas adicionales (opcional)</label>
+
+            <textarea class="form-control"
+                      @bind="notas"
+                      rows="2"
+                      placeholder="Información adicional..."></textarea>
+        </div>
+
+        <div class="mt-3">
+            <button class="btn btn-primary"
+                    @onclick="EnviarSolicitud"
+                    disabled="@enviandoSolicitud">
+
+                @if (enviandoSolicitud)
+                {
+                    <span>Enviando...</span>
+                }
+                else
+                {
+                    <span>Enviar solicitud</span>
+                }
+            </button>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(mensajeFormulario))
+        {
+            <div class="alert @(solicitudExitosa ? "alert-success" : "alert-danger") mt-3">
+                @mensajeFormulario
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private int parentId;
+    
+    private int materiaId;
+
+    private string nivel = "";
+    private string modalidad = "ONLINE";
+    private string mensajeSolicitud = "";
+    private string notas = "";
+    private string ofertaSeleccionada = "";
+
+    private DateTime fechaClase = DateTime.Now.AddDays(1);
+
+    private int duracion = 1;
+
+    private bool mostrarFormulario = false;
+    private bool enviandoSolicitud = false;
+    private bool solicitudExitosa = false;
+
+    private string mensajeFormulario = "";
+
+    [Parameter]
+    public int Id { get; set; }
+
+    private DocenteDetalleDTO? docente;
+    private bool cargando = true;
+    private string error = "";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        cargando = true;
+        error = "";
+        docente = null;
+
+        try
+        {
+            using var respuesta = await Http.GetAsync($"api/Docente/{Id}");
+
+            if (respuesta.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                error = "No se encontró el docente.";
+                return;
+            }
+
+            respuesta.EnsureSuccessStatusCode();
+
+            docente = await respuesta.Content
+                .ReadFromJsonAsync<DocenteDetalleDTO>();
+
+            if (docente == null)
+            {
+                error = "No se encontró el docente.";
+            }
+            else
+            {
+                await CargarResenasAsync();
+            }
+        }
+        catch (HttpRequestException)
+        {
+            error = "No se pudo consultar el docente.";
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            error = "La respuesta del servidor no tiene el formato esperado.";
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private async Task ContratarClase()
+    {
+        error = "Verificando sesión...";
+
+        try
+        {
+            var token = await JS.InvokeAsync<string>(
+                "localStorage.getItem",
+                "token");
+
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                error = "No se encontró el token. Debés iniciar sesión.";
+                return;
+            }
+
+            Http.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue(
+                    "Bearer",
+                    token);
+
+            error = "Consultando perfil de padre...";
+
+            var respuesta = await Http.GetAsync("api/Padre/perfil");
+
+            if (respuesta.StatusCode == System.Net.HttpStatusCode.Unauthorized ||
+                respuesta.StatusCode == System.Net.HttpStatusCode.Forbidden)
+            {
+                error = "La sesión no corresponde a una cuenta de padre.";
+                return;
+            }
+
+            if (!respuesta.IsSuccessStatusCode)
+            {
+                error = $"Error al consultar el perfil. Código: {(int)respuesta.StatusCode}";
+                return;
+            }
+
+            var perfil = await respuesta.Content
+                .ReadFromJsonAsync<PerfilPadreDTO>();
+
+            if (perfil == null)
+            {
+                error = "No se encontraron los datos del padre.";
+                return;
+            }
+
+            parentId = perfil.Id;
+            error = "";
+            mostrarFormulario = true;
+        }
+        catch (Exception ex)
+        {
+            error = $"Error al verificar la cuenta: {ex.Message}";
+        }
+    }
+
+    private void SeleccionarOferta(string valor)
+    {
+        ofertaSeleccionada = valor;
+
+        var partes = valor.Split('|');
+
+        if (partes.Length == 2 &&
+            int.TryParse(partes[0], out var id))
+        {
+            materiaId = id;
+            nivel = partes[1];
+        }
+        else
+        {
+            materiaId = 0;
+            nivel = "";
+        }
+    }
+
+    private void CambiarOferta(ChangeEventArgs e)
+    {
+        SeleccionarOferta(e.Value?.ToString() ?? "");
+    }
+
+    private decimal PrecioEstimado
+    {
+        get
+        {
+            var materia = docente?.Materias.FirstOrDefault(m =>
+                m.Id == materiaId && m.Level == nivel);
+
+            return materia == null
+                ? 0
+                : materia.HourlyRate * duracion;
+        }
+    }
+
+    private async Task EnviarSolicitud()
+    {
+        mensajeFormulario = "";
+        solicitudExitosa = false;
+
+       
+
+        if (materiaId <= 0 || string.IsNullOrWhiteSpace(nivel))
+        {
+            mensajeFormulario = "Seleccioná una materia y un nivel.";
+            return;
+        }
+
+        if (fechaClase <= DateTime.Now)
+        {
+            mensajeFormulario = "La fecha de la clase debe ser futura.";
+            return;
+        }
+
+        if (duracion < 1 || duracion > 4)
+        {
+            mensajeFormulario = "La duración debe ser de entre 1 y 4 horas.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(mensajeSolicitud))
+        {
+            mensajeFormulario = "Escribí un mensaje para el docente.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(modalidad))
+        {
+            mensajeFormulario = "Seleccioná una modalidad.";
+            return;
+        }
+
+        enviandoSolicitud = true;
+
+        try
+        {
+            var dto = new CrearSolicitudDTO
+            {
+                ParentId = parentId,
+                DocenteId = Id,
+                MateriaId = materiaId,
+                Level = nivel,
+
+                Schedule = new DateTimeOffset(
+        DateTime.SpecifyKind(fechaClase, DateTimeKind.Local)),
+
+                Duration = duracion,
+                Notes = notas,
+                Message = mensajeSolicitud.Trim(),
+                Modalidad = modalidad
+            };
+
+            var respuesta = await Http.PostAsJsonAsync(
+                "api/SolicitudClase",
+                dto);
+
+            if (respuesta.IsSuccessStatusCode)
+            {
+                solicitudExitosa = true;
+                mensajeFormulario = "¡Solicitud enviada correctamente!";
+            }
+            else
+            {
+                var detalle = await respuesta.Content.ReadAsStringAsync();
+
+                mensajeFormulario = string.IsNullOrWhiteSpace(detalle)
+                    ? "No se pudo enviar la solicitud."
+                    : detalle;
+            }
+        }
+        catch (Exception)
+        {
+            mensajeFormulario = "Ocurrió un error al enviar la solicitud.";
+        }
+        finally
+        {
+            enviandoSolicitud = false;
+        }
+    }
+
+    // --- SECCIÓN DE RESEÑAS ---
+    private List<ResenaDetalleDTO> resenas = new();
+    private bool cargandoResenas = true;
+    private PuedeOpinarDTO? puedeOpinarInfo;
+    private bool mostrarFormularioResena = false;
+    private int nuevaCalificacion = 5;
+    private string nuevoComentarioResena = "";
+    private bool enviandoResena = false;
+    private string errorResena = "";
+    private string exitoResena = "";
+
+    private int ultimoIdVerificado = -1;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender || ultimoIdVerificado != Id)
+        {
+            ultimoIdVerificado = Id;
+            await VerificarPuedeOpinarAsync();
+        }
+    }
+
+    private async Task CargarResenasAsync()
+    {
+        cargandoResenas = true;
+        try
+        {
+            var lista = await Http.GetFromJsonAsync<List<ResenaDetalleDTO>>($"api/Resena/docente/{Id}");
+            resenas = lista ?? new();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al cargar reseñas: {ex.Message}");
+            resenas = new();
+        }
+        finally
+        {
+            cargandoResenas = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task VerificarPuedeOpinarAsync()
+    {
+        try
+        {
+            var token = await JS.InvokeAsync<string?>("localStorage.getItem", "token")
+                        ?? await JS.InvokeAsync<string?>("localStorage.getItem", "udx_token");
+
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                puedeOpinarInfo = null;
+                return;
+            }
+
+            using var request = new HttpRequestMessage(HttpMethod.Get, $"api/Resena/docente/{Id}/puede-opinar");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            var respuesta = await Http.SendAsync(request);
+            if (respuesta.IsSuccessStatusCode)
+            {
+                puedeOpinarInfo = await respuesta.Content.ReadFromJsonAsync<PuedeOpinarDTO>();
+            }
+            else
+            {
+                puedeOpinarInfo = null;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al verificar si puede opinar: {ex.Message}");
+            puedeOpinarInfo = null;
+        }
+        finally
+        {
+            StateHasChanged();
+        }
+    }
+
+    private void AbrirFormularioResena()
+    {
+        mostrarFormularioResena = true;
+        errorResena = "";
+        exitoResena = "";
+        nuevaCalificacion = 5;
+        nuevoComentarioResena = "";
+    }
+
+    private void CerrarFormularioResena()
+    {
+        mostrarFormularioResena = false;
+        errorResena = "";
+        exitoResena = "";
+    }
+
+    private string RenderizarEstrellas(double calificacion)
+    {
+        var red = (int)Math.Round(calificacion);
+        red = Math.Clamp(red, 0, 5);
+        return new string('★', red) + new string('☆', 5 - red);
+    }
+
+    private async Task EnviarResenaAsync()
+    {
+        errorResena = "";
+        exitoResena = "";
+
+        if (nuevaCalificacion < 1 || nuevaCalificacion > 5)
+        {
+            errorResena = "La calificación debe ser entre 1 y 5 estrellas.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(nuevoComentarioResena) || nuevoComentarioResena.Trim().Length < 5)
+        {
+            errorResena = "El comentario debe tener al menos 5 caracteres.";
+            return;
+        }
+
+        enviandoResena = true;
+        try
+        {
+            var token = await JS.InvokeAsync<string?>("localStorage.getItem", "token")
+                        ?? await JS.InvokeAsync<string?>("localStorage.getItem", "udx_token");
+
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                errorResena = "Debés iniciar sesión como familia para enviar una reseña.";
+                return;
+            }
+
+            var dto = new ResenaDTO
+            {
+                TeacherId = docente?.Id ?? Id,
+                Calificacion = nuevaCalificacion,
+                Comentario = nuevoComentarioResena.Trim()
+            };
+
+            using var request = new HttpRequestMessage(HttpMethod.Post, "api/Resena")
+            {
+                Content = JsonContent.Create(dto)
+            };
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            var respuesta = await Http.SendAsync(request);
+            if (respuesta.IsSuccessStatusCode)
+            {
+                exitoResena = "¡Muchas gracias! Tu reseña ha sido publicada.";
+                nuevoComentarioResena = "";
+                mostrarFormularioResena = false;
+
+                await CargarResenasAsync();
+                await VerificarPuedeOpinarAsync();
+
+                var resDoc = await Http.GetAsync($"api/Docente/{Id}");
+                if (resDoc.IsSuccessStatusCode)
+                {
+                    docente = await resDoc.Content.ReadFromJsonAsync<DocenteDetalleDTO>();
+                }
+            }
+            else
+            {
+                var detalle = await respuesta.Content.ReadAsStringAsync();
+                errorResena = string.IsNullOrWhiteSpace(detalle)
+                    ? "No se pudo registrar la reseña."
+                    : detalle.Trim('"');
+            }
+        }
+        catch (Exception ex)
+        {
+            errorResena = $"Error al enviar la reseña: {ex.Message}";
+        }
+        finally
+        {
+            enviandoResena = false;
+            StateHasChanged();
+        }
+    }
+}
