@@ -805,3 +805,10 @@
     grid-template-columns: 1fr;
   }
 }
+.teacher-rating-box img,
+.teacher-location img {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  object-fit: contain;
+}
