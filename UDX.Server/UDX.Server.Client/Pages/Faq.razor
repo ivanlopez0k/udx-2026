@@ -1,0 +1,84 @@
+@page "/faq"
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+
+<PageTitle>FAQ - UDX</PageTitle>
+
+<section class="faq py-5">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="fw-bold">Preguntas Frecuentes</h2>
+            <p class="text-muted">Encontrá respuestas a las dudas más comunes sobre nuestra plataforma.</p>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-12">
+                <div class="accordion" id="faqAccordion">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="faq-one">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq-content-one" aria-expanded="false" aria-controls="faq-content-one">
+                                ¿Cómo registro mi cuenta en UDX?
+                            </button>
+                        </h2>
+                        <div id="faq-content-one" class="accordion-collapse collapse" aria-labelledby="faq-one" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                <p>Para registrarte en UDX, dirígete a la página principal y haz clic en el botón "Registro". Completa el formulario con tu nombre, correo electrónico y una contraseña segura. Recibirás un correo de confirmación para activar tu cuenta. Una vez confirmado, podrás acceder al panel familiar y comenzar a buscar profesores para el apoyo escolar de tus hijos.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="faq-two">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq-content-two" aria-expanded="false" aria-controls="faq-content-two">
+                                ¿Cómo busco profesores por materia?
+                            </button>
+                        </h2>
+                        <div id="faq-content-two" class="accordion-collapse collapse" aria-labelledby="faq-two" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                <p>Puedes buscar profesores de dos formas: 1) Utilizando el menú desplegable de materias en la sección de profesores, donde encontrarás las materias principales (Matemáticas, Lenguaje, Inglés, Naturales). 2) Ingresando directamente a una URL con el parámetro de materia, por ejemplo: <code>/profesores?materia=Matemáticas</code>. También puedes filtrar por grado (1° a 7°) y modalidad (online, presencial o ambas).</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="faq-three">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq-content-three" aria-expanded="false" aria-controls="faq-content-three">
+                                ¿Las clases son online o presenciales?
+                            </button>
+                        </h2>
+                        <div id="faq-content-three" class="accordion-collapse collapse" aria-labelledby="faq-three" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                <p>Ofrecemos ambas modalidades para adaptarnos a tus necesidades. Al buscar un profesor, puedes filtrar específicamente por "Online", "Presencial" o "Ambas" según tus preferencias. Los profesores independientes y las academias pueden ofrecer una o ambas modalidades, por lo que revisa el perfil de cada docente para ver qué opciones disponen.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="faq-four">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq-content-four" aria-expanded="false" aria-controls="faq-content-four">
+                                ¿Cómo funcionan los pagos?
+                            </button>
+                        </h2>
+                        <div id="faq-content-four" class="accordion-collapse collapse" aria-labelledby="faq-four" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                <p>Los pagos se gestionan directamente con cada profesor o academia particular. UDX actúa como plataforma de conexión y no cobra comisiones por las clases en sí. Las tarifas y formas de pago son definidas por cada docente o institución educativa. Algunos profesores pueden aceptar pagos por sesión, mensualidades o paquetes de clases, los cuales se acuerdan de común acuerdo entre la familia y el docente.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="faq-five">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq-content-five" aria-expanded="false" aria-controls="faq-content-five">
+                                ¿Qué grados o niveles cubren?
+                            </button>
+                        </h2>
+                        <div id="faq-content-five" class="accordion-collapse collapse" aria-labelledby="faq-five" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                <p>Nuestro enfoque principal es el nivel primario, cubriendo los grados 1° a 7° grado. Esta es la especialidad de la plataforma UDX Primaria. Sin embargo, también contamos con algunos profesores especializados en niveles secundarios y universitarios para materias específicas. Revisa el perfil de cada docente para verificar los niveles que imparte y las materias disponibles, ya que la oferta varía según el profesor.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
