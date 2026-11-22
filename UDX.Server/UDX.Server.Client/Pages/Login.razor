@@ -175,6 +175,12 @@
                     await JS.InvokeVoidAsync("localStorage.setItem", "udx_role", resultado.Role.ToString());
                     await JS.InvokeVoidAsync("localStorage.setItem", "udx_email", resultado.Email);
 
+                    // Guardar foto de perfil si viene en el resultado (para el Navbar)
+                    if (!string.IsNullOrWhiteSpace(resultado.FotoPerfil))
+                    {
+                        await JS.InvokeVoidAsync("localStorage.setItem", "udx_fotoPerfil", resultado.FotoPerfil);
+                    }
+
                     // Redirigir según el rol
                     if (resultado.Role == 1 || resultado.Role == 2) // TEACHER o ACADEMY
                     {

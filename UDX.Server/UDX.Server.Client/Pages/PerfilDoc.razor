@@ -4,11 +4,13 @@
 @using Microsoft.JSInterop
 @using System.Net.Http.Headers
 @using System.Net.Http.Json
+@using UDX.Server.Client.Services
 @layout MainLayout
 
 @inject HttpClient Http
 @inject IJSRuntime JS
 @inject NavigationManager Navigation
+@inject ProfilePhotoStateService PhotoState
 
 <PageTitle>Mi Panel Docente | UDX</PageTitle>
 
@@ -799,6 +801,12 @@ private void SeleccionarArchivoMaterial(InputFileChangeEventArgs e)
                     if (resultadoFoto != null)
                     {
                         fotoUrl = resultadoFoto.foto;
+                        // Notificar al Navbar y guardar en localStorage
+                        if (!string.IsNullOrWhiteSpace(resultadoFoto.foto))
+                        {
+                            await JS.InvokeVoidAsync("localStorage.setItem", "udx_fotoPerfil", resultadoFoto.foto);
+                            PhotoState.FotoPerfilUrl = resultadoFoto.foto;
+                        }
                     }
                 }
                 fotoSeleccionada = null;
@@ -892,19 +900,59 @@ private void SeleccionarArchivoMaterial(InputFileChangeEventArgs e)
         var token = await JS.InvokeAsync<string?>("localStorage.getItem", "token")
                     ?? await JS.InvokeAsync<string?>("localStorage.getItem", "udx_token");
 
-        if (string.IsNullOrEmpty(token)) return;
+        if (string.IsNullOrEmpty(token))
+        {
+            fotoUrl = "";
+            return;
+        }
 
         using var request = new HttpRequestMessage(HttpMethod.Get, "api/Docente/foto");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var respuesta = await Http.SendAsync(request);
-        if (respuesta.IsSuccessStatusCode)
+        try
         {
-            var resultado = await respuesta.Content.ReadFromJsonAsync<RespuestaFoto>();
-            if (resultado != null)
+            var respuesta = await Http.SendAsync(request);
+
+            if (respuesta.IsSuccessStatusCode)
             {
-                fotoUrl = resultado.foto;
+                var resultado = await respuesta.Content.ReadFromJsonAsync<RespuestaFoto>();
+                if (resultado != null)
+                {
+                    fotoUrl = resultado.foto;
+                    // Guardar foto en localStorage y notificar al servicio para el Navbar
+                    if (!string.IsNullOrWhiteSpace(resultado.foto))
+                    {
+                        await JS.InvokeVoidAsync("localStorage.setItem", "udx_fotoPerfil", resultado.foto);
+                        PhotoState.FotoPerfilUrl = resultado.foto;
+                    }
+                }
+                else
+                {
+                    // No photo data returned; keep default avatar
+                    fotoUrl = "";
+                    await JS.InvokeVoidAsync("localStorage.removeItem", "udx_fotoPerfil");
+                    PhotoState.Clear();
+                }
             }
+            else if (respuesta.StatusCode == System.Net.HttpStatusCode.Unauthorized ||
+                     respuesta.StatusCode == System.Net.HttpStatusCode.Forbidden)
+            {
+                // Token invalid or insufficient permissions; navigate to login
+                Navigation.NavigateTo("/login");
+                return;
+            }
+            else
+            {
+                // API error; keep default avatar and optionally log
+                fotoUrl = "";
+                Console.WriteLine($"Error fetching photo: {(int)respuesta.StatusCode}");
+            }
+        }
+        catch (Exception ex)
+        {
+            // Network or unexpected error; keep default avatar
+            Console.WriteLine($"Exception fetching photo: {ex.Message}");
+            fotoUrl = "";
         }
     }
 

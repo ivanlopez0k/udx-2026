@@ -223,7 +223,8 @@ namespace UDX.Server.Controllers
                 Token = token,
                 usuario.Email,
                 usuario.Role,
-                usuario.Name
+                usuario.Name,
+                usuario.FotoPerfil
             });
         }
 

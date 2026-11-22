@@ -2,10 +2,12 @@
 @using UDX.Shared.DTOs
 @using Microsoft.AspNetCore.Components.Forms
 @using System.Net.Http.Headers
+@using UDX.Server.Client.Services
 @layout MainLayout
 @inject HttpClient Http
 @inject IJSRuntime JS
 @inject NavigationManager Navigation
+@inject ProfilePhotoStateService PhotoState
 
 <PageTitle>Mi Panel Familiar | UDX</PageTitle>
 
@@ -432,6 +434,7 @@ else
         if (firstRender)
         {
             await CargarPerfil();
+            await CargarFotoPadre();
         }
     }
 
@@ -482,6 +485,67 @@ else
 
         cargando = false;
         StateHasChanged();
+    }
+
+    // CARGAR FOTO DE PERFIL
+    private async Task CargarFotoPadre()
+    {
+        var token = await JS.InvokeAsync<string?>("localStorage.getItem", "token")
+                    ?? await JS.InvokeAsync<string?>("localStorage.getItem", "udx_token");
+
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            fotoPerfil = "";
+            return;
+        }
+
+        using var request = new HttpRequestMessage(
+            HttpMethod.Get, "api/Padre/foto");
+        request.Headers.Authorization =
+            new AuthenticationHeaderValue("Bearer", token);
+
+        try
+        {
+            var respuesta = await Http.SendAsync(request);
+
+            if (respuesta.IsSuccessStatusCode)
+            {
+                var resultado = await respuesta.Content.ReadFromJsonAsync<PerfilPadreDTO>();
+                if (resultado != null && !string.IsNullOrWhiteSpace(resultado.FotoPerfil))
+                {
+                    fotoPerfil = resultado.FotoPerfil;
+                    // Guardar foto en localStorage y notificar al servicio para el Navbar
+                    await JS.InvokeVoidAsync("localStorage.setItem", "udx_fotoPerfil", resultado.FotoPerfil);
+                    PhotoState.FotoPerfilUrl = resultado.FotoPerfil;
+                }
+                else
+                {
+                    // No photo data returned; use default avatar
+                    fotoPerfil = "";
+                    await JS.InvokeVoidAsync("localStorage.removeItem", "udx_fotoPerfil");
+                    PhotoState.Clear();
+                }
+            }
+            else if (respuesta.StatusCode == System.Net.HttpStatusCode.Unauthorized ||
+                     respuesta.StatusCode == System.Net.HttpStatusCode.Forbidden)
+            {
+                // Token invalid or insufficient permissions; navigate to login
+                Navigation.NavigateTo("/login");
+                return;
+            }
+            else
+            {
+                // API error; use default avatar
+                fotoPerfil = "";
+                Console.WriteLine($"Error fetching parent photo: {(int)respuesta.StatusCode}");
+            }
+        }
+        catch (Exception ex)
+        {
+            // Network or unexpected error; use default avatar
+            Console.WriteLine($"Exception fetching parent photo: {ex.Message}");
+            fotoPerfil = "";
+        }
     }
 
     // CARGAR SOLICITUDES
@@ -710,6 +774,15 @@ else
             {
                 mensajeFoto = "No se pudo actualizar la foto de perfil.";
                 return;
+            }
+
+            // Leer la URL de la foto guardada y notificar al Navbar
+            var resultadoFoto = await respuestaFoto.Content.ReadFromJsonAsync<PerfilPadreDTO>();
+            if (resultadoFoto != null && !string.IsNullOrWhiteSpace(resultadoFoto.FotoPerfil))
+            {
+                fotoPerfil = resultadoFoto.FotoPerfil;
+                await JS.InvokeVoidAsync("localStorage.setItem", "udx_fotoPerfil", resultadoFoto.FotoPerfil);
+                PhotoState.FotoPerfilUrl = resultadoFoto.FotoPerfil;
             }
 
             fotoSeleccionada = null;
