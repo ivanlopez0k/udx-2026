@@ -7,5 +7,6 @@
         public int Role { get; set; }
 
         public string Name { get; set; } = "";
+        public string? FotoPerfil { get; set; }
     }
 }

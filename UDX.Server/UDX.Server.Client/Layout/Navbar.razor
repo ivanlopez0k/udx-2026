@@ -1,6 +1,8 @@
+@using UDX.Server.Client.Services
 @implements IDisposable
 @inject IJSRuntime JS
 @inject NavigationManager Navigation
+@inject ProfilePhotoStateService PhotoState
 
 <header class="header-floating-wrap">
     <div class="nav-island">
@@ -103,7 +105,15 @@
             {
                 <div class="user-action-group">
                     <div class="user-profile-toggle" @onclick="ToggleUserMenu">
-                        <div class="user-avatar-hex">@ObtenerInicial()</div>
+                        <!-- Mostrar foto de perfil si está disponible, sino inicial -->
+                        @if (!string.IsNullOrWhiteSpace(fotoPerfilLocalStorage))
+                        {
+                            <img src="@fotoPerfilLocalStorage" class="user-avatar-img" alt="Foto de perfil" />
+                        }
+                        else
+                        {
+                            <div class="user-avatar-hex">@ObtenerInicial()</div>
+                        }
                         <span class="user-short-name">@nombreUsuario</span>
                         <svg class="chevron-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                             <path d="M6 9l6 6 6-6"/>
@@ -146,12 +156,14 @@
     private bool estaLogueado = false;
     private string nombreUsuario = "";
     private string rolUsuario = "";
+    private string fotoPerfilLocalStorage = "";
     private bool userMenuAbierto = false;
     private bool mobileMenuAbierto = false;
 
     protected override void OnInitialized()
     {
         Navigation.LocationChanged += AlCambiarPagina;
+        PhotoState.OnChange += HandlePhotoChanged;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -179,11 +191,27 @@
             estaLogueado = !string.IsNullOrWhiteSpace(token);
             nombreUsuario = nombre ?? "Usuario";
             rolUsuario = rol ?? "";
+
+            // === AGREGAR ESTO AQUÍ ===
+            var fotoGuardada = await JS.InvokeAsync<string?>("localStorage.getItem", "udx_fotoPerfil");
+            if (!string.IsNullOrWhiteSpace(fotoGuardada))
+            {
+                PhotoState.FotoPerfilUrl = fotoGuardada;
+                fotoPerfilLocalStorage = fotoGuardada;
+            }
+            // =========================
+
         }
         catch
         {
             // Prerender safe fallback
         }
+    }
+
+    private void HandlePhotoChanged()
+    {
+        fotoPerfilLocalStorage = PhotoState.FotoPerfilUrl;
+        InvokeAsync(StateHasChanged);
     }
 
     private async void AlCambiarPagina(object? sender, LocationChangedEventArgs e)
@@ -266,5 +294,6 @@
     public void Dispose()
     {
         Navigation.LocationChanged -= AlCambiarPagina;
+        PhotoState.OnChange -= HandlePhotoChanged;
     }
 }

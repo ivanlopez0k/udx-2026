@@ -5,9 +5,11 @@ using System.Text;
 using UDX.BD.Datos;
 using UDX.Server.Authorization;
 using UDX.Server.Client.Pages;
+using UDX.Server.Client.Services;
 using UDX.Server.Components;
 using Microsoft.OpenApi;
 using Microsoft.AspNetCore.Authorization;
+using UDX.Server.Client.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -49,6 +51,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             };
     });
 builder.Services.AddScoped<IAuthorizationHandler, PerfilDocenteHandler>();
+builder.Services.AddScoped<ProfilePhotoStateService>();
+builder.Services.AddScoped<ProfilePhotoStateService>();
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("PerfilDocenteOnly", policy =>
