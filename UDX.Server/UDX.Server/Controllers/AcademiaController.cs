@@ -277,6 +277,69 @@ public class AcademiaController : ControllerBase
         return Ok(MapearDTO(academia));
     }
 
+    // POST: api/Academia/{id}/foto (solo el responsable) - subir foto/logo de la academia
+    [Authorize]
+    [HttpPost("{id:int}/foto")]
+    public async Task<IActionResult> SubirFoto(int id, IFormFile foto)
+    {
+        if (foto == null || foto.Length == 0)
+            return BadRequest("No se recibió ninguna foto.");
+
+        if (foto.Length > 5 * 1024 * 1024)
+            return BadRequest("La foto no puede superar los 5 MB.");
+
+        var extensionesPermitidas = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+        var extension = Path.GetExtension(foto.FileName).ToLowerInvariant();
+        if (!extensionesPermitidas.Contains(extension))
+            return BadRequest("Formato de imagen no permitido.");
+
+        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
+        var academia = await _context.Academias
+            .FirstOrDefaultAsync(a => a.Id == id);
+
+        if (academia == null)
+            return NotFound("Academia no encontrada.");
+
+        if (academia.ResponsableId != userId)
+            return StatusCode(StatusCodes.Status403Forbidden, "Solo el responsable puede modificar la foto de la academia.");
+
+        var carpeta = Path.Combine(
+            Directory.GetCurrentDirectory(),
+            "wwwroot",
+            "uploads",
+            "academias");
+
+        if (!Directory.Exists(carpeta))
+            Directory.CreateDirectory(carpeta);
+
+        if (!string.IsNullOrEmpty(academia.Foto))
+        {
+            var rutaFotoAnterior = Path.Combine(
+                Directory.GetCurrentDirectory(),
+                academia.Foto.TrimStart('/').Replace("/", Path.DirectorySeparatorChar.ToString()));
+            if (System.IO.File.Exists(rutaFotoAnterior))
+                System.IO.File.Delete(rutaFotoAnterior);
+        }
+
+        var nombreArchivo = $"academia_{id}{extension}";
+        var ruta = Path.Combine(carpeta, nombreArchivo);
+
+        using (var stream = new FileStream(ruta, FileMode.Create))
+        {
+            await foto.CopyToAsync(stream);
+        }
+
+        academia.Foto = $"/uploads/academias/{nombreArchivo}";
+        await _context.SaveChangesAsync();
+
+        return Ok(new
+        {
+            mensaje = "Foto subida correctamente.",
+            foto = academia.Foto
+        });
+    }
+
     private string GenerateAcademyCode()
     {
         const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";

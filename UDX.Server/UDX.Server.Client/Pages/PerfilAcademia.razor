@@ -46,11 +46,21 @@ else
             <!-- Profile Column -->
             <aside class="profile-box">
                 <div class="avatar-wrapper">
-                    <img src="/assets/images/default-avatar.avif"
+                    <img src="@(string.IsNullOrWhiteSpace(fotoUrl) ? "/assets/images/default-avatar.avif" : fotoUrl)"
                          alt="Logo de la academia"
                          class="avatar-img" />
-                    <span class="avatar-edit-label" title="Academia oficial" style="cursor: default;">🏛️</span>
+                    <label class="avatar-edit-label" title="Subir nuevo logo">
+                        ✎
+                        <InputFile OnChange="SeleccionarFoto" style="display: none;" accept="image/*" />
+                    </label>
                 </div>
+
+                @if (!string.IsNullOrWhiteSpace(fotoUrl) && fotoSeleccionada != null)
+                {
+                    <button type="button" class="btn btn-primary btn-full btn-sm" style="margin-top: 0.5rem;" @onclick="SubirFoto">
+                        Subir logo
+                    </button>
+                }
 
                 <h2 style="font-size: 1.35rem; font-weight: 800; margin-bottom: 0.25rem;">@(string.IsNullOrWhiteSpace(nombre) ? "Academia" : nombre)</h2>
                 <p style="font-size: 0.825rem; color: var(--slate-500); margin-bottom: 1.25rem;">@email</p>
@@ -249,6 +259,9 @@ else
     // Vista de demostración para usuarios sin sesión (no redirige al login).
     private bool modoDemo = false;
 
+    private string fotoUrl = "";
+    private IBrowserFile? fotoSeleccionada;
+
     private bool mostrarConfirmacionEliminar = false;
 
     private string mensaje = "";
@@ -272,6 +285,13 @@ else
         public bool IsActive { get; set; }
         public decimal? PricePerHour { get; set; }
         public decimal? PricePerCourse { get; set; }
+        public string? Foto { get; set; }
+    }
+
+    public class RespuestaFoto
+    {
+        public string mensaje { get; set; } = "";
+        public string foto { get; set; } = "";
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -345,6 +365,7 @@ else
                 activa = academia.IsActive;
                 precioPorHora = academia.PricePerHour;
                 precioPorCurso = academia.PricePerCourse;
+                fotoUrl = academia.Foto ?? "";
             }
             else
             {
@@ -376,7 +397,8 @@ else
             Email = "aprender@udx.com",
             IsActive = true,
             PricePerHour = 8000,
-            PricePerCourse = 25000
+            PricePerCourse = 25000,
+            Foto = "/assets/images/default-avatar.avif"
         };
 
         nombre = academia.Name;
@@ -496,6 +518,79 @@ else
         mensajePrecios = "Tarifas actualizadas correctamente.";
         guardadoPreciosCorrecto = true;
         guardandoPrecios = false;
+    }
+
+    private async Task SeleccionarFoto(InputFileChangeEventArgs e)
+    {
+        fotoSeleccionada = e.File;
+        mensajeFoto = "";
+
+        try
+        {
+            using var stream = fotoSeleccionada.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
+            using var memoryStream = new MemoryStream();
+            await stream.CopyToAsync(memoryStream);
+            var bytes = memoryStream.ToArray();
+            fotoUrl = $"data:{fotoSeleccionada.ContentType};base64,{Convert.ToBase64String(bytes)}";
+        }
+        catch (Exception)
+        {
+            fotoSeleccionada = null;
+            mensajeFoto = "No se pudo cargar la imagen. Verificá que pese menos de 5 MB.";
+        }
+    }
+
+    private async Task SubirFoto()
+    {
+        mensajeFoto = "";
+
+        if (academia == null) return;
+
+        var token = await JS.InvokeAsync<string?>("localStorage.getItem", "token")
+                    ?? await JS.InvokeAsync<string?>("localStorage.getItem", "udx_token");
+
+        if (string.IsNullOrEmpty(token))
+        {
+            mensajeFoto = "No hay una sesión iniciada.";
+            return;
+        }
+
+        if (fotoSeleccionada == null) return;
+
+        try
+        {
+            using var stream = fotoSeleccionada.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
+            using var archivo = new StreamContent(stream);
+            archivo.Headers.ContentType = new MediaTypeHeaderValue(fotoSeleccionada.ContentType);
+            using var contenido = new MultipartFormDataContent();
+            contenido.Add(archivo, "foto", fotoSeleccionada.Name);
+
+            using var request = new HttpRequestMessage(HttpMethod.Post, $"api/Academia/{academia.Id}/foto") { Content = contenido };
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            var respuesta = await Http.SendAsync(request);
+
+            if (!respuesta.IsSuccessStatusCode)
+            {
+                mensajeFoto = "No se pudo subir la foto.";
+                return;
+            }
+
+            var resultado = await respuesta.Content.ReadFromJsonAsync<RespuestaFoto>();
+            if (resultado != null && !string.IsNullOrWhiteSpace(resultado.foto))
+            {
+                fotoUrl = resultado.foto;
+                await JS.InvokeVoidAsync("localStorage.setItem", "udx_fotoPerfil", resultado.foto);
+                PhotoState.FotoPerfilUrl = resultado.foto;
+                mensajeFoto = "";
+            }
+
+            fotoSeleccionada = null;
+        }
+        catch (Exception)
+        {
+            mensajeFoto = "Ocurrió un error al subir la foto.";
+        }
     }
 
     private async Task CerrarSesion()
