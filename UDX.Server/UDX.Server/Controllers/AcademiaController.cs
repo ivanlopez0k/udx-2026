@@ -115,6 +115,116 @@ public class AcademiaController : ControllerBase
         return Ok(academias);
     }
 
+    // GET: api/Academia/mia (academia oficial a cargo del usuario autenticado)
+    [Authorize]
+    [HttpGet("mia")]
+    public async Task<ActionResult<AcademiaDTO>> GetMiAcademia()
+    {
+        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
+        var academia = await _context.Academias
+            .FirstOrDefaultAsync(a => a.ResponsableId == userId && !a.IsPersonal);
+
+        if (academia == null)
+            return NotFound("No tenés una academia a tu cargo.");
+
+        return Ok(MapearDTO(academia));
+    }
+
+    // GET: api/Academia/publico/{nombre} (vista pública, sin autenticación - busca por nombre)
+    [HttpGet("publico/nombre/{nombre}")]
+    public async Task<ActionResult<AcademiaDTO>> GetPublicoPorNombre(string nombre)
+    {
+        var academia = await _context.Academias
+            .Where(a => a.Name.ToLower() == nombre.ToLower() && !a.IsPersonal && a.IsActive)
+            .Select(a => new AcademiaDTO
+            {
+                Id = a.Id,
+                Name = a.Name,
+                Description = a.Description,
+                Code = a.Code,
+                CreatedAt = a.CreatedAt,
+                Location = a.Location,
+                Phone = a.Phone,
+                Email = a.Email,
+                ResponsableId = a.ResponsableId,
+                IsActive = a.IsActive,
+                PricePerHour = a.PricePerHour,
+                PricePerCourse = a.PricePerCourse
+            })
+            .FirstOrDefaultAsync();
+
+        if (academia == null)
+            return NotFound("Academia no encontrada.");
+
+        return Ok(academia);
+    }
+
+    // GET: api/Academia/publico/{codigo} (vista pública, sin autenticación - busca por código)
+    [HttpGet("publico/{codigo}")]
+    public async Task<ActionResult<AcademiaDTO>> GetPublicoPorCodigo(string codigo)
+    {
+        var academia = await _context.Academias
+            .Where(a => a.Code.ToUpper() == codigo.ToUpper() && !a.IsPersonal && a.IsActive)
+            .Select(a => new AcademiaDTO
+            {
+                Id = a.Id,
+                Name = a.Name,
+                Description = a.Description,
+                Code = a.Code,
+                CreatedAt = a.CreatedAt,
+                Location = a.Location,
+                Phone = a.Phone,
+                Email = a.Email,
+                ResponsableId = a.ResponsableId,
+                IsActive = a.IsActive,
+                PricePerHour = a.PricePerHour,
+                PricePerCourse = a.PricePerCourse
+            })
+            .FirstOrDefaultAsync();
+
+        if (academia == null)
+            return NotFound("Academia no encontrada.");
+
+        return Ok(academia);
+    }
+
+    // GET: api/Academia/{id}/docentes (vista pública, sin autenticación)
+    [HttpGet("{id:int}/docentes")]
+    public async Task<ActionResult<List<DocenteAcademiaDTO>>> GetDocentesPorAcademia(int id)
+    {
+        var membresias = await _context.DocentesAcademias
+            .Where(da => da.AcademyId == id && da.IsActive)
+            .Include(da => da.Teacher)
+                .ThenInclude(p => p.User)
+            .Include(da => da.Teacher)
+                .ThenInclude(p => p.DocentesMaterias)
+                    .ThenInclude(dm => dm.Materia)
+            .ToListAsync();
+
+        var docentes = membresias
+            .OrderBy(da => da.Teacher.User?.Name ?? string.Empty)
+            .Select(da => new DocenteAcademiaDTO
+            {
+                Id = da.Teacher.Id,
+                Nombre = da.Teacher.User?.Name ?? "Docente",
+                Foto = da.Teacher.ProfileImage,
+                Location = da.Teacher.Location,
+                Credenciales = da.Teacher.Credentials,
+                Calificacion = da.Teacher.RatingAvg,
+                CantidadResenas = da.Teacher.RatinCount,
+                Verificado = da.Teacher.Verified,
+                Disponibilidad = da.Teacher.Availability,
+                Materias = da.Teacher.DocentesMaterias?
+                    .Where(dm => dm.Materia != null)
+                    .Select(dm => dm.Materia.Name)
+                    .ToList() ?? new List<string>()
+            })
+            .ToList();
+
+        return Ok(docentes);
+    }
+
     // GET: api/Academia/{id}
     [HttpGet("{id:int}")]
     public async Task<ActionResult<AcademiaDTO>> GetById(int id)
@@ -167,6 +277,69 @@ public class AcademiaController : ControllerBase
         return Ok(MapearDTO(academia));
     }
 
+    // POST: api/Academia/{id}/foto (solo el responsable) - subir foto/logo de la academia
+    [Authorize]
+    [HttpPost("{id:int}/foto")]
+    public async Task<IActionResult> SubirFoto(int id, IFormFile foto)
+    {
+        if (foto == null || foto.Length == 0)
+            return BadRequest("No se recibió ninguna foto.");
+
+        if (foto.Length > 5 * 1024 * 1024)
+            return BadRequest("La foto no puede superar los 5 MB.");
+
+        var extensionesPermitidas = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+        var extension = Path.GetExtension(foto.FileName).ToLowerInvariant();
+        if (!extensionesPermitidas.Contains(extension))
+            return BadRequest("Formato de imagen no permitido.");
+
+        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
+        var academia = await _context.Academias
+            .FirstOrDefaultAsync(a => a.Id == id);
+
+        if (academia == null)
+            return NotFound("Academia no encontrada.");
+
+        if (academia.ResponsableId != userId)
+            return StatusCode(StatusCodes.Status403Forbidden, "Solo el responsable puede modificar la foto de la academia.");
+
+        var carpeta = Path.Combine(
+            Directory.GetCurrentDirectory(),
+            "wwwroot",
+            "uploads",
+            "academias");
+
+        if (!Directory.Exists(carpeta))
+            Directory.CreateDirectory(carpeta);
+
+        if (!string.IsNullOrEmpty(academia.Foto))
+        {
+            var rutaFotoAnterior = Path.Combine(
+                Directory.GetCurrentDirectory(),
+                academia.Foto.TrimStart('/').Replace("/", Path.DirectorySeparatorChar.ToString()));
+            if (System.IO.File.Exists(rutaFotoAnterior))
+                System.IO.File.Delete(rutaFotoAnterior);
+        }
+
+        var nombreArchivo = $"academia_{id}{extension}";
+        var ruta = Path.Combine(carpeta, nombreArchivo);
+
+        using (var stream = new FileStream(ruta, FileMode.Create))
+        {
+            await foto.CopyToAsync(stream);
+        }
+
+        academia.Foto = $"/uploads/academias/{nombreArchivo}";
+        await _context.SaveChangesAsync();
+
+        return Ok(new
+        {
+            mensaje = "Foto subida correctamente.",
+            foto = academia.Foto
+        });
+    }
+
     private string GenerateAcademyCode()
     {
         const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -216,6 +389,28 @@ public class AcademiaController : ControllerBase
         await _context.SaveChangesAsync();
 
         return Ok(MapearDTO(academia));
+    }
+
+    // DELETE: api/Academia/{id}/cuenta (solo el responsable)
+    [Authorize]
+    [HttpDelete("{id:int}/cuenta")]
+    public async Task<IActionResult> EliminarCuenta(int id)
+    {
+        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
+        var academia = await _context.Academias
+            .FirstOrDefaultAsync(a => a.Id == id);
+
+        if (academia == null)
+            return NotFound("Academia no encontrada.");
+
+        if (academia.ResponsableId != userId)
+            return StatusCode(StatusCodes.Status403Forbidden, "Solo el responsable puede eliminar la academia.");
+
+        _context.Academias.Remove(academia);
+        await _context.SaveChangesAsync();
+
+        return Ok("Academia eliminada correctamente.");
     }
 
     // PUT: api/Academia/{id}/responsable (solo el responsable actual)
@@ -279,4 +474,18 @@ public class AcademiaController : ControllerBase
         PricePerHour = academia.PricePerHour,
         PricePerCourse = academia.PricePerCourse
     };
+
+    public class DocenteAcademiaDTO
+    {
+        public int Id { get; set; }
+        public string Nombre { get; set; } = "";
+        public string? Foto { get; set; }
+        public string? Location { get; set; }
+        public string? Credenciales { get; set; }
+        public float Calificacion { get; set; }
+        public int CantidadResenas { get; set; }
+        public bool Verificado { get; set; }
+        public string? Disponibilidad { get; set; }
+        public List<string> Materias { get; set; } = new();
+    }
 }

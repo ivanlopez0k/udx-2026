@@ -20,6 +20,9 @@ namespace UDX.BD.Datos.Entity
         public string? Phone { get; set; }
         public string? Email { get; set; }
 
+        // Foto/logo de la academia (ruta relativa en wwwroot).
+        public string? Foto { get; set; }
+
         // Precios generales de la academia.
         [Column(TypeName = "decimal(18,2)")]
         public decimal? PricePerHour { get; set; }

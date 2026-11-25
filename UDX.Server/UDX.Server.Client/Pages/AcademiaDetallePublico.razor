@@ -1,0 +1,109 @@
+@inject NavigationManager Navigation
+@using UDX.Server.Client.Models
+
+<div class="academia-detalle">
+    <div class="section-head" style="margin-bottom: 3rem;">
+        <span class="badge badge-primary" style="margin-bottom: 0.85rem;">Academia oficial</span>
+        <h1 style="font-size: 2.35rem; font-weight: 800; letter-spacing: -0.03em; color: var(--slate-950); margin: 0;">
+            @Academia.Name
+        </h1>
+        @if (!string.IsNullOrWhiteSpace(Academia.Location))
+        {
+            <p style="font-size: 1.05rem; color: var(--slate-500); margin-top: 0.75rem; line-height: 1.6;">
+                📍 @Academia.Location
+            </p>
+        }
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 320px; gap: 3rem; align-items: start;">
+        <section>
+            @if (!string.IsNullOrWhiteSpace(Academia.Description))
+            {
+                <div class="content-box" style="margin-bottom: 2rem;">
+                    <h3 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 0.75rem;">Sobre la academia</h3>
+                    <p style="color: var(--slate-600); line-height: 1.7; margin: 0;">
+                        @Academia.Description
+                    </p>
+                </div>
+            }
+
+            <div class="content-box" style="margin-bottom: 2rem;">
+                <h3 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 1rem;">Contacto</h3>
+
+                <div style="display: flex; align-items: flex-start; gap: 0.75rem; margin-bottom: 0.75rem;">
+                    <span style="font-size: 1.25rem;">📞</span>
+                    <div>
+                        <strong style="color: var(--slate-900); display: block;">Teléfono / WhatsApp</strong>
+                        @if (!string.IsNullOrWhiteSpace(Academia.Phone))
+                        {
+                            <a href="@($"https://wa.me/{Academia.Phone.Replace(" ", "").Replace("-", "").Replace("+", "")}")"
+                               class="btn btn-outline btn-sm" style="margin-top: 0.25rem;">
+                                @Academia.Phone
+                            </a>
+                        }
+                        else
+                        {
+                            <span style="color: var(--slate-500);">No disponible</span>
+                        }
+                    </div>
+                </div>
+
+                <div style="display: flex; align-items: flex-start; gap: 0.75rem; margin-bottom: 0.75rem;">
+                    <span style="font-size: 1.25rem;">✉️</span>
+                    <div>
+                        <strong style="color: var(--slate-900); display: block;">Correo electrónico</strong>
+                        @if (!string.IsNullOrWhiteSpace(Academia.Email))
+                        {
+                            <a href="@($"mailto:{Academia.Email}")"
+                               class="btn btn-outline btn-sm" style="margin-top: 0.25rem;">
+                                @Academia.Email
+                            </a>
+                        }
+                        else
+                        {
+                            <span style="color: var(--slate-500);">No disponible</span>
+                        }
+                    </div>
+                </div>
+
+                <div style="display: flex; align-items: flex-start; gap: 0.75rem;">
+                    <span style="font-size: 1.25rem;">🏛️</span>
+                    <div>
+                        <strong style="color: var(--slate-900); display: block;">Estado</strong>
+                        <span class="@(Academia.IsActive ? "badge badge-verified" : "badge badge-outline")" style="margin-top: 0.25rem;">
+                            @(Academia.IsActive ? "✓ Activa" : "Inactiva")
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+           
+        </section>
+
+        <aside style="position: sticky; top: 6rem;">
+            <div class="content-box" style="text-align: center;">
+                <div class="avatar-wrapper" style="width: 96px; height: 96px; margin: 0 auto 1rem;">
+                    <img src="/assets/images/default-avatar.avif"
+                         alt="Logo academia"
+                         class="avatar-img" />
+                </div>
+
+                <h3 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 0.25rem;">
+                    @Academia.Name
+                </h3>
+
+                <span class="badge badge-primary" style="font-size: 0.75rem;">Academia oficial</span>
+
+                <a href="@($"/academias/{Academia.Id}/docentes")" class="btn btn-primary btn-full btn-sm" style="margin-top: 1.25rem;">
+                    Ver docentes
+                </a>
+            </div>
+        </aside>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public AcademiaDto Academia { get; set; } = new();
+
+}
