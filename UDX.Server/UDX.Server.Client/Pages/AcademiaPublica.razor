@@ -1,0 +1,59 @@
+@page "/academia/{nombre}"
+@using UDX.Server.Client.Models
+
+@inject HttpClient Http
+
+<PageTitle>@(academia?.Name ?? nombre) | UDX</PageTitle>
+
+<main class="container">
+    @if (cargando)
+    {
+        <div class="text-center" style="padding: 8rem 0;">
+            <h4 style="color: var(--slate-600);">Cargando academia...</h4>
+        </div>
+    }
+    else if (academia == null)
+    {
+        <div class="content-box" style="margin-top: 7rem; text-align: center;">
+            <span style="font-size: 3rem;">🏛️</span>
+            <h2 style="font-size: 1.35rem; font-weight: 800; margin-top: 0.75rem;">Academia no encontrada</h2>
+            <p style="color: var(--slate-500); font-size: 0.9rem; margin-bottom: 1.5rem;">
+                No existe una academia activa con ese nombre.
+            </p>
+            <a href="/" class="btn btn-primary">Volver al inicio</a>
+        </div>
+    }
+    else
+    {
+        <AcademiaDetallePublico Academia="academia" />
+    }
+</main>
+
+@code {
+    [Parameter]
+    public string nombre { get; set; } = "";
+
+    private AcademiaDto? academia;
+    private bool cargando = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarAcademia();
+    }
+
+    private async Task CargarAcademia()
+    {
+        try
+        {
+            academia = await Http.GetFromJsonAsync<AcademiaDto>($"api/Academia/publico/nombre/{nombre}");
+        }
+        catch
+        {
+            academia = null;
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+}

@@ -1,0 +1,110 @@
+@page "/academias"
+
+@inject HttpClient Http
+@using UDX.Server.Client.Models
+
+<PageTitle>Academias Oficiales | UDX</PageTitle>
+
+<main class="container">
+    <div class="section-head" style="margin-bottom: 3rem;">
+        <span class="badge badge-primary" style="margin-bottom: 0.85rem;">Academias oficiales</span>
+        <h1 style="font-size: 2.35rem; font-weight: 800; letter-spacing: -0.03em; color: var(--slate-950); margin: 0;">
+            Academias Verificadas
+        </h1>
+        <p style="font-size: 1.05rem; color: var(--slate-500); margin-top: 0.75rem; line-height: 1.6;">
+            Conocé las academias pedagógicas oficiales de UDX. Compartí su código de invitación con docentes para que se unan.
+        </p>
+    </div>
+
+    @if (cargando)
+    {
+        <div class="text-center" style="padding: 6rem 0;">
+            <h4 style="color: var(--slate-600);">Cargando academias...</h4>
+        </div>
+    }
+    else if (academias == null || academias.Count == 0)
+    {
+        <div class="content-box" style="text-align: center; padding: 4rem 1rem;">
+            <span style="font-size: 3rem;">🏛️</span>
+            <h3 style="font-size: 1.35rem; font-weight: 800; margin-top: 1rem;">No hay academias disponibles</h3>
+            <p style="color: var(--slate-500); margin-bottom: 1.5rem;">Pronto se registrarán academias oficiales.</p>
+            <a href="/" class="btn btn-primary">Volver al inicio</a>
+        </div>
+    }
+    else
+    {
+        <div class="academias-listado">
+            <div class="teacher-grid">
+                @foreach (var academia in academias)
+                {
+                    <a href="@($"/academia/{academia.Name}")" class="teacher-card" style="text-decoration: none; color: inherit;">
+                        <div class="teacher-cover">
+                            <img src="/assets/images/default-avatar.avif"
+                                 alt="Academia"
+                                 style="width: 100%; height: 100%; object-fit: cover;" />
+                            <div class="teacher-cover-overlay"></div>
+                            <span class="teacher-floating-badge badge @(academia.IsActive ? "badge-verified" : "badge-outline")">
+                                @(academia.IsActive ? "✓ Activa" : "Inactiva")
+                            </span>
+                        </div>
+                        <div class="teacher-body">
+                            <div class="teacher-header">
+                                <div>
+                                    <h3 class="teacher-name" style="font-size: 1.25rem; font-weight: 800; color: var(--slate-900); margin: 0 0 0.25rem 0;">
+                                        @academia.Name
+                                    </h3>
+                                    <div class="teacher-location" style="color: var(--slate-500); font-size: 0.85rem; display: flex; align-items: center; gap: 0.35rem;">
+                                        @(!string.IsNullOrWhiteSpace(academia.Location) ? $"📍 {academia.Location}" : "Ubicación no definida")
+                                    </div>
+                                </div>
+                            </div>
+                            @if (!string.IsNullOrWhiteSpace(academia.Description))
+                            {
+                                <p style="font-size: 0.9rem; color: var(--slate-600); line-height: 1.6; margin-bottom: 1rem; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
+                                    @academia.Description
+                                </p>
+                            }
+                        </div>
+                        <div class="teacher-footer">
+                            <div class="teacher-rate">
+                                <strong style="font-size: 1.25rem; color: var(--slate-900); font-weight: 800;">
+                                    @(academia.PricePerHour.HasValue ? $"${academia.PricePerHour.Value:N0}" : "Consultar")
+                                </strong>
+                                <span style="font-size: 0.8rem; color: var(--slate-500);">/ hora</span>
+                            </div>
+                            <span class="badge badge-outline" style="font-size: 0.7rem; font-family: var(--font-mono);">
+                                @academia.Code
+                            </span>
+                        </div>
+                    </a>
+                }
+            </div>
+        </div>
+    }
+</main>
+
+@code {
+    private List<AcademiaDto> academias = new();
+    private bool cargando = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarAcademias();
+    }
+
+    private async Task CargarAcademias()
+    {
+        try
+        {
+            academias = await Http.GetFromJsonAsync<List<AcademiaDto>>("api/Academia") ?? new List<AcademiaDto>();
+        }
+        catch
+        {
+            academias = new List<AcademiaDto>();
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+}

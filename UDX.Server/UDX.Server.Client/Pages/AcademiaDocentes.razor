@@ -1,0 +1,159 @@
+@page "/academias/{id:int}/docentes"
+
+@inject HttpClient Http
+@inject NavigationManager Navigation
+@using UDX.Server.Client.Models
+
+<PageTitle>Docentes de @NombreAcademia | UDX</PageTitle>
+
+<main class="container" style="padding-top: 8rem;">
+    <div class="section-head" style="margin-bottom: 3rem;">
+        <a href="@($"/academia/{NombreAcademia}")" class="btn btn-outline btn-sm" style="margin-bottom: 1rem;">
+            ← Volver a @NombreAcademia
+        </a>
+        <h1 style="font-size: 2.35rem; font-weight: 800; letter-spacing: -0.03em; color: var(--slate-950); margin: 0;">
+            Docentes de @NombreAcademia
+        </h1>
+        <p style="font-size: 1.05rem; color: var(--slate-500); margin-top: 0.75rem; line-height: 1.6;">
+            Conocé a los docentes que forman parte de esta academia.
+        </p>
+    </div>
+
+    @if (cargando)
+    {
+        <div class="text-center" style="padding: 6rem 0;">
+            <h4 style="color: var(--slate-600);">Cargando docentes...</h4>
+        </div>
+    }
+    else if (docentes == null || docentes.Count == 0)
+    {
+        <div class="content-box" style="text-align: center; padding: 4rem 1rem;">
+            <span style="font-size: 3rem;">👩‍🏫</span>
+            <h3 style="font-size: 1.35rem; font-weight: 800; margin-top: 1rem;">No hay docentes disponibles</h3>
+            <p style="color: var(--slate-500); margin-bottom: 1.5rem;">Esta academia aún no tiene docentes afiliados.</p>
+            <a href="@($"/academia/{CodigoAcademia}")" class="btn btn-primary">Volver a la academia</a>
+        </div>
+    }
+    else
+    {
+        <div class="teacher-grid">
+            @foreach (var docente in docentes)
+            {
+                <a href="/profesores/@docente.Id" class="teacher-card" style="text-decoration: none; color: inherit;">
+                    <div class="teacher-cover">
+                        <img src="@(string.IsNullOrWhiteSpace(docente.Foto) ? "/assets/images/default-avatar.avif" : docente.Foto)"
+                             alt="@docente.Nombre"
+                             style="width: 100%; height: 100%; object-fit: cover;" />
+                        <div class="teacher-cover-overlay"></div>
+                        @if (docente.Verificado)
+                        {
+                            <span class="teacher-floating-badge badge badge-verified">✓ Verificado</span>
+                        }
+                    </div>
+                    <div class="teacher-body">
+                        <div class="teacher-header">
+                            <div>
+                                <h3 class="teacher-name" style="font-size: 1.25rem; font-weight: 800; color: var(--slate-900); margin: 0 0 0.25rem 0;">
+                                    @docente.Nombre
+                                </h3>
+                                @if (!string.IsNullOrWhiteSpace(docente.Location))
+                                {
+                                    <div class="teacher-location" style="color: var(--slate-500); font-size: 0.85rem; display: flex; align-items: center; gap: 0.35rem;">
+                                        📍 @docente.Location
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                        @if (docente.Materias != null && docente.Materias.Count > 0)
+                        {
+                            <div style="display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1rem;">
+                                @foreach (var materia in docente.Materias)
+                                {
+                                    <span class="badge badge-outline" style="font-size: 0.75rem;">@materia</span>
+                                }
+                            </div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(docente.Disponibilidad))
+                        {
+                            <p style="font-size: 0.85rem; color: var(--slate-500); margin-bottom: 0.5rem;">
+                                📅 @docente.Disponibilidad
+                            </p>
+                        }
+                    </div>
+                    <div class="teacher-footer">
+                        <div class="teacher-rate">
+                            <strong style="font-size: 1.25rem; color: var(--slate-900); font-weight: 800;">
+                                @docente.Calificacion.ToString("0.0")
+                            </strong>
+                            <span style="font-size: 0.8rem; color: var(--slate-500);">★</span>
+                        </div>
+                        <span class="badge badge-primary" style="font-size: 0.7rem;">
+                            @docente.CantidadResenas reseñas
+                        </span>
+                    </div>
+                </a>
+            }
+        </div>
+    }
+</main>
+
+@code {
+    [Parameter]
+    public int id { get; set; }
+
+    private List<DocenteAcademiaDto> docentes = new();
+    private bool cargando = true;
+    private string NombreAcademia = "la academia";
+    private string CodigoAcademia = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarDocentes();
+    }
+
+    private async Task CargarDocentes()
+    {
+        try
+        {
+            // Primero obtener la academia para saber su nombre y código
+            var academia = await Http.GetFromJsonAsync<AcademiaDto>($"api/Academia/{id}");
+            if (academia != null)
+            {
+                NombreAcademia = academia.Name;
+                CodigoAcademia = academia.Code;
+            }
+
+            // Luego obtener los docentes
+            docentes = await Http.GetFromJsonAsync<List<DocenteAcademiaDto>>($"api/Academia/{id}/docentes") ?? new List<DocenteAcademiaDto>();
+        }
+        catch
+        {
+            docentes = new List<DocenteAcademiaDto>();
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    public class AcademiaDto
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = "";
+        public string Code { get; set; } = "";
+    }
+
+    public class DocenteAcademiaDto
+    {
+        public int Id { get; set; }
+        public string Nombre { get; set; } = "";
+        public string? Foto { get; set; }
+        public string? Location { get; set; }
+        public string? Credenciales { get; set; }
+        public float Calificacion { get; set; }
+        public int CantidadResenas { get; set; }
+        public bool Verificado { get; set; }
+        public string? Disponibilidad { get; set; }
+        public List<string> Materias { get; set; } = new();
+    }
+}

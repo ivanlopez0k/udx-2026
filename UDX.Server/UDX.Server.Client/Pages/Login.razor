@@ -176,9 +176,13 @@
                     await JS.InvokeVoidAsync("localStorage.setItem", "udx_email", resultado.Email);
 
                     // Redirigir según el rol
-                    if (resultado.Role == 1 || resultado.Role == 2) // TEACHER o ACADEMY
+                    if (resultado.Role == 1) // TEACHER
                     {
                         Navigation.NavigateTo("/perfil-doc", forceLoad: true);
+                    }
+                    else if (resultado.Role == 3) // ACADEMY
+                    {
+                        Navigation.NavigateTo("/perfil-academia", forceLoad: true);
                     }
                     else
                     {

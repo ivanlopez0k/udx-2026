@@ -77,6 +77,10 @@
                 <span>Cómo Funciona</span>
             </a>
 
+            <NavLink href="/academias" class="nav-item-link" @onclick="CerrarMobileMenu">
+                <span>Academias</span>
+            </NavLink>
+
             <NavLink href="/quiero-ensenar" class="nav-item-link nav-special-link" @onclick="CerrarMobileMenu">
                 <span class="pulse-indicator"></span>
                 <span>Quiero Enseñar</span>
@@ -235,6 +239,11 @@
             string.Equals(rolUsuario, "Tutor", StringComparison.OrdinalIgnoreCase))
         {
             return "/perfil-padre";
+        }
+        if (string.Equals(rolUsuario, "Academia", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(rolUsuario, "ACADEMY", StringComparison.OrdinalIgnoreCase))
+        {
+            return "/perfil-academia";
         }
         return "/perfil";
     }
